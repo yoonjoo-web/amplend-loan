@@ -1,0 +1,356 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, X, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LoanPartner } from "@/entities/all";
+import { US_STATES } from "../utils/usStates"; // New import for US States
+import AddressAutocomplete from "../shared/AddressAutocomplete"; // New import for AddressAutocomplete
+
+// Define the initial state structure for the form data,
+// now including granular address fields and excluding the single 'address' field.
+const initialFormDataState = {
+  name: '',
+  type: '',
+  email: '',
+  phone: '',
+  website: '',
+  contact_person: '',
+  notes: '',
+  address_street: '',
+  address_unit: '',
+  address_city: '',
+  address_state: '',
+  address_zip: '',
+};
+
+export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcessing, toast }) {
+  const [formData, setFormData] = useState(initialFormDataState);
+  const [errors, setErrors] = useState({});
+  const [nameExists, setNameExists] = useState(false);
+
+  // Effect to update formData when the 'partner' prop changes.
+  // This ensures the form is correctly populated when editing an existing partner
+  // or reset when switching to a new partner creation.
+  useEffect(() => {
+    if (partner) {
+      setFormData(prev => ({
+        ...initialFormDataState, // Start with a clean slate ensuring all fields are present
+        ...partner, // Apply existing partner data
+        // Explicitly set the old 'address' field to undefined
+        // to ensure it's not carried over from the 'partner' object
+        // if it still contains an older data model.
+        address: undefined,
+      }));
+    } else {
+      setFormData(initialFormDataState); // Reset to initial state for a new form
+    }
+  }, [partner]); // Rerun this effect whenever the 'partner' prop object changes
+
+  useEffect(() => {
+    // Check if partner name exists (but not for the current partner being edited)
+    const checkName = async () => {
+      if (formData.name && formData.name.trim().length > 0) {
+        try {
+          const existingPartners = await LoanPartner.filter({ 
+            name: formData.name 
+          });
+          
+          // If editing, exclude the current partner from the check
+          const isDuplicate = existingPartners.some(p => p.id !== partner?.id);
+          setNameExists(isDuplicate);
+        } catch (error) {
+          console.error('Error checking partner name:', error);
+        }
+      } else {
+        setNameExists(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(checkName, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [formData.name, partner?.id]);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
+  const handlePhoneInput = (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) value = value.slice(0, 10);
+    
+    if (value.length >= 7) {
+      value = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6)}`;
+    } else if (value.length >= 4) {
+      value = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+    } else if (value.length > 0) {
+      value = `(${value}`;
+    }
+    
+    handleInputChange('phone', value);
+    
+    const phoneDigits = value.replace(/\D/g, '');
+    if (phoneDigits.length > 0 && phoneDigits.length !== 10) {
+      setErrors(prev => ({ ...prev, phone: 'Phone must be 10 digits: (XXX) XXX-XXXX' }));
+    } else {
+      setErrors(prev => ({ ...prev, phone: '' }));
+    }
+  };
+
+  const handleAddressSelect = (addressData) => {
+    setFormData(prev => ({
+      ...prev,
+      address_street: addressData.street,
+      address_city: addressData.city,
+      address_state: addressData.state,
+      address_zip: addressData.zip
+    }));
+  };
+
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (nameExists || Object.keys(errors).some(key => errors[key])) {
+      if (toast) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Please fix the errors before submitting.",
+        });
+      }
+      return;
+    }
+    
+    // Create a copy of formData to clean
+    const cleanedData = { ...formData };
+    
+    // Convert empty string fields to null for database storage or API submission
+    Object.keys(cleanedData).forEach(key => {
+      if (cleanedData[key] === '') {
+        cleanedData[key] = null;
+      }
+    });
+
+    onSubmit(cleanedData);
+  };
+
+  return (
+    <Card className="border-0 shadow-xl bg-white">
+      <CardHeader className="pb-6">
+        <CardTitle className="text-2xl font-bold text-slate-900">
+          {partner ? 'Edit Loan Partner' : 'New Loan Partner'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Partner Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="ABC Servicing Company"
+                className={errors.name || nameExists ? 'border-red-500' : ''}
+                required
+              />
+              {nameExists && (
+                <div className="flex items-center gap-2 text-red-600 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>A partner with this name already exists</span>
+                </div>
+              )}
+              {errors.name && (
+                <p className="text-red-500 text-sm">{errors.name}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Partner Type *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleInputChange('type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select partner type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Servicer">Servicer</SelectItem>
+                  <SelectItem value="Auditor">Auditor</SelectItem>
+                  <SelectItem value="Referral Partner">Referral Partner</SelectItem>
+                  <SelectItem value="Brokerage">Brokerage</SelectItem>
+                  <SelectItem value="Title Company">Title Company</SelectItem>
+                  <SelectItem value="Appraisal Firm">Appraisal Firm</SelectItem>
+                  <SelectItem value="Legal Counsel">Legal Counsel</SelectItem>
+                  <SelectItem value="Insurance Provider">Insurance Provider</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => {
+                  handleInputChange('email', e.target.value);
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (e.target.value && !emailPattern.test(e.target.value)) {
+                    setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+                  } else {
+                    setErrors(prev => ({ ...prev, email: '' }));
+                  }
+                }}
+                placeholder="contact@partner.com"
+                className={errors.email ? 'border-red-500' : ''}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone || ''}
+                onInput={handlePhoneInput}
+                placeholder="(555) 123-4567"
+                className={errors.phone ? 'border-red-500' : ''}
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-sm">{errors.phone}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact_person">Contact Person</Label>
+              <Input
+                id="contact_person"
+                value={formData.contact_person || ''}
+                onChange={(e) => handleInputChange('contact_person', e.target.value)}
+                placeholder="John Smith"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                value={formData.website || ''}
+                onChange={(e) => handleInputChange('website', e.target.value)}
+                placeholder="https://www.partner.com"
+              />
+            </div>
+          </div>
+
+          {/* Address Section */}
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="font-semibold text-slate-900">Address</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2 space-y-2"> {/* Street Address takes full width on md and up */}
+                <Label htmlFor="address_street">Street Address</Label>
+                <AddressAutocomplete
+                  id="address_street"
+                  value={formData.address_street || ''}
+                  onChange={(value) => handleInputChange('address_street', value)}
+                  onAddressSelect={handleAddressSelect}
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_unit">Unit/Suite</Label>
+                <Input
+                  id="address_unit"
+                  value={formData.address_unit || ''}
+                  onChange={(e) => handleInputChange('address_unit', e.target.value)}
+                  placeholder="Suite 200"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_city">City</Label>
+                <Input
+                  id="address_city"
+                  value={formData.address_city || ''}
+                  onChange={(e) => handleInputChange('address_city', e.target.value)}
+                  placeholder="New York"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_state">State</Label>
+                <Select
+                  value={formData.address_state || ''}
+                  onValueChange={(value) => handleInputChange('address_state', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Map through US_STATES to populate the select options */}
+                    {US_STATES.map(state => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_zip">ZIP Code</Label>
+                <Input
+                  id="address_zip"
+                  value={formData.address_zip || ''}
+                  onChange={(e) => handleInputChange('address_zip', e.target.value)}
+                  placeholder="10001"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Any additional information..."
+              className="h-32"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isProcessing}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isProcessing || nameExists}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {isProcessing ? 'Saving...' : 'Save Partner'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
