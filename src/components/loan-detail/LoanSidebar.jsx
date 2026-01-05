@@ -363,7 +363,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
 
   return (
     <div className="w-80 bg-white border-l border-slate-200 overflow-y-auto h-full" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
-      <style jsx>{`
+      <style>{`
         div::-webkit-scrollbar {
           display: none;
         }
