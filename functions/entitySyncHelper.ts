@@ -90,18 +90,33 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
   };
 
   // Borrower Address
+  console.log('[entitySyncHelper] Borrower type:', application.borrower_type);
   if (application.borrower_type == "entity") {
+    console.log('[entitySyncHelper] Entity branch - entity_address_street:', application.entity_address_street);
     mapping.borrower_billing_address_street = application.entity_address_street;
     mapping.borrower_billing_address_unit = application.entity_address_unit;
     mapping.borrower_billing_address_city = application.entity_address_city;
     mapping.borrower_billing_address_state = application.entity_address_state;
     mapping.borrower_billing_address_zip = application.entity_address_zip;
+    console.log('[entitySyncHelper] Entity mapped billing address:', {
+      street: mapping.borrower_billing_address_street,
+      city: mapping.borrower_billing_address_city,
+      state: mapping.borrower_billing_address_state,
+      zip: mapping.borrower_billing_address_zip
+    });
   } else {
+    console.log('[entitySyncHelper] Individual branch - borrower_address_street:', application.borrower_address_street);
     mapping.borrower_billing_address_street = application.borrower_address_street;
     mapping.borrower_billing_address_unit = application.borrower_address_unit;
     mapping.borrower_billing_address_city = application.borrower_address_city;
     mapping.borrower_billing_address_state = application.borrower_address_state;
     mapping.borrower_billing_address_zip = application.borrower_address_zip;
+    console.log('[entitySyncHelper] Individual mapped billing address:', {
+      street: mapping.borrower_billing_address_street,
+      city: mapping.borrower_billing_address_city,
+      state: mapping.borrower_billing_address_state,
+      zip: mapping.borrower_billing_address_zip
+    });
   }
 
   // Property address (concatenated)
