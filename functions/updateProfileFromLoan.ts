@@ -31,43 +31,23 @@ Deno.serve(async (req) => {
       entities: []
     };
 
-    console.log('[updateProfileFromLoan] ====== LOAN DATA ======');
-    console.log('[updateProfileFromLoan] Loan ID:', loan_id);
-    console.log('[updateProfileFromLoan] Borrower type:', loan.borrower_type);
-    console.log('[updateProfileFromLoan] Borrower IDs:', loan.borrower_ids);
-    console.log('[updateProfileFromLoan] Individual information array length:', loan.individual_information?.length || 0);
-    console.log('[updateProfileFromLoan] Individual information:', JSON.stringify(loan.individual_information, null, 2));
-
     // Get all borrowers first
     const allBorrowers = await base44.asServiceRole.entities.Borrower.list();
-    console.log('[updateProfileFromLoan] Total borrowers in system:', allBorrowers.length);
 
     // Update individual borrowers (process for both individual and entity borrower types)
     if (loan.individual_information && loan.individual_information.length > 0) {
-      console.log('[updateProfileFromLoan] ====== PROCESSING INDIVIDUAL BORROWERS ======');
       
       for (let i = 0; i < loan.individual_information.length; i++) {
         const individualData = loan.individual_information[i];
-        console.log(`[updateProfileFromLoan] Processing individual #${i + 1}:`, JSON.stringify(individualData, null, 2));
         
         try {
           const borrowerEmail = individualData.individual_email;
-          console.log('[updateProfileFromLoan] Looking for borrower with email:', borrowerEmail);
           
           const borrower = allBorrowers.find(b => b.email === borrowerEmail);
           
           if (!borrower) {
-            console.log('[updateProfileFromLoan] ❌ NO BORROWER FOUND for email:', borrowerEmail);
-            console.log('[updateProfileFromLoan] Available borrower emails:', allBorrowers.map(b => b.email).join(', '));
             continue;
           }
-          
-          console.log('[updateProfileFromLoan] ✓ Found borrower:', {
-            id: borrower.id,
-            name: `${borrower.first_name} ${borrower.last_name}`,
-            email: borrower.email,
-            user_id: borrower.user_id
-          });
 
           const updatedData = {};
           
@@ -85,23 +65,15 @@ Deno.serve(async (req) => {
           if (individualData.credit_expiration_date) updatedData.credit_expiration_date = individualData.credit_expiration_date;
           if (individualData.credit_expiration_date) updatedData.credit_expiration_date = individualData.credit_expiration_date;
 
-          console.log('[updateProfileFromLoan] Update data prepared:', JSON.stringify(updatedData, null, 2));
-
           if (Object.keys(updatedData).length > 0) {
-            console.log('[updateProfileFromLoan] Updating borrower...');
             await base44.asServiceRole.entities.Borrower.update(borrower.id, updatedData);
             updates.borrowers.push(borrower.id);
-            console.log('[updateProfileFromLoan] ✓ Successfully updated borrower:', borrower.id);
           } else {
-            console.log('[updateProfileFromLoan] No data to update for borrower');
           }
         } catch (error) {
-          console.error('[updateProfileFromLoan] ❌ Error updating borrower:', error);
         }
       }
     } else {
-      console.log('[updateProfileFromLoan] ====== NO INDIVIDUAL INFORMATION TO PROCESS ======');
-      console.log('[updateProfileFromLoan] has individual_information=' + (!!loan.individual_information) + ', length=' + (loan.individual_information?.length || 0));
     }
 
     // Update entity
