@@ -182,7 +182,7 @@ export function mapLoanApplicationToLoan(application) {
     borrower_liquidity: toNumber(application.borrower_liquidity_amount),
     
     // Borrower Billing Address
-    borrower_billing_address_street: application.borrower_address_street || null,
+    borrower_billing_address_street: application.borrower_address_street || "null",
     borrower_billing_address_unit: application.borrower_address_unit || null,
     borrower_billing_address_city: application.borrower_address_city || null,
     borrower_billing_address_state: application.borrower_address_state || null,
