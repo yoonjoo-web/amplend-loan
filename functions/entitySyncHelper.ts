@@ -91,17 +91,17 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
 
   // Borrower Address
   if (application.borrower_type == "entity") {
-    mapping.borrower_billing_address_street: application.entity_address_street,
-    mapping.borrower_billing_address_unit: application.entity_address_unit,
-    mapping.borrower_billing_address_city: application.entity_address_city,
-    mapping.borrower_billing_address_state: application.entity_address_state,
-    mapping.borrower_billing_address_zip: application.entity_address_zip
+    mapping.borrower_billing_address_street = application.entity_address_street;
+    mapping.borrower_billing_address_unit = application.entity_address_unit;
+    mapping.borrower_billing_address_city = application.entity_address_city;
+    mapping.borrower_billing_address_state = application.entity_address_state;
+    mapping.borrower_billing_address_zip = application.entity_address_zip;
   } else {
-    mapping.borrower_billing_address_street: application.borrower_address_street,
-    mapping.borrower_billing_address_unit: application.borrower_address_unit,
-    mapping.borrower_billing_address_city: application.borrower_address_city,
-    mapping.borrower_billing_address_state: application.borrower_address_state,
-    mapping.borrower_billing_address_zip: application.borrower_address_zip
+    mapping.borrower_billing_address_street = application.borrower_address_street;
+    mapping.borrower_billing_address_unit = application.borrower_address_unit;
+    mapping.borrower_billing_address_city = application.borrower_address_city;
+    mapping.borrower_billing_address_state = application.borrower_address_state;
+    mapping.borrower_billing_address_zip = application.borrower_address_zip;
   }
 
   // Property address (concatenated)
@@ -127,52 +127,30 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
       individual_email: application.borrower_email,
       individual_phone_number: application.borrower_phone,
       rehab_experience: application.borrower_rehabs_done_36_months || 0,
-      credit_score_median: application.borrower_credit_score || 0, // may need to take it down
-      foreign_national: application.us_citizen,
-      //individual_construction_experience: 0,
-      //guarantor: 'false',
+      credit_score_median: application.borrower_credit_score || 0,
+      foreign_national: application.us_citizen === 'no',
+      ownership_of_entity: application.entity_owners?.[0]?.ownership_percentage || 0,
       bankruptcy_foreclosure_short_sale_or_deed_in_lieu_in_last_36_months: application.bankruptcy_36_months,
       mortgage_late_payment_or_delinquencies: application.mortgage_late,
       previous_felony_misdemeanor_convictions_or_other_similar_crimes: application.felony_convictions,
-      //credit_report_date: null,
-      //credit_expiration_date: null,
-      //individual_comment: null
     });
-    if (application.entity_owners && Array.isArray(application.entity_owners)) {
-      application.entity_owners.forEach((owner) => {
-        individualInfo.push({
-          ownership_of_entity: owner[0].ownership_percentage
-        })
-      });
-    }
   }
   // Co-Borrowers
   if (application.co_borrowers && Array.isArray(application.co_borrowers)) {
-    application.co_borrowers.forEach((coBorrower) => {
+    application.co_borrowers.forEach((coBorrower, index) => {
       individualInfo.push({
         first_name: coBorrower.first_name,
         last_name: coBorrower.last_name,
         individual_email: coBorrower.email,
         individual_phone_number: coBorrower.phone,
         rehab_experience: coBorrower.rehabs_done_36_months || 0,
-        credit_score_median: coBorrower.credit_score || 0, // may need to take it down
-        foreign_national: coBorrower.us_citizen,
-        //individual_construction_experience: 0,
-        //guarantor: 'false',
+        credit_score_median: coBorrower.credit_score || 0,
+        foreign_national: coBorrower.us_citizen === 'no',
+        ownership_of_entity: application.entity_owners?.[index + 1]?.ownership_percentage || 0,
         bankruptcy_foreclosure_short_sale_or_deed_in_lieu_in_last_36_months: coBorrower.bankruptcy_36_months,
         mortgage_late_payment_or_delinquencies: coBorrower.mortgage_late,
         previous_felony_misdemeanor_convictions_or_other_similar_crimes: coBorrower.felony_convictions,
-        //credit_report_date: null,
-        //credit_expiration_date: null,
-        //individual_comment: null
       });
-      if (application.entity_owners && Array.isArray(application.entity_owners)) {
-        application.entity_owners.slice(1).forEach((owner) => {
-          individualInfo.push({
-            ownership_of_entity: owner.ownership_percentage
-          })
-        });
-      }
     });
   }
 
