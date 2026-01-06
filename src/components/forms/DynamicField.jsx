@@ -674,8 +674,8 @@ export default function DynamicField({
           <div className="relative">
             <Input
               type="number"
-              value={value || ''}
-              onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : null)}
+              value={value === null || value === undefined ? '' : value}
+              onChange={(e) => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
               placeholder={fieldConfig.placeholder || '0'}
               disabled={effectiveReadOnly}
               required={fieldConfig.required}
@@ -692,8 +692,8 @@ export default function DynamicField({
         return (
           <Input
             type="number"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : null)}
+            value={value === null || value === undefined ? '' : value}
+            onChange={(e) => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
             placeholder={fieldConfig.placeholder}
             disabled={effectiveReadOnly}
             required={fieldConfig.required}
