@@ -204,14 +204,27 @@ export default function NewApplication() {
       // Auto-assign loan officer if none is assigned yet
       if (!appData.assigned_loan_officer_id) {
         try {
-          const assignResponse = await base44.functions.invoke('assignLoanOfficer');
-          if (assignResponse?.data?.loan_officer_id) {
+          let assignedOfficerId = null;
+
+          // If current user is a loan officer, assign to themselves (bypass queue)
+          if (permissions.isLoanOfficer || currentUser.app_role === 'Loan Officer') {
+            assignedOfficerId = currentUser.id;
+          } else {
+            // Otherwise, use the queue assignment system
+            const assignResponse = await base44.functions.invoke('assignLoanOfficer');
+            if (assignResponse?.data?.loan_officer_id) {
+              assignedOfficerId = assignResponse.data.loan_officer_id;
+            }
+          }
+
+          // Update the application with the assigned officer
+          if (assignedOfficerId) {
             await base44.functions.invoke('updateApplicationStatus', {
               application_id: appData.id,
-              updates: { assigned_loan_officer_id: assignResponse.data.loan_officer_id }
+              updates: { assigned_loan_officer_id: assignedOfficerId }
             });
 
-            appData.assigned_loan_officer_id = assignResponse.data.loan_officer_id;
+            appData.assigned_loan_officer_id = assignedOfficerId;
           }
         } catch (error) {
           console.error('Error auto-assigning loan officer:', error);
