@@ -1,41 +1,41 @@
-import Dashboard from './pages/Dashboard';
-import Loans from './pages/Loans';
-import Borrowers from './pages/Borrowers';
-import Settings from './pages/Settings';
 import Applications from './pages/Applications';
-import NewApplication from './pages/NewApplication';
-import MyProfile from './pages/MyProfile';
-import Entities from './pages/Entities';
-import LoanPartners from './pages/LoanPartners';
-import LoanOfficerQueue from './pages/LoanOfficerQueue';
-import LoanDetail from './pages/LoanDetail';
-import Messages from './pages/Messages';
-import Contacts from './pages/Contacts';
+import Borrowers from './pages/Borrowers';
 import ContactDetail from './pages/ContactDetail';
-import Onboarding from './pages/Onboarding';
-import MyTasks from './pages/MyTasks';
+import Contacts from './pages/Contacts';
+import Dashboard from './pages/Dashboard';
+import Entities from './pages/Entities';
 import JoinRequest from './pages/JoinRequest';
+import LoanDetail from './pages/LoanDetail';
+import LoanOfficerQueue from './pages/LoanOfficerQueue';
+import LoanPartners from './pages/LoanPartners';
+import Loans from './pages/Loans';
+import Messages from './pages/Messages';
+import MyProfile from './pages/MyProfile';
+import MyTasks from './pages/MyTasks';
+import NewApplication from './pages/NewApplication';
+import Onboarding from './pages/Onboarding';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Loans": Loans,
-    "Borrowers": Borrowers,
-    "Settings": Settings,
     "Applications": Applications,
-    "NewApplication": NewApplication,
-    "MyProfile": MyProfile,
-    "Entities": Entities,
-    "LoanPartners": LoanPartners,
-    "LoanOfficerQueue": LoanOfficerQueue,
-    "LoanDetail": LoanDetail,
-    "Messages": Messages,
-    "Contacts": Contacts,
+    "Borrowers": Borrowers,
     "ContactDetail": ContactDetail,
-    "Onboarding": Onboarding,
-    "MyTasks": MyTasks,
+    "Contacts": Contacts,
+    "Dashboard": Dashboard,
+    "Entities": Entities,
     "JoinRequest": JoinRequest,
+    "LoanDetail": LoanDetail,
+    "LoanOfficerQueue": LoanOfficerQueue,
+    "LoanPartners": LoanPartners,
+    "Loans": Loans,
+    "Messages": Messages,
+    "MyProfile": MyProfile,
+    "MyTasks": MyTasks,
+    "NewApplication": NewApplication,
+    "Onboarding": Onboarding,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
