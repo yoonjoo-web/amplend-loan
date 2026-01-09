@@ -359,27 +359,46 @@ Deno.serve(async (req) => {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     checkNewPage();
-    doc.text('Property Address', contentIndent, y);
+    doc.text('Address', contentIndent, y);
     y += 7;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     
-    addField('Street Address:', application.property_address_street);
-    addTwoColumnFields('Unit/Apt:', application.property_address_unit, 'City:', application.property_address_city);
-    addTwoColumnFields('State:', application.property_address_state, 'ZIP Code:', application.property_address_zip);
+    addTwoColumnFields('Street Address:', application.property_address_street, 'Unit/Apt:', application.property_address_unit);
+    addTwoColumnFields('City:', application.property_address_city, 'State:', application.property_address_state);
+    addField('ZIP Code:', application.property_address_zip);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    checkNewPage();
+    doc.text('Basic Information', contentIndent, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     
-    const propertyTypeLabels = {
-      'single_family': 'Single Family',
-      'condo': 'Condo',
-      'townhouse': 'Townhouse',
-      'multi_family': 'Multi-Family',
-      'commercial': 'Commercial'
-    };
-    
-    addTwoColumnFields('Property Type:', propertyTypeLabels[application.property_type] || formatValue(application.property_type), 'Number of Units:', application.number_of_units);
-    addTwoColumnFields('Leased Units:', application.number_of_leased_units, 'Renovating:', application.renovating ? 'Yes' : 'No');
-    addField('Expansion >20%:', application.expansion_over_20_percent ? 'Yes' : 'No');
-    
+    if (application.property_type_dscr == false) {
+      addField('Property Type:', application.property_type_not_dscr || formatValue(application.property_type_not_dscr));
+    } else if (application.property_type_not_dscr == false) {
+      addField('Property Type:', application.property_type_dscr || formatValue(application.property_type_not_dscr));
+    }
+    addTwoColumnFields('Number of Units:', application.number_of_units, 'Number of Leased Units:', application.number_of_leased_units);
+    addTwoColumnFields('Purchase Price:', formatCurrency(application.purchase_price), 'Estimated As-Is Value:', formatCurrency(application.estimated_asis_value)); 
+    addTwoColumnFields('After Repair Value:', formatCurrency(application.after_repair_value), 'Rehab/Construction Budget:', formatCurrency(application.rehab_budget));
+    addField('Completed Improvements:', formatCurrency(application.completed_improvements));
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    checkNewPage();
+    doc.text('Additional Information', contentIndent, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+
+    addTwoColumnFields('Gross Monthly Rent:', formatCurrency(application.gross_monthly_rent), 'Annual Insurance:', formatCurrency(application.annual_insurance));
+    addTwoColumnFields('Annual HOA Fees:', formatCurrency(application.annual_hoa_fees), 'Annual Property Tax:', formatCurrency(application.annual_property_tax));
+    addTwoColumnFields('Purchase Date:', formatDate(application.purchase_date), 'Target Closing:', formatDate(application.target_closing_date));
+    addField('Existing Mortgage Balance:', formatCurrency(application.existing_mortgage_answer_if_refi));
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     checkNewPage();
@@ -390,35 +409,7 @@ Deno.serve(async (req) => {
     
     addField('Contact Person:', application.contact_person_at_property);
     addTwoColumnFields('Contact Phone:', formatPhone(application.contact_phone_at_property), 'Contact Email:', application.contact_email_at_property);
-    addField('Property Accessible:', application.property_accessible ? 'Yes' : 'No');
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    checkNewPage();
-    doc.text('Financial Information', contentIndent, y);
-    y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    
-    addTwoColumnFields('Purchase Price:', formatCurrency(application.purchase_price), 'Estimated Value:', formatCurrency(application.estimated_value));
-    addTwoColumnFields('After Repair Value:', formatCurrency(application.after_repair_value), 'Rehab Budget:', formatCurrency(application.rehab_budget));
-    addTwoColumnFields('Completed Improvements:', formatCurrency(application.completed_improvements), 'Monthly Rent (Est.):', formatCurrency(application.estimated_monthly_rent));
-    addTwoColumnFields('Monthly Property Tax:', formatCurrency(application.monthly_property_tax), 'Monthly Insurance:', formatCurrency(application.monthly_insurance));
-    addTwoColumnFields('Monthly HOA Fees:', formatCurrency(application.monthly_hoa_fees), 'Desired Loan Amount:', formatCurrency(application.desired_loan_amount));
-    addField('Existing Mortgage Balance:', formatCurrency(application.existing_mortgage_balance));
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    checkNewPage();
-    doc.text('Additional Information', contentIndent, y);
-    y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    
-    addTwoColumnFields('Purchase Date:', formatDate(application.purchase_date), 'Target Closing:', formatDate(application.target_closing));
-    addField('Investment Strategy:', application.investment_strategy);
-    addField('How Did You Hear:', application.how_did_you_hear === 'other' ? application.how_did_you_hear_other : formatValue(application.how_did_you_hear));
-    addField('Exit Strategy:', application.exit_strategy);
+    addTwoColumnFields('Property Accessible:', application.property_accessible ? 'Yes' : 'No', 'Lock Box #:', application.lockbox_number);
 
     // Borrower Declarations
     addSection('Borrower Declarations');
