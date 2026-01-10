@@ -206,7 +206,7 @@ export function mapLoanApplicationToLoan(application) {
   
   if (application.borrower_first_name || application.borrower_last_name) {
     individualInfo.push({
-      first_name: application.borrower_first_name,
+      //first_name: application.borrower_first_name,
       last_name: application.borrower_last_name,
       individual_email: application.borrower_email,
       individual_phone_number: application.borrower_phone,
