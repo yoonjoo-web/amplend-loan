@@ -82,7 +82,7 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
   const mapping = {
 
     // Loan Base
-    //loan_product: application.loan_type,
+    loan_product: application.loan_type,
     loan_purpose: application.loan_purpose, // conditional (DSCR)
     borrower_type: application.borrower_type,
     borrower_entity_name: application.entity_name,
@@ -137,7 +137,7 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
   // Primary Borrower
   if (application.borrower_first_name || application.borrower_last_name) {
     individualInfo.push({
-      first_name: application.borrower_first_name,
+      //first_name: application.borrower_first_name,
       last_name: application.borrower_last_name,
       individual_email: application.borrower_email,
       individual_phone_number: application.borrower_phone,
