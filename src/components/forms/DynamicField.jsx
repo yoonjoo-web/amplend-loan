@@ -32,6 +32,7 @@ import { US_COUNTIES_BY_STATE } from "../utils/usCountiesData";
 import { evaluateFormula } from "../utils/formulaEvaluator";
 import { LoanPartner } from "@/entities/all";
 import { RotateCcw } from 'lucide-react';
+import FieldChangeIndicator from "../application-steps/FieldChangeIndicator";
 
 // Formatting functions
 function formatPhoneNumber(value) {
@@ -241,7 +242,8 @@ export default function DynamicField({
   repeatableFieldKey = null,
   showOverrideControl = false,
   profileType = null,
-  profileId = null
+  profileId = null,
+  applicationData = null
 }) {
   const [calculatedValue, setCalculatedValue] = useState(value);
   const [displayValue, setDisplayValue] = useState(value);
@@ -1040,6 +1042,9 @@ export default function DynamicField({
           >
             <MessageSquare className="w-3.5 h-3.5" />
           </Button>
+        )}
+        {applicationData && (
+          <FieldChangeIndicator fieldName={fieldConfig.field_name} applicationData={applicationData} />
         )}
       </div>
       
