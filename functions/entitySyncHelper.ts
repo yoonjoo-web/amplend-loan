@@ -82,7 +82,7 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
   const mapping = {
 
     // Loan Base
-    //loan_product: application.loan_type,
+    loan_product: application.loan_type,
     loan_purpose: application.loan_purpose, // conditional (DSCR)
     borrower_type: application.borrower_type,
     borrower_entity_name: application.entity_name,

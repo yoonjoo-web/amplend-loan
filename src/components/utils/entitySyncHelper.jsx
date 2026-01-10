@@ -171,7 +171,7 @@ export function mapLoanApplicationToLoan(application) {
   }
 
   const mapping = {
-    loan_product: loanProduct,
+    //loan_product: loanProduct,
     loan_purpose: loanPurpose,
     borrower_type: borrowerType,
     borrower_entity_name: borrowerEntityName,
