@@ -31,6 +31,8 @@ Deno.serve(async (req) => {
 
     // Map application data to loan
     const mappedLoanData = mapLoanApplicationToLoan(application);
+    console.log('[createLoanFromApplication] Mapped loan data:');
+    console.log(JSON.stringify(mappedLoanData, null, 2));
 
     // Prepare borrower IDs array
     const borrowerIds = [];

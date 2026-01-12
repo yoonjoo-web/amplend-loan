@@ -183,6 +183,8 @@ export function mapLoanApplicationToLoan(application, existingLoan = null) {
   }
   mapping.borrower_liquidity = totalLiquidity;
 
+  console.log('[entitySyncHelper] mapLoanApplicationToLoan output:');
+  console.log(JSON.stringify(mapping, null, 2));
   return mapping;
 }
 
