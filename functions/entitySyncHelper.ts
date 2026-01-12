@@ -92,8 +92,7 @@ export function mapLoanApplicationToLoan(application) {
   
   if (application.borrower_first_name || application.borrower_last_name) {
     individualInfo.push({
-      // INTENTIONALLY COMMENTED OUT - DO NOT MAP first_name
-      // first_name: application.borrower_first_name,
+      first_name: application.borrower_first_name,
       last_name: application.borrower_last_name,
       individual_email: application.borrower_email,
       individual_phone_number: application.borrower_phone,
@@ -150,15 +149,16 @@ export function mapLoanApplicationToLoan(application) {
   mapping.property_state = application.property_address_state || null;
   mapping.property_zip = application.property_address_zip || null;
   mapping.property_county = application.property_county || null;
+
   mapping.property_type = normalizeEnumValue(application.property_type, ['single_family', '2_4_unit', 'multifamily_5plus_unit', 'condo_warrantable']) || 'single_family';
+  
   mapping.number_of_units = toInteger(application.number_of_units) || 1;
+  mapping.number_of_leased_units = toInteger(application.number_of_leased_units) || 0;
   
   // Financial information with type conversion
   mapping.as_is_appraisal_value = toNumber(application.estimated_value);
   mapping.after_repair_appraisal_value = toNumber(application.after_repair_value);
   mapping.purchase_price = toNumber(application.purchase_price);
-  mapping.initial_loan_amount = toNumber(application.desired_loan_amount);
-  mapping.total_loan_amount = toNumber(application.desired_loan_amount);
   mapping.total_rehab_budget = toNumber(application.rehab_budget);
   mapping.gross_potential_rent = toNumber(application.estimated_monthly_rent);
   mapping.annual_property_taxes = toNumber(application.monthly_property_tax) ? toNumber(application.monthly_property_tax) * 12 : null;
