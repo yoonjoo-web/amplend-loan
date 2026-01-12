@@ -24,6 +24,7 @@ function toBoolean(value) {
   return null;
 }
 
+
 function normalizeEnumValue(value, validValues) {
   if (!value) return null;
   const normalized = String(value).toLowerCase().trim();
