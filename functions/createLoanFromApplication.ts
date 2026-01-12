@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { mapLoanApplicationToLoan } from './entitySyncHelper.ts';
 
 Deno.serve(async (req) => {
+  console.error('[createLoanFromApplication] LOG_BANNER v1');
   console.log('[createLoanFromApplication] Handler start');
   try {
     console.log('[createLoanFromApplication] Creating client from request');
