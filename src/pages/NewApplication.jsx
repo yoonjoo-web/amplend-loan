@@ -551,6 +551,7 @@ export default function NewApplication() {
       const { data } = await base44.functions.invoke('createLoanFromApplication', {
         application_id: formData.id
       });
+      console.log('[createLoanFromApplication] response data:', data);
 
       if (data.success && data.loan) {
         toast({
