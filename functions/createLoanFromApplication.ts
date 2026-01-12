@@ -1,33 +1,47 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { mapLoanApplicationToLoan } from './entitySyncHelper.js';
+import { mapLoanApplicationToLoan } from './entitySyncHelper.ts';
 
 Deno.serve(async (req) => {
+  console.log('[createLoanFromApplication] Handler start');
   try {
+    console.log('[createLoanFromApplication] Creating client from request');
     const base44 = createClientFromRequest(req);
+    console.log('[createLoanFromApplication] Fetching user');
     const user = await base44.auth.me();
 
     if (!user) {
+      console.warn('[createLoanFromApplication] Unauthorized: no user');
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[createLoanFromApplication] User authenticated:', user.id);
+    console.log('[createLoanFromApplication] Parsing request body');
     const { application_id } = await req.json();
 
     if (!application_id) {
+      console.warn('[createLoanFromApplication] Missing application_id');
       return Response.json({ error: 'application_id is required' }, { status: 400 });
     }
+    console.log('[createLoanFromApplication] application_id:', application_id);
 
     // Fetch the application
+    console.log('[createLoanFromApplication] Fetching LoanApplication');
     const application = await base44.asServiceRole.entities.LoanApplication.get(application_id);
 
     if (!application) {
+      console.warn('[createLoanFromApplication] Application not found:', application_id);
       return Response.json({ error: 'Application not found' }, { status: 404 });
     }
+    console.log('[createLoanFromApplication] Application found:', application.id);
 
     // Generate loan number based on loan type
+    console.log('[createLoanFromApplication] Generating loan number');
     const loanNumberResponse = await base44.functions.invoke('generateLoanNumber', {
       loan_product: application.loan_type
     });
+    console.log('[createLoanFromApplication] Loan number response:', loanNumberResponse?.data);
     const loanNumber = loanNumberResponse.data.loan_number;
+    console.log('[createLoanFromApplication] Loan number:', loanNumber);
 
     // Map application data to loan
     const mappedLoanData = mapLoanApplicationToLoan(application);
@@ -35,6 +49,7 @@ Deno.serve(async (req) => {
     console.log(JSON.stringify(mappedLoanData, null, 2));
 
     // Prepare borrower IDs array
+    console.log('[createLoanFromApplication] Building borrower IDs');
     const borrowerIds = [];
     if (application.primary_borrower_id) {
       borrowerIds.push(application.primary_borrower_id);
@@ -50,6 +65,7 @@ Deno.serve(async (req) => {
     }
 
     // Prepare loan officer IDs
+    console.log('[createLoanFromApplication] Building loan officer IDs');
     const loanOfficerIds = [];
     if (application.assigned_loan_officer_id) {
       loanOfficerIds.push(application.assigned_loan_officer_id);
@@ -61,6 +77,7 @@ Deno.serve(async (req) => {
     }
 
     // Prepare referrer IDs if referrer_name exists
+    console.log('[createLoanFromApplication] Resolving referrer');
     const referrerIds = [];
     let referrerUser = null;
     if (application.referrer_name) {
@@ -88,6 +105,7 @@ Deno.serve(async (req) => {
     }
 
     // Create the loan object using mapped data and additional fields
+    console.log('[createLoanFromApplication] Building loan payload');
     const loanData = {
       loan_number: loanNumber,
       borrower_ids: borrowerIds,
@@ -123,9 +141,12 @@ Deno.serve(async (req) => {
     };
 
     // Create the loan
+    console.log('[createLoanFromApplication] Creating loan');
     const loan = await base44.asServiceRole.entities.Loan.create(loanData);
+    console.log('[createLoanFromApplication] Loan created:', loan?.id);
 
     // Update application status
+    console.log('[createLoanFromApplication] Updating application status to approved');
     await base44.asServiceRole.entities.LoanApplication.update(application_id, {
       status: 'approved'
     });
@@ -133,14 +154,17 @@ Deno.serve(async (req) => {
     // Generate PDF for the application
     let pdfFileUrl = null;
     try {
+      console.log('[createLoanFromApplication] Generating application PDF');
       const pdfResponse = await base44.functions.invoke('generateApplicationPDF', {
         application_id: application.id
       });
 
       if (pdfResponse.data && pdfResponse.data.file_url) {
         pdfFileUrl = pdfResponse.data.file_url;
+        console.log('[createLoanFromApplication] PDF generated:', pdfFileUrl);
         
         // Create document record for the PDF
+        console.log('[createLoanFromApplication] Creating LoanDocument for PDF');
         await base44.asServiceRole.entities.LoanDocument.create({
           loan_id: loan.id,
           document_name: `Application_${application.application_number}.pdf`,
@@ -160,6 +184,7 @@ Deno.serve(async (req) => {
     // Notify referrer if they exist
     if (referrerUser && referrerIds.length > 0) {
       try {
+        console.log('[createLoanFromApplication] Notifying referrer:', referrerUser.id);
         const borrowerName = application.borrower_first_name && application.borrower_last_name 
           ? `${application.borrower_first_name} ${application.borrower_last_name}`
           : 'a borrower';
@@ -193,13 +218,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log('[createLoanFromApplication] Success response');
     return Response.json({ 
       success: true, 
       loan: loan 
     });
 
   } catch (error) {
-    console.error('Error creating loan from application:', error);
+    console.error('[createLoanFromApplication] Unhandled error:', error);
     return Response.json({ 
       error: error.message || 'Unknown error'
     }, { status: 500 });

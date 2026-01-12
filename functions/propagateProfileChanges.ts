@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { syncEntities } from './entitySyncHelper.js';
+import { syncEntities } from './entitySyncHelper.ts';
 
 Deno.serve(async (req) => {
   try {
