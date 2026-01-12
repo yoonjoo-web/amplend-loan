@@ -548,6 +548,11 @@ export default function NewApplication() {
   const handleProceedToLoan = async () => {
     setIsProcessing(true);
     try {
+      try {
+        localStorage.setItem('createLoanFromApplicationAttempt', new Date().toISOString());
+      } catch (storageError) {
+        console.error('[createLoanFromApplication] Failed to store attempt timestamp:', storageError);
+      }
       const { data } = await base44.functions.invoke('createLoanFromApplication', {
         application_id: formData.id
       });
@@ -571,6 +576,14 @@ export default function NewApplication() {
         throw new Error('Failed to create loan');
       }
     } catch (error) {
+      try {
+        localStorage.setItem('createLoanFromApplicationError', JSON.stringify({
+          message: error?.message || String(error),
+          time: new Date().toISOString()
+        }));
+      } catch (storageError) {
+        console.error('[createLoanFromApplication] Failed to store error in localStorage:', storageError);
+      }
       console.error('Error creating loan:', error);
       toast({
         variant: "destructive",
