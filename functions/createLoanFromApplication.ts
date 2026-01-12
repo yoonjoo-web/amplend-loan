@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
 
     if (!user) {
       console.warn('[createLoanFromApplication] Unauthorized: no user');
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ error: 'Unauthorized', marker: 'createLoanFromApplication_v1' }, { status: 401 });
     }
 
     console.log('[createLoanFromApplication] User authenticated:', user.id);
@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
     if (!application_id) {
       console.warn('[createLoanFromApplication] Missing application_id');
-      return Response.json({ error: 'application_id is required' }, { status: 400 });
+      return Response.json({ error: 'application_id is required', marker: 'createLoanFromApplication_v1' }, { status: 400 });
     }
     console.log('[createLoanFromApplication] application_id:', application_id);
 
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     if (!application) {
       console.warn('[createLoanFromApplication] Application not found:', application_id);
-      return Response.json({ error: 'Application not found' }, { status: 404 });
+      return Response.json({ error: 'Application not found', marker: 'createLoanFromApplication_v1' }, { status: 404 });
     }
     console.log('[createLoanFromApplication] Application found:', application.id);
 
@@ -222,13 +222,15 @@ Deno.serve(async (req) => {
     console.log('[createLoanFromApplication] Success response');
     return Response.json({ 
       success: true, 
+      marker: 'createLoanFromApplication_v1',
       loan: loan 
     });
 
   } catch (error) {
     console.error('[createLoanFromApplication] Unhandled error:', error);
     return Response.json({ 
-      error: error.message || 'Unknown error'
+      error: error.message || 'Unknown error',
+      marker: 'createLoanFromApplication_v1'
     }, { status: 500 });
   }
 });
