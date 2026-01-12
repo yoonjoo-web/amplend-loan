@@ -551,7 +551,12 @@ export default function NewApplication() {
       const { data } = await base44.functions.invoke('createLoanFromApplication', {
         application_id: formData.id
       });
-      console.log('[createLoanFromApplication] response data:', data);
+      console.error('[createLoanFromApplication] response data:', data);
+      try {
+        localStorage.setItem('createLoanFromApplicationResponse', JSON.stringify(data));
+      } catch (storageError) {
+        console.error('[createLoanFromApplication] Failed to store response in localStorage:', storageError);
+      }
 
       if (data.success && data.loan) {
         toast({
