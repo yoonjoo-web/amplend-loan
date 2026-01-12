@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { mapLoanApplicationToLoan } from '../components/utils/entitySyncHelper.js';
+import { mapLoanApplicationToLoan } from './entitySyncHelper.js';
 
 Deno.serve(async (req) => {
   try {
