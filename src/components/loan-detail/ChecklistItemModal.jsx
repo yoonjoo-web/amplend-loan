@@ -846,6 +846,20 @@ Amplend Team`
             </div>
           </div>
 
+          {/* Description/Title Suggestion - Only for action items */}
+          {item?.checklist_type === 'action_item' && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Description/Title Suggestion</Label>
+              <Textarea
+                value={formData.description || ''}
+                onChange={(e) => handleFieldChange('description', e.target.value)}
+                placeholder="leave suggestions"
+                rows={2}
+                className="text-xs resize-none"
+              />
+            </div>
+          )}
+
           {/* Assigned To and Provider Row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
