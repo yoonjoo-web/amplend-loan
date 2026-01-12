@@ -548,6 +548,12 @@ export default function NewApplication() {
   const handleProceedToLoan = async () => {
     setIsProcessing(true);
     try {
+      console.error('[handleProceedToLoan] fired');
+      try {
+        localStorage.setItem('handleProceedToLoanFired', new Date().toISOString());
+      } catch (storageError) {
+        console.error('[handleProceedToLoan] Failed to store fired timestamp:', storageError);
+      }
       try {
         localStorage.setItem('createLoanFromApplicationAttempt', new Date().toISOString());
       } catch (storageError) {
