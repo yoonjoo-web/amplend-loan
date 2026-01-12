@@ -559,12 +559,15 @@ export default function NewApplication() {
       } catch (storageError) {
         console.error('[createLoanFromApplication] Failed to store attempt timestamp:', storageError);
       }
-      const { data } = await base44.functions.invoke('createLoanFromApplication', {
+      const response = await base44.functions.invoke('createLoanFromApplication', {
         application_id: formData.id
       });
+      const { data } = response || {};
+      console.error('[createLoanFromApplication] full response:', response);
       console.error('[createLoanFromApplication] response data:', data);
       try {
         localStorage.setItem('createLoanFromApplicationResponse', JSON.stringify(data));
+        localStorage.setItem('createLoanFromApplicationFullResponse', JSON.stringify(response));
       } catch (storageError) {
         console.error('[createLoanFromApplication] Failed to store response in localStorage:', storageError);
       }
