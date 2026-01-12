@@ -223,6 +223,18 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true, 
       marker: 'createLoanFromApplication_v1',
+      debug: {
+        borrower_first_name: application.borrower_first_name,
+        borrower_last_name: application.borrower_last_name,
+        co_borrowers: Array.isArray(application.co_borrowers)
+          ? application.co_borrowers.map((cb) => ({
+              first_name: cb.first_name,
+              last_name: cb.last_name,
+              email: cb.email
+            }))
+          : application.co_borrowers,
+        mapped_individual_information: mappedLoanData.individual_information
+      },
       loan: loan 
     });
 
