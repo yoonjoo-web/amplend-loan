@@ -19,6 +19,7 @@ const availableColumns = [
   { key: 'property_type', label: 'Property Type' },
   { key: 'borrower_email', label: 'Email' },
   { key: 'borrower_phone', label: 'Phone' },
+  { key: 'borrower_address_street', label: 'Property' },
   { key: 'loan_purpose', label: 'Loan Purpose' },
   { key: 'current_step', label: 'Progress' }
 ];
@@ -34,7 +35,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
     if (saved) {
       setSelectedColumns(JSON.parse(saved));
     } else {
-      const defaults = ['application_number', 'borrower_name', 'loan_type', 'status', 'updated_date', 'submission_count'];
+      const defaults = ['application_number', 'borrower_name', 'borrower_address_street', 'loan_type', 'status', 'updated_date', 'submission_count'];
       setSelectedColumns(defaults);
     }
   }, [isOpen]);
@@ -73,7 +74,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
   };
 
   const handleReset = () => {
-    const defaults = ['application_number', 'borrower_name', 'loan_type', 'status', 'updated_date', 'submission_count'];
+    const defaults = ['application_number', 'borrower_name', 'borrower_address_street', 'loan_type', 'status', 'updated_date', 'submission_count'];
     setSelectedColumns(defaults);
   };
 

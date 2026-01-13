@@ -32,6 +32,7 @@ const availableColumns = [
   { key: 'property_type', label: 'Property Type' },
   { key: 'borrower_email', label: 'Email' },
   { key: 'borrower_phone', label: 'Phone' },
+  { key: 'borrower_address_street', label: 'Borrower Address' },
   { key: 'loan_purpose', label: 'Loan Purpose' },
   { key: 'current_step', label: 'Progress' }
 ];
@@ -96,7 +97,7 @@ export default function Applications() {
       });
       setVisibleColumns(columnsWithLabels);
     } else {
-      const defaults = ['application_number', 'borrower_name', 'loan_type', 'status', 'updated_date', 'submission_count'];
+      const defaults = ['application_number', 'borrower_name', 'borrower_address_street', 'loan_type', 'status', 'updated_date', 'submission_count'];
       const columnsWithLabels = defaults.map(key => {
         const col = availableColumns.find(c => c.key === key);
         return { key, label: col?.label || key };
@@ -281,6 +282,8 @@ export default function Applications() {
         return app.borrower_email || 'N/A';
       case 'borrower_phone':
         return app.borrower_phone || 'N/A';
+      case 'borrower_address_street':
+        return app.borrower_address_street || 'N/A';
       case 'loan_purpose':
         return app.loan_purpose || 'N/A';
       case 'current_step':
