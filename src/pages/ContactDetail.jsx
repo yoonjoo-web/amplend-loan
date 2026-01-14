@@ -1226,7 +1226,7 @@ export default function ContactDetail() {
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <span className="text-sm font-medium text-slate-900">#{app.application_number}</span>
                                   <span className="text-xs text-slate-500 truncate">
-                                    {app.loan_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    {app.loan_type === 'dscr' ? 'DSCR' : app.loan_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                   </span>
                                 </div>
                                 <Badge className={`text-[10px] px-1.5 py-0.5 ${
@@ -1715,7 +1715,7 @@ export default function ContactDetail() {
                 <div className="border-t border-slate-100 mt-4 pt-4">
                   <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2 block">Address</Label>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-3">
-                    <div className="md:col-span-2">
+                    <div>
                       <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Street</Label>
                       {isEditingContactInfo ? (
                         <Input
@@ -1726,6 +1726,19 @@ export default function ContactDetail() {
                         />
                       ) : (
                         <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_street || 'N/A'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Unit</Label>
+                      {isEditingContactInfo ? (
+                        <Input
+                          type="text"
+                          value={editedContactData.address_unit || ''}
+                          onChange={(e) => handleContactFieldChange('address_unit', e.target.value)}
+                          className="h-8 text-sm mt-0.5"
+                        />
+                      ) : (
+                        <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_unit || 'N/A'}</p>
                       )}
                     </div>
                     <div>
