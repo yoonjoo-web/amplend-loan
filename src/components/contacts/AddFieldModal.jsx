@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from 'lucide-react';
-import { Borrower, BorrowerEntity, LoanPartner } from "@/entities/all";
+import { base44 } from "@/api/base44Client";
 
 export default function AddFieldModal({ isOpen, onClose, onSave, contactType, visibleFields = [], contact = {} }) {
   const [selectedField, setSelectedField] = useState("");
@@ -22,13 +22,13 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
       let schema;
       switch(contactType) {
         case 'borrower':
-          schema = await Borrower.schema();
+          schema = await base44.entities.Borrower.schema();
           break;
         case 'entity':
-          schema = await BorrowerEntity.schema();
+          schema = await base44.entities.BorrowerEntity.schema();
           break;
         case 'partner':
-          schema = await LoanPartner.schema();
+          schema = await base44.entities.LoanPartner.schema();
           break;
       }
 
