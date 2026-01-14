@@ -266,17 +266,15 @@ export function mapLoanApplicationToLoan(application) {
   mapping.property_type = normalizeEnumValue(application.property_type, ['single_family', '2_4_unit', 'multifamily_5plus_unit', 'condo_warrantable']) || 'single_family';
   mapping.number_of_units = toInteger(application.number_of_units) || 1;
   
-  // Financial information with type conversion
-  mapping.as_is_appraisal_value = toNumber(application.estimated_value);
+  // Property Economics with type conversion
+  mapping.as_is_appraisal_value = toNumber(application.estimated_asis_value);
   mapping.after_repair_appraisal_value = toNumber(application.after_repair_value);
   mapping.purchase_price = toNumber(application.purchase_price);
-  mapping.initial_loan_amount = toNumber(application.desired_loan_amount);
-  mapping.total_loan_amount = toNumber(application.desired_loan_amount);
   mapping.total_rehab_budget = toNumber(application.rehab_budget);
-  mapping.gross_potential_rent = toNumber(application.estimated_monthly_rent);
-  mapping.annual_property_taxes = toNumber(application.monthly_property_tax) ? toNumber(application.monthly_property_tax) * 12 : null;
-  mapping.annual_insurance = toNumber(application.monthly_insurance) ? toNumber(application.monthly_insurance) * 12 : null;
-  mapping.annual_hoa = toNumber(application.monthly_hoa_fees) ? toNumber(application.monthly_hoa_fees) * 12 : null;
+  mapping.gross_potential_rent = toNumber(application.gross_monthly_rent);
+  mapping.annual_property_taxes = toNumber(application.annual_property_tax);
+  mapping.annual_insurance = toNumber(application.annual_insurance);
+  mapping.annual_hoa = toNumber(application.annual_hoa_fees);
 
   return mapping;
 }

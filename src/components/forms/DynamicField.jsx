@@ -771,6 +771,7 @@ export default function DynamicField({
             type="date"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
+            placeholder="MM/DD/YYYY"
             disabled={effectiveReadOnly}
             required={fieldConfig.required}
             className="h-10 text-sm"
