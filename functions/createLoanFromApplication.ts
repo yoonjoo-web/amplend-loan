@@ -272,7 +272,7 @@ Deno.serve(async (req) => {
       
       // Loan details
       lien_position: '1st',
-      origination_date: new Date().toISOString().split('T')[0],
+      origination_date: null,
       target_closing_date: application.target_closing || null,
       occupant: 'vacant',
       
