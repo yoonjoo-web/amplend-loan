@@ -22,25 +22,24 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
       console.log('[AddFieldModal] Loading fields for contactType:', contactType);
       console.log('[AddFieldModal] Visible fields:', visibleFields);
       
-      // Define all available fields per entity type based on schemas
-      const allFieldsByType = {
-        borrower: [
-          { key: 'annual_gross_income', label: 'Annual Gross Income', type: 'number' },
-          { key: 'liquidity_amount', label: 'Liquidity Amount', type: 'number' },
-          { key: 'rehabs_done_36_months', label: 'Rehabs Done (36 Months)', type: 'integer' },
-          { key: 'rentals_owned_36_months', label: 'Rentals Owned (36 Months)', type: 'integer' },
-          { key: 'notes', label: 'Notes', type: 'string' }
-        ],
-        entity: [
-          { key: 'notes', label: 'Notes', type: 'string' }
-        ],
-        partner: [
-          { key: 'notes', label: 'Notes', type: 'string' }
-        ]
+      // Load entity schema files
+      const schemaMap = {
+        borrower: '/entities/Borrower.json',
+        entity: '/entities/BorrowerEntity.json',
+        partner: '/entities/LoanPartner.json'
       };
 
-      const allFields = allFieldsByType[contactType] || [];
+      const schemaPath = schemaMap[contactType];
+      const response = await fetch(schemaPath);
+      const schema = await response.json();
       
+      console.log('[AddFieldModal] Schema loaded:', schema);
+      
+      if (!schema?.properties) {
+        console.error('[AddFieldModal] Schema has no properties');
+        return;
+      }
+
       // Define fields that are already displayed in Contact Information section
       const displayedFields = new Set([
         'email', 'phone', 'ssn', 'date_of_birth', 'credit_score', 'credit_expiration_date',
@@ -57,7 +56,15 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
 
       console.log('[AddFieldModal] Displayed fields:', Array.from(displayedFields));
 
-      const fields = allFields.filter(field => !displayedFields.has(field.key));
+      // Convert schema properties to field list
+      const fields = Object.entries(schema.properties)
+        .filter(([key]) => !displayedFields.has(key))
+        .map(([key, value]) => ({
+          key,
+          label: value.description || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          description: value.description || '',
+          type: value.type
+        }));
       
       console.log('[AddFieldModal] Available fields after filtering:', fields);
       setAvailableFields(fields);
