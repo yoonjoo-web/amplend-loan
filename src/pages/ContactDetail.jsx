@@ -1860,6 +1860,8 @@ export default function ContactDetail() {
           onClose={() => setShowAddFieldModal(false)}
           onSave={handleAddVisibleField}
           contactType={contactType}
+          visibleFields={visibleAdditionalFields}
+          contact={contact}
         />
 
         <AddCoOwnerModal

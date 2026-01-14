@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X } from 'lucide-react';
 import { Borrower, BorrowerEntity, LoanPartner } from "@/entities/all";
 
-export default function AddFieldModal({ isOpen, onClose, onSave, contactType }) {
+export default function AddFieldModal({ isOpen, onClose, onSave, contactType, visibleFields = [], contact = {} }) {
   const [selectedField, setSelectedField] = useState("");
   const [availableFields, setAvailableFields] = useState([]);
 
@@ -15,7 +15,7 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType }) 
       loadAvailableFields();
       setSelectedField("");
     }
-  }, [isOpen, contactType]);
+  }, [isOpen, contactType, visibleFields]);
 
   const loadAvailableFields = async () => {
     try {
@@ -33,12 +33,28 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType }) 
       }
 
       if (schema && schema.properties) {
-        const fields = Object.entries(schema.properties).map(([key, value]) => ({
-          key,
-          label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          description: value.description || '',
-          type: value.type
-        }));
+        // Define fields that are already displayed in Contact Information section
+        const displayedFields = new Set([
+          'email', 'phone', 'ssn', 'date_of_birth', 'credit_score', 'credit_expiration_date',
+          'entity_type', 'registration_number', 'type', 'website', 'contact_person',
+          'address_street', 'address_unit', 'address_city', 'address_state', 'address_zip',
+          'mailing_address_street', 'mailing_address_unit', 'mailing_address_city', 
+          'mailing_address_state', 'mailing_address_zip',
+          'first_name', 'last_name', 'name', 'entity_name', 
+          'user_id', 'ownership_structure'
+        ]);
+
+        // Add fields that are currently visible in Additional Information
+        visibleFields.forEach(field => displayedFields.add(field));
+
+        const fields = Object.entries(schema.properties)
+          .filter(([key]) => !displayedFields.has(key))
+          .map(([key, value]) => ({
+            key,
+            label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            description: value.description || '',
+            type: value.type
+          }));
         setAvailableFields(fields);
       }
     } catch (error) {
