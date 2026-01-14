@@ -770,7 +770,7 @@ export default function DynamicField({
           <Input
             type="date"
             value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(e.target.value || null)}
             disabled={effectiveReadOnly}
             required={fieldConfig.required}
             className="h-10 text-sm"
