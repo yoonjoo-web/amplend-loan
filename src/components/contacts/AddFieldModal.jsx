@@ -22,16 +22,18 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
       console.log('[AddFieldModal] Loading fields for contactType:', contactType);
       console.log('[AddFieldModal] Visible fields:', visibleFields);
       
-      // Load entity schema files
-      const schemaMap = {
-        borrower: '/entities/Borrower.json',
-        entity: '/entities/BorrowerEntity.json',
-        partner: '/entities/LoanPartner.json'
+      // Map contactType to entity name
+      const entityMap = {
+        borrower: 'Borrower',
+        entity: 'BorrowerEntity',
+        partner: 'LoanPartner'
       };
 
-      const schemaPath = schemaMap[contactType];
-      const response = await fetch(schemaPath);
-      const schema = await response.json();
+      const entityName = entityMap[contactType];
+      console.log('[AddFieldModal] Entity name:', entityName);
+
+      // Get schema using Base44 SDK
+      const schema = await base44.entities[entityName].schema();
       
       console.log('[AddFieldModal] Schema loaded:', schema);
       
