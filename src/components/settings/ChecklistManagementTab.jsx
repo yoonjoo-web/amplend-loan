@@ -158,15 +158,16 @@ export default function ChecklistManagementTab({ currentUser }) {
       category: editingItem.category,
       item: editingItem.item,
       description: editingItem.description || '',
-      provider: editingItem.provider || '',
       loan_types: editingItem.loan_types || [],
     };
 
     if (activeTab === 'document') {
+      newItemData.provider = editingItem.provider || '';
       newItemData.template_url = editingItem.template_url || '';
       newItemData.template_name = editingItem.template_name || '';
     } else { // activeTab === 'action'
       // Ensure document-specific fields are not carried over to action items
+      delete newItemData.provider;
       delete newItemData.template_url;
       delete newItemData.template_name;
     }
