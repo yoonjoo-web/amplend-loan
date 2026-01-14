@@ -12,6 +12,7 @@ const availableColumns = [
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
   { key: 'address', label: 'Address' },
+  { key: 'owner', label: 'Owner' },
   { key: 'owners', label: 'Owners', required: true }
 ];
 
@@ -24,9 +25,15 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      setSelectedColumns(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      const normalized = Array.from(new Set(
+        (Array.isArray(parsed) ? parsed : []).map((key) =>
+          key === 'entity_ein' ? 'registration_number' : key
+        )
+      ));
+      setSelectedColumns(normalized);
     } else {
-      const defaults = ['entity_name', 'entity_type', 'registration_number', 'email', 'owners'];
+      const defaults = ['entity_name', 'entity_type', 'registration_number', 'email', 'owner', 'owners'];
       setSelectedColumns(defaults);
     }
   }, [isOpen]);
@@ -51,7 +58,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
   };
 
   const handleReset = () => {
-    const defaults = ['entity_name', 'entity_type', 'registration_number', 'email', 'owners'];
+    const defaults = ['entity_name', 'entity_type', 'registration_number', 'email', 'owner', 'owners'];
     setSelectedColumns(defaults);
   };
 

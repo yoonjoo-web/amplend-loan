@@ -22,7 +22,7 @@ export default function Entities() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState([
-    'entity_name', 'entity_type', 'registration_number', 'email', 'owners'
+    'entity_name', 'entity_type', 'registration_number', 'email', 'owner', 'owners'
   ]);
   const [sortField, setSortField] = useState('entity_name'); // Default sort by entity_name
   const [sortDirection, setSortDirection] = useState('asc'); // Default sort ascending
@@ -34,7 +34,16 @@ export default function Entities() {
       // Load visible columns from local storage
       const saved = localStorage.getItem('entities_visible_columns');
       if (saved) {
-        setVisibleColumns(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        const normalized = Array.from(new Set(
+          (Array.isArray(parsed) ? parsed : []).map((key) =>
+            key === 'entity_ein' ? 'registration_number' : key
+          )
+        ));
+        setVisibleColumns(normalized);
+        if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+          localStorage.setItem('entities_visible_columns', JSON.stringify(normalized));
+        }
       }
     }
   }, [permissionsLoading]);
@@ -94,6 +103,29 @@ export default function Entities() {
       .join(', ');
   };
 
+  const getPrimaryOwnerName = (entity) => {
+    if (!entity.ownership_structure || entity.ownership_structure.length === 0) {
+      return "No owner";
+    }
+
+    const primaryOwner = entity.ownership_structure.reduce((best, owner) => {
+      const bestPercent = Number(best?.ownership_percentage) || 0;
+      const ownerPercent = Number(owner?.ownership_percentage) || 0;
+      if (!best || ownerPercent > bestPercent) return owner;
+      return best;
+    }, null);
+
+    if (!primaryOwner) return "No owner";
+
+    const borrower = allBorrowers.find(b => b.id === primaryOwner.borrower_id);
+    if (borrower) {
+      const borrowerName = [borrower.first_name, borrower.last_name].filter(Boolean).join(' ').trim();
+      if (borrowerName) return borrowerName;
+    }
+
+    return primaryOwner.owner_name || "Unknown owner";
+  };
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -134,6 +166,10 @@ export default function Entities() {
       case 'owners':
         aValue = getOwnerNames(a);
         bValue = getOwnerNames(b);
+        break;
+      case 'owner':
+        aValue = getPrimaryOwnerName(a);
+        bValue = getPrimaryOwnerName(b);
         break;
       case 'address':
         aValue = [a.address_street, a.address_city, a.address_state, a.address_zip].filter(Boolean).join(', ');
@@ -185,6 +221,8 @@ export default function Entities() {
         return addressParts.length > 0 ? addressParts.join(', ') : '-';
       case 'owners':
         return getOwnerNames(entity);
+      case 'owner':
+        return getPrimaryOwnerName(entity);
       default:
         return '-';
     }
@@ -198,6 +236,7 @@ export default function Entities() {
       'email': 'Email',
       'phone': 'Phone',
       'address': 'Address',
+      'owner': 'Owner',
       'owners': 'Owners'
     };
     return columnConfig[columnKey] || columnKey;
@@ -374,6 +413,7 @@ export default function Entities() {
           { key: 'email', label: 'Email' },
           { key: 'phone', label: 'Phone' },
           { key: 'address', label: 'Address' },
+          { key: 'owner', label: 'Owner' },
           { key: 'owners', label: 'Owners' },
         ]}
         visibleColumns={visibleColumns}

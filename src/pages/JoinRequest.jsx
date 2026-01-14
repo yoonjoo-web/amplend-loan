@@ -18,6 +18,19 @@ export default function JoinRequest() {
   const [requestType, setRequestType] = useState(null);
   const { toast } = useToast();
 
+  const formatEIN = (value) => {
+    if (!value) return '';
+    const cleaned = String(value).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{0,2})(\d{0,7})$/);
+    if (!match) return value;
+
+    let formatted = '';
+    if (match[1]) formatted = match[1];
+    if (match[1].length === 2 && match[2]) formatted += `-${match[2]}`;
+
+    return formatted;
+  };
+
   useEffect(() => {
     loadRequestData();
   }, []);
@@ -206,7 +219,7 @@ export default function JoinRequest() {
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">{requestData.entity.entity_name}</h3>
                     <p className="text-sm text-slate-600 mt-1">
-                      {requestData.entity.entity_type} • EIN: {requestData.entity.registration_number || 'N/A'}
+                      {requestData.entity.entity_type} • EIN: {requestData.entity.registration_number ? formatEIN(requestData.entity.registration_number) : 'N/A'}
                     </p>
                   </div>
                   <Badge className="bg-blue-100 text-blue-800">Entity</Badge>

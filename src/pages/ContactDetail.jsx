@@ -780,6 +780,11 @@ export default function ContactDetail() {
   };
 
   const handleContactFieldChange = (field, value) => {
+    if (field === 'registration_number' || field === 'entity_ein') {
+      const formatted = formatEIN(value);
+      setEditedContactData(prev => ({ ...prev, [field]: formatted.replace(/\D/g, '') }));
+      return;
+    }
     setEditedContactData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -902,6 +907,19 @@ export default function ContactDetail() {
     setIsDeleting(false);
   };
 
+  const formatEIN = (value) => {
+    if (!value) return '';
+    const cleaned = String(value).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{0,2})(\d{0,7})$/);
+    if (!match) return value;
+
+    let formatted = '';
+    if (match[1]) formatted = match[1];
+    if (match[1].length === 2 && match[2]) formatted += `-${match[2]}`;
+
+    return formatted;
+  };
+
   const getContactHeader = () => {
     switch(contactType) {
       case 'borrower':
@@ -977,6 +995,9 @@ export default function ContactDetail() {
     }
 
     if (typeof value === 'string') {
+      if (fieldKey === 'registration_number' || fieldKey === 'entity_ein') {
+        return formatEIN(value);
+      }
       return value.replace(/_/g, ' ');
     }
 
@@ -1579,12 +1600,14 @@ export default function ContactDetail() {
                         {isEditingContactInfo ? (
                           <Input
                             type="text"
-                            value={editedContactData.registration_number || ''}
+                            value={formatEIN(editedContactData.registration_number) || ''}
                             onChange={(e) => handleContactFieldChange('registration_number', e.target.value)}
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.registration_number || 'N/A'}</p>
+                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                            {contact.registration_number ? formatEIN(contact.registration_number) : 'N/A'}
+                          </p>
                         )}
                       </div>
                     </>

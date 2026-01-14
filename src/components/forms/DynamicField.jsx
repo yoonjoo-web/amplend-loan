@@ -65,6 +65,19 @@ function formatSSN(value) {
   return formatted;
 }
 
+function formatEIN(value) {
+  if (!value) return '';
+  const cleaned = value.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{0,2})(\d{0,7})$/);
+  if (!match) return value;
+
+  let formatted = '';
+  if (match[1]) formatted = match[1];
+  if (match[1].length === 2 && match[2]) formatted += `-${match[2]}`;
+
+  return formatted;
+}
+
 function formatCurrency(value) {
   if (value === null || value === undefined || value === '') return '';
   const cleaned = String(value).replace(/[^\d.]/g, '');
@@ -72,6 +85,8 @@ function formatCurrency(value) {
   if (isNaN(number)) return '';
   return number.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function parseCurrency(value) {
   if (!value) return null;
@@ -249,6 +264,7 @@ export default function DynamicField({
   const [displayValue, setDisplayValue] = useState(value);
   const [autoCalculatedValue, setAutoCalculatedValue] = useState(null);
   const [isOverrideMode, setIsOverrideMode] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const comment = fieldComments?.[fieldConfig.field_name];
   const hasComment = !!comment && !!comment.comment;
@@ -352,16 +368,27 @@ export default function DynamicField({
   }, [allFieldValues, fieldConfig.value_conditional, isReadOnly, onChange, value, overriddenFields, fieldConfig.field_name, repeatableFieldKey]);
 
   useEffect(() => {
+    if (fieldConfig.field_type !== 'email') return;
+    if (!value) {
+      setEmailError('');
+      return;
+    }
+    setEmailError(EMAIL_PATTERN.test(value) ? '' : 'Please enter a valid email address');
+  }, [fieldConfig.field_type, value]);
+
+  useEffect(() => {
     if (fieldConfig.field_type === 'currency') {
       setDisplayValue(formatCurrency(value));
     } else if (fieldConfig.field_type === 'tel') {
       setDisplayValue(formatPhoneNumber(value));
     } else if (fieldConfig.field_type === 'ssn') {
       setDisplayValue(formatSSN(value));
+    } else if (fieldConfig.field_type === 'ein' || fieldConfig.field_name === 'entity_ein') {
+      setDisplayValue(formatEIN(value));
     } else {
       setDisplayValue(value);
     }
-  }, [value, fieldConfig.field_type]);
+  }, [value, fieldConfig.field_type, fieldConfig.field_name]);
 
   const shouldDisplay = () => {
     if (!fieldConfig.display_conditional) return true;
@@ -472,6 +499,12 @@ export default function DynamicField({
 
   const handleCurrencyChange = (e) => {
     onChange(parseCurrency(e.target.value));
+  };
+
+  const handleEINChange = (e) => {
+    const formatted = formatEIN(e.target.value);
+    setDisplayValue(formatted);
+    onChange(formatted.replace(/\D/g, ''));
   };
 
   const handleAddressSelect = (addressData) => {
@@ -629,15 +662,27 @@ export default function DynamicField({
 
       case 'email':
         return (
-          <Input
-            type="email"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={fieldConfig.placeholder}
-            disabled={effectiveReadOnly}
-            required={fieldConfig.required}
-            className="h-10 text-sm"
-          />
+          <div className="space-y-1">
+            <Input
+              type="email"
+              value={value || ''}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                onChange(nextValue);
+                setEmailError(
+                  nextValue && !EMAIL_PATTERN.test(nextValue)
+                    ? 'Please enter a valid email address'
+                    : ''
+                );
+              }}
+              placeholder={fieldConfig.placeholder || 'email@example.com'}
+              disabled={effectiveReadOnly}
+              required={fieldConfig.required}
+              pattern={EMAIL_PATTERN.source}
+              className={`h-10 text-sm ${emailError ? 'border-red-500' : ''}`}
+            />
+            {emailError && <p className="text-xs text-red-500">{emailError}</p>}
+          </div>
         );
 
       case 'ssn':
@@ -650,6 +695,20 @@ export default function DynamicField({
             disabled={effectiveReadOnly}
             required={fieldConfig.required}
             maxLength={11}
+            className="h-10 text-sm"
+          />
+        );
+
+      case 'ein':
+        return (
+          <Input
+            type="text"
+            value={displayValue || ''}
+            onChange={handleEINChange}
+            placeholder={fieldConfig.placeholder || '00-0000000'}
+            disabled={effectiveReadOnly}
+            required={fieldConfig.required}
+            maxLength={10}
             className="h-10 text-sm"
           />
         );
@@ -865,6 +924,20 @@ export default function DynamicField({
         );
 
       default:
+        if (fieldConfig.field_name === 'entity_ein') {
+          return (
+            <Input
+              type="text"
+              value={displayValue || ''}
+              onChange={handleEINChange}
+              placeholder={fieldConfig.placeholder || '00-0000000'}
+              disabled={effectiveReadOnly}
+              required={fieldConfig.required}
+              maxLength={10}
+              className="h-10 text-sm"
+            />
+          );
+        }
         return (
           <Input
             type="text"
