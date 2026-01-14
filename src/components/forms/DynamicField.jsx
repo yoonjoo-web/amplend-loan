@@ -774,7 +774,6 @@ export default function DynamicField({
             disabled={effectiveReadOnly}
             required={fieldConfig.required}
             className="h-10 text-sm"
-            placeholder=""
           />
         );
 
