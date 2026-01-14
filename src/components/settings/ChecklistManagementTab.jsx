@@ -81,9 +81,6 @@ export default function ChecklistManagementTab({ currentUser }) {
 
   const handleLoanProductChange = (value) => {
     setSelectedLoanProduct(value);
-    if (value === 'dscr') {
-      setSelectedLoanPurpose('purchase');
-    }
   };
 
   const handleDragEnd = (result) => {
@@ -291,18 +288,26 @@ export default function ChecklistManagementTab({ currentUser }) {
       const loanProduct = LOAN_PRODUCTS.find(p => p.value === selectedLoanProduct);
       if (!loanProduct) return false;
 
+      const isDscr = selectedLoanProduct === 'dscr';
+      const isRefinance = selectedLoanPurpose === 'refinance';
+
       return item.loan_types.some(type => {
         const typeLower = type.toLowerCase();
         const productLabelLower = loanProduct.label.toLowerCase();
 
-        if (selectedLoanProduct === 'dscr') {
-          const purposeMatch = selectedLoanPurpose === 'purchase'
+        if (!typeLower.includes(productLabelLower)) return false;
+
+        if (isDscr) {
+          return selectedLoanPurpose === 'purchase'
             ? typeLower.includes('purchase')
             : typeLower.includes('refinance');
-          return typeLower.includes(productLabelLower) && purposeMatch;
         }
 
-        return typeLower.includes(productLabelLower);
+        if (isRefinance) {
+          return typeLower.includes('refinance');
+        }
+
+        return true;
       });
     });
   };
@@ -366,23 +371,21 @@ export default function ChecklistManagementTab({ currentUser }) {
                     </Select>
                   </div>
 
-                  {selectedLoanProduct === 'dscr' && (
-                    <div className="flex items-center gap-3">
-                      <Label className="text-base font-semibold">Loan Purpose:</Label>
-                      <Select value={selectedLoanPurpose} onValueChange={setSelectedLoanPurpose}>
-                        <SelectTrigger className="w-48">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LOAN_PURPOSES.map((purpose) => (
-                            <SelectItem key={purpose.value} value={purpose.value}>
-                              {purpose.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <Label className="text-base font-semibold">Loan Purpose:</Label>
+                    <Select value={selectedLoanPurpose} onValueChange={setSelectedLoanPurpose}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOAN_PURPOSES.map((purpose) => (
+                          <SelectItem key={purpose.value} value={purpose.value}>
+                            {purpose.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
