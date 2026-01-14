@@ -19,6 +19,9 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
 
   const loadAvailableFields = async () => {
     try {
+      console.log('[AddFieldModal] Loading fields for contactType:', contactType);
+      console.log('[AddFieldModal] Visible fields:', visibleFields);
+      
       let schema;
       switch(contactType) {
         case 'borrower':
@@ -32,7 +35,11 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
           break;
       }
 
+      console.log('[AddFieldModal] Schema loaded:', schema);
+
       if (schema && schema.properties) {
+        console.log('[AddFieldModal] Schema properties:', Object.keys(schema.properties));
+        
         // Define fields that are already displayed in Contact Information section
         const displayedFields = new Set([
           'email', 'phone', 'ssn', 'date_of_birth', 'credit_score', 'credit_expiration_date',
@@ -47,6 +54,8 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
         // Add fields that are currently visible in Additional Information
         visibleFields.forEach(field => displayedFields.add(field));
 
+        console.log('[AddFieldModal] Displayed fields:', Array.from(displayedFields));
+
         const fields = Object.entries(schema.properties)
           .filter(([key]) => !displayedFields.has(key))
           .map(([key, value]) => ({
@@ -55,10 +64,14 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
             description: value.description || '',
             type: value.type
           }));
+        
+        console.log('[AddFieldModal] Available fields after filtering:', fields);
         setAvailableFields(fields);
+      } else {
+        console.error('[AddFieldModal] Schema has no properties:', schema);
       }
     } catch (error) {
-      console.error("Error loading schema:", error);
+      console.error("[AddFieldModal] Error loading schema:", error);
     }
   };
 
