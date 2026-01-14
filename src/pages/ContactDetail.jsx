@@ -302,6 +302,7 @@ export default function ContactDetail() {
   const [relatedApplications, setRelatedApplications] = useState([]);
   const [relatedTasks, setRelatedTasks] = useState([]);
   const [allBorrowers, setAllBorrowers] = useState([]);
+  const [ownedEntities, setOwnedEntities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -364,9 +365,10 @@ export default function ContactDetail() {
           }
           
           try {
-            const [allLoans, allApplications] = await Promise.all([
+            const [allLoans, allApplications, allEntities] = await Promise.all([
               base44.entities.Loan.list().catch(() => []),
-              base44.entities.LoanApplication.list().catch(() => [])
+              base44.entities.LoanApplication.list().catch(() => []),
+              base44.entities.BorrowerEntity.list().catch(() => [])
             ]);
             console.log('[ContactDetail] Borrower ID:', id);
             console.log('[ContactDetail] Borrower user_id:', contactData.user_id);
@@ -391,6 +393,12 @@ export default function ContactDetail() {
               (borrowerUserId && app.primary_borrower_id === borrowerUserId) ||
               app.co_borrowers?.some(cb => cb.user_id === borrowerUserId || cb.borrower_id === id)
             );
+            
+            // Find entities where this borrower is an owner
+            const borrowerOwnedEntities = (allEntities || []).filter(entity => 
+              entity.ownership_structure?.some(owner => owner.borrower_id === id)
+            );
+            setOwnedEntities(borrowerOwnedEntities);
           } catch (err) {
             console.error('Error loading related data for borrower:', err);
           }
@@ -1243,6 +1251,45 @@ export default function ContactDetail() {
               </Card>
             )}
 
+            {/* Owned Entities */}
+            {contactType === 'borrower' && ownedEntities.length > 0 && (
+              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                <CardHeader className="border-b border-slate-100 pb-3">
+                  <CardTitle className="text-base font-semibold text-slate-900">
+                    Owned Entities ({ownedEntities.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-1.5">
+                    {ownedEntities.map(entity => {
+                      const ownershipInfo = entity.ownership_structure?.find(owner => owner.borrower_id === contactId);
+                      return (
+                        <div
+                          key={entity.id}
+                          className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                          onClick={() => navigate(createPageUrl('ContactDetail') + `?id=${entity.id}&type=entity`)}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Building2 className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">{entity.entity_name}</p>
+                              <p className="text-xs text-slate-500">{entity.entity_type || 'Entity'}</p>
+                            </div>
+                          </div>
+                          {ownershipInfo && (
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-sm font-semibold text-slate-900">{ownershipInfo.ownership_percentage}%</p>
+                              <p className="text-xs text-slate-500">ownership</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Ownership Structure */}
             {contactType === 'entity' && contact?.ownership_structure && (
               <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -1339,16 +1386,23 @@ export default function ContactDetail() {
                         {contact.ownership_structure.map((owner, idx) => {
                           const borrower = allBorrowers.find(b => b.id === owner.borrower_id);
                           return (
-                            <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                            <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                               <div className="flex-1">
-                                <p className="text-sm font-medium text-slate-900">
-                                  {owner.owner_name}
-                                  {borrower && (
+                                {borrower ? (
+                                  <button
+                                    onClick={() => navigate(createPageUrl('ContactDetail') + `?id=${borrower.id}&type=borrower`)}
+                                    className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors text-left"
+                                  >
+                                    {owner.owner_name}
                                     <Badge className="ml-2 bg-slate-100 text-slate-700 text-[10px] border border-slate-300 px-1.5 py-0">
                                       Linked
                                     </Badge>
-                                  )}
-                                </p>
+                                  </button>
+                                ) : (
+                                  <p className="text-sm font-medium text-slate-900">
+                                    {owner.owner_name}
+                                  </p>
+                                )}
                               </div>
                               <div className="text-right">
                                 <p className="text-sm font-semibold text-slate-900">{owner.ownership_percentage}%</p>
