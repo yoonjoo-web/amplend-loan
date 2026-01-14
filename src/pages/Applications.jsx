@@ -229,11 +229,7 @@ export default function Applications() {
         status: 'draft',
         current_step: 1,
         borrower_type: 'individual',
-        has_coborrowers: 'no',
-        // Explicitly set all date fields to null
-        borrower_date_of_birth: null,
-        purchase_date: null,
-        esignature_date: null
+        has_coborrowers: 'no'
       };
 
       if (permissions.isBorrower) {

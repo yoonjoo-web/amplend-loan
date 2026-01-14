@@ -273,16 +273,7 @@ Deno.serve(async (req) => {
       // Loan details
       lien_position: '1st',
       origination_date: null,
-      first_payment_date: null,
-      maturity_date: null,
       target_closing_date: application.target_closing || null,
-      extended_maturity_date: null,
-      good_through_date: null,
-      loan_sale_closing_date: null,
-      loan_purchase_date: null,
-      appraisal_date: null,
-      appraisal_expiration_date: null,
-      original_purchase_date: null,
       occupant: 'vacant',
       
       // Status
