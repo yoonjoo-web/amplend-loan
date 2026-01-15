@@ -6,35 +6,36 @@ import { Label } from "@/components/ui/label";
 import { X, Columns3, AlertTriangle, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
-const availableColumns = [
-  { key: 'loan_number', label: 'Loan Number', required: true },
-  { key: 'primary_loan_id', label: 'Primary Loan ID' },
-  { key: 'borrowers', label: 'Borrowers', required: true },
-  { key: 'loan_product', label: 'Loan Product' },
-  { key: 'status', label: 'Status', required: true },
-  { key: 'initial_loan_amount', label: 'Loan Amount' },
-  { key: 'interest_rate', label: 'Interest Rate' },
-  { key: 'origination_date', label: 'Origination Date' },
-  { key: 'maturity_date', label: 'Maturity Date' },
-  { key: 'updated_date', label: 'Last Updated', required: true },
-  { key: 'created_date', label: 'Created' }
-];
-
 const STORAGE_KEY = 'loans_visible_columns';
 const RECOMMENDED_MAX = 8;
 
-export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }) {
+const formatColumnLabel = (key) => {
+  if (!key) return 'N/A';
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const normalizeColumnKeys = (keys = []) =>
+  keys.map((key) => (key === 'borrowers' ? 'borrower' : key));
+
+export default function ColumnSettingsModal({
+  isOpen,
+  onClose,
+  onColumnsChange,
+  availableColumns = [],
+  defaultColumns = []
+}) {
   const [selectedColumns, setSelectedColumns] = useState([]);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      setSelectedColumns(JSON.parse(saved));
+      setSelectedColumns(normalizeColumnKeys(JSON.parse(saved)));
     } else {
-      const defaults = ['loan_number', 'primary_loan_id', 'borrowers', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
-      setSelectedColumns(defaults);
+      setSelectedColumns(normalizeColumnKeys(defaultColumns));
     }
-  }, [isOpen]);
+  }, [isOpen, defaultColumns]);
 
   const handleColumnToggle = (columnKey) => {
     const column = availableColumns.find(col => col.key === columnKey);
@@ -63,15 +64,14 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedColumns));
     const columnsWithLabels = selectedColumns.map(key => {
       const col = availableColumns.find(c => c.key === key);
-      return { key, label: col?.label || key };
+      return { key, label: col?.label || formatColumnLabel(key) };
     });
     onColumnsChange(columnsWithLabels);
     onClose();
   };
 
   const handleReset = () => {
-    const defaults = ['loan_number', 'primary_loan_id', 'borrowers', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
-    setSelectedColumns(defaults);
+    setSelectedColumns(normalizeColumnKeys(defaultColumns));
   };
 
   if (!isOpen) return null;
@@ -117,8 +117,10 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
                     {selectedColumns.map((key, index) => {
-                      const column = availableColumns.find(col => col.key === key);
-                      if (!column) return null;
+                      const column = availableColumns.find(col => col.key === key) || {
+                        key,
+                        label: formatColumnLabel(key)
+                      };
                       
                       return (
                         <Draggable key={key} draggableId={key} index={index}>

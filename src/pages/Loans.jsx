@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Loan, User } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import ProductTour from "../components/shared/ProductTour";
 
 const STORAGE_KEY = 'loans_visible_columns';
 
-const availableColumns = [
+const baseColumns = [
   { key: 'loan_number', label: 'Loan Number', required: true },
   { key: 'primary_loan_id', label: 'Primary Loan ID' },
   { key: 'borrower', label: 'Borrower', required: true },
@@ -32,6 +32,23 @@ const availableColumns = [
   { key: 'updated_date', label: 'Last Updated', required: true },
   { key: 'created_date', label: 'Created' }
 ];
+
+const formatColumnLabel = (key) => {
+  if (!key) return 'N/A';
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const normalizeColumnKeys = (keys = []) =>
+  keys.map((key) => (key === 'borrowers' ? 'borrower' : key));
+
+const getDefaultColumnKeys = (isBorrower) => {
+  if (isBorrower) {
+    return ['loan_number', 'primary_loan_id', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
+  }
+  return ['loan_number', 'primary_loan_id', 'borrower', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
+};
 
 const statusColors = {
   application_submitted: 'bg-blue-100 text-blue-800',
@@ -105,31 +122,50 @@ export default function Loans() {
     searchTerm: ''
   });
 
+  const availableColumns = useMemo(() => {
+    const columnsByKey = new Map(baseColumns.map((column) => [column.key, column]));
+    const dynamicKeys = new Set();
+
+    allLoans.forEach((loan) => {
+      Object.keys(loan || {}).forEach((key) => {
+        if (!columnsByKey.has(key)) {
+          dynamicKeys.add(key);
+        }
+      });
+    });
+
+    const dynamicColumns = Array.from(dynamicKeys)
+      .sort()
+      .map((key) => ({
+        key,
+        label: formatColumnLabel(key)
+      }));
+
+    return [...baseColumns, ...dynamicColumns];
+  }, [allLoans]);
+
+  const defaultColumnKeys = useMemo(
+    () => getDefaultColumnKeys(permissions.isBorrower),
+    [permissions.isBorrower]
+  );
+
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const savedKeys = JSON.parse(saved);
+      const savedKeys = normalizeColumnKeys(JSON.parse(saved));
       const columnsWithLabels = savedKeys.map(key => {
         const col = availableColumns.find(c => c.key === key);
-        return { key, label: col?.label || key };
+        return { key, label: col?.label || formatColumnLabel(key) };
       });
       setVisibleColumns(columnsWithLabels);
     } else {
-      // Different defaults based on user role
-      let defaults;
-      if (permissions.isBorrower) {
-        // Borrowers don't see borrower column by default
-        defaults = ['loan_number', 'primary_loan_id', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
-      } else {
-        defaults = ['loan_number', 'primary_loan_id', 'borrower', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
-      }
-      const columnsWithLabels = defaults.map(key => {
+      const columnsWithLabels = defaultColumnKeys.map(key => {
         const col = availableColumns.find(c => c.key === key);
-        return { key, label: col?.label || key };
+        return { key, label: col?.label || formatColumnLabel(key) };
       });
       setVisibleColumns(columnsWithLabels);
     }
-  }, []);
+  }, [availableColumns, defaultColumnKeys]);
 
   useEffect(() => {
     if (!permissionsLoading && currentUser) {
@@ -562,7 +598,9 @@ export default function Loans() {
       <ColumnSettingsModal
         isOpen={showColumnSettings}
         onClose={() => setShowColumnSettings(false)}
-        onColumnsChange={setVisibleColumns} />
+        onColumnsChange={setVisibleColumns}
+        availableColumns={availableColumns}
+        defaultColumns={defaultColumnKeys} />
 
       <FilterModal
         isOpen={showFilters}
