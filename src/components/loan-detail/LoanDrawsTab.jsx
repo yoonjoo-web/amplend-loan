@@ -25,7 +25,7 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
     ['Administrator', 'Loan Officer'].includes(currentUser.app_role)
   );
   const isBorrower = currentUser?.app_role === 'Borrower';
-  const canSubmitRequest = isBorrower && loan.borrower_ids?.includes(currentUser.id);
+  const canSubmitRequest = (isBorrower && loan.borrower_ids?.includes(currentUser.id)) || canEdit;
 
   const formatCurrency = (value) => {
     if (value === '' || value === null || Number.isNaN(value)) return '';
