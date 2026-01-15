@@ -16,6 +16,7 @@ import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
 import LoanCalculatorTab from "../components/loan-detail/LoanCalculatorTab";
+import ClosingScheduleSection from "../components/loan-detail/ClosingScheduleSection";
 
 
 export default function LoanDetail() {
@@ -33,6 +34,13 @@ export default function LoanDetail() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [openTaskId, setOpenTaskId] = useState(null);
   const [isLoanPartner, setIsLoanPartner] = useState(false);
+
+  const normalizeDateValue = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     loadLoan();
@@ -137,17 +145,24 @@ export default function LoanDetail() {
 
   const handleLoanUpdate = async (updatedFields) => {
     try {
-      console.log('[LoanDetail] handleLoanUpdate called with:', updatedFields);
+      const normalizedActualClosingDate = normalizeDateValue(updatedFields.actual_closing_date);
+      const normalizedExistingClosingDate = normalizeDateValue(loan.actual_closing_date);
+      const shouldScheduleClosing = normalizedActualClosingDate && normalizedActualClosingDate !== normalizedExistingClosingDate;
+      const mergedUpdates = shouldScheduleClosing
+        ? { ...updatedFields, status: 'closing_scheduled' }
+        : updatedFields;
+
+      console.log('[LoanDetail] handleLoanUpdate called with:', mergedUpdates);
       console.log('[LoanDetail] Previous status:', loan.status);
-      console.log('[LoanDetail] New status:', updatedFields.status);
+      console.log('[LoanDetail] New status:', mergedUpdates.status);
       
       const userName = currentUser.first_name && currentUser.last_name
         ? `${currentUser.first_name} ${currentUser.last_name}`
         : currentUser.full_name || currentUser.email;
 
-      const changedFields = Object.keys(updatedFields).filter(key => {
+      const changedFields = Object.keys(mergedUpdates).filter(key => {
         if (key === 'modification_history' || key === 'overridden_fields') return false;
-        return JSON.stringify(loan[key]) !== JSON.stringify(updatedFields[key]);
+        return JSON.stringify(loan[key]) !== JSON.stringify(mergedUpdates[key]);
       });
 
       const modificationHistory = loan.modification_history ? [...loan.modification_history] : [];
@@ -160,16 +175,16 @@ export default function LoanDetail() {
       });
 
       const dataToUpdate = {
-        ...updatedFields,
+        ...mergedUpdates,
         modification_history: modificationHistory,
-        overridden_fields: updatedFields.overridden_fields || loan.overridden_fields || []
+        overridden_fields: mergedUpdates.overridden_fields || loan.overridden_fields || []
       };
 
-      if (updatedFields.status && updatedFields.status !== loan.status) {
+      if (mergedUpdates.status && mergedUpdates.status !== loan.status) {
         console.log('[LoanDetail] Status changed, checking for profile updates...');
         
         // Check if moving from underwriting to processing
-        if (loan.status === 'underwriting' && updatedFields.status === 'processing') {
+        if (loan.status === 'underwriting' && mergedUpdates.status === 'processing') {
           console.log('[LoanDetail] Moving from underwriting to processing - should show update profiles modal');
           // TODO: Show UpdateProfilesFromLoanModal here
         }
@@ -179,7 +194,7 @@ export default function LoanDetail() {
           try {
             await base44.functions.invoke('createNotification', {
               user_ids: loanOfficerIds,
-              message: `Loan ${loan.loan_number || loan.primary_loan_id} status changed to: ${updatedFields.status}`,
+              message: `Loan ${loan.loan_number || loan.primary_loan_id} status changed to: ${mergedUpdates.status}`,
               type: 'status_change',
               entity_type: 'Loan',
               entity_id: loan.id,
@@ -302,6 +317,11 @@ export default function LoanDetail() {
                     currentUser={currentUser}
                     allLoanOfficers={allLoanOfficers}
                     onLoanChange={() => setHasUnsavedChanges(true)}
+                  />
+                  <ClosingScheduleSection
+                    loan={loan}
+                    onUpdate={handleLoanUpdate}
+                    currentUser={currentUser}
                   />
                 </TabsContent>
 
