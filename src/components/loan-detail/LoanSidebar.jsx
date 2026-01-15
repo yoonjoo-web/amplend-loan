@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Users, History, ChevronRight, ChevronLeft, Mail, Phone } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle, Users, History, ChevronRight, ChevronLeft, Mail, Phone, MessageSquare, Copy } from "lucide-react";
 import { base44 } from "@/api/base44Client"; // Updated import
+import { Message } from "@/entities/all";
 
 import TeamManagementModal from "./TeamManagementModal";
 import VersionHistoryModal from "./VersionHistoryModal";
@@ -104,6 +107,10 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const [fieldConfigMap, setFieldConfigMap] = useState({});
   const [showUpdateProfilesModal, setShowUpdateProfilesModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState(null);
+  const [messageText, setMessageText] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -188,6 +195,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               email: user.email,
               phone: user.phone,
               role: 'Borrower',
+              messageUserId: user.id,
               displayName: user.first_name && user.last_name
                 ? `${user.first_name} ${user.last_name}`
                 : user.email || 'Unknown User'
@@ -207,6 +215,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               email: user.email,
               phone: user.phone,
               role: 'Loan Officer',
+              messageUserId: user.id,
               displayName: user.first_name && user.last_name
                 ? `${user.first_name} ${user.last_name}`
                 : user.email || 'Unknown User'
@@ -226,6 +235,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               email: borrower.email,
               phone: borrower.phone,
               role: 'Guarantor',
+              messageUserId: borrower.user_id || null,
               displayName: borrower.first_name && borrower.last_name
                 ? `${borrower.first_name} ${borrower.last_name}`
                 : borrower.email || 'Unknown Contact'
@@ -245,6 +255,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               email: partner.email,
               phone: partner.phone,
               role: 'Referrer',
+              messageUserId: partner.user_id || null,
               displayName: partner.name || 'Unknown Partner'
             });
           }
@@ -346,6 +357,92 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     color: "bg-gray-100 text-gray-800"
   };
 
+  const restrictedMessengerRoles = ['Borrower', 'Referrer', 'Broker', 'Guarantor', 'Title Company'];
+  const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(currentUser.app_role);
+
+  const canMessageMember = (member) => {
+    if (!currentUser || !member?.messageUserId) return false;
+    if (member.messageUserId === currentUser.id) return false;
+    if (!isRestrictedMessenger) return true;
+    return member.role === 'Loan Officer';
+  };
+
+  const getMessageDisabledReason = (member) => {
+    if (!currentUser) return "Sign in to message";
+    if (!member?.messageUserId) return "No linked user account";
+    if (member.messageUserId === currentUser.id) return "You can't message yourself";
+    if (isRestrictedMessenger && member.role !== 'Loan Officer') {
+      return "Borrowers and partners can only message loan officers";
+    }
+    return "Send in-app message";
+  };
+
+  const handleCopy = async (value, label) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({
+        title: "Copied",
+        description: `${label} copied to clipboard.`
+      });
+    } catch (error) {
+      console.error('Error copying value:', error);
+      toast({
+        variant: "destructive",
+        title: "Copy failed",
+        description: "Unable to copy to clipboard. Please try again."
+      });
+    }
+  };
+
+  const handleOpenMessage = (member) => {
+    setMessageRecipient(member);
+    setMessageText('');
+    setShowMessageModal(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageRecipient?.messageUserId || !messageText.trim() || isSendingMessage) return;
+    setIsSendingMessage(true);
+
+    try {
+      const conversationId = [currentUser.id, messageRecipient.messageUserId].sort().join('_');
+      const senderName = currentUser.first_name && currentUser.last_name
+        ? `${currentUser.first_name} ${currentUser.last_name}`
+        : currentUser.full_name || currentUser.email;
+
+      await Message.create({
+        conversation_id: conversationId,
+        conversation_type: 'direct',
+        sender_id: currentUser.id,
+        sender_name: senderName,
+        participant_ids: [currentUser.id, messageRecipient.messageUserId],
+        content: messageText.trim(),
+        loan_id: loan.id,
+        loan_number: loan.loan_number || loan.primary_loan_id,
+        read_by: [currentUser.id],
+        attachments: []
+      });
+
+      toast({
+        title: "Message sent",
+        description: `Message sent to ${messageRecipient.displayName}.`
+      });
+      setShowMessageModal(false);
+      setMessageRecipient(null);
+      setMessageText('');
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to send message. Please try again."
+      });
+    }
+
+    setIsSendingMessage(false);
+  };
+
   if (collapsed) {
     return (
       <div className="w-16 bg-white border-l border-slate-200 h-full flex items-start justify-center pt-4">
@@ -440,23 +537,54 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               {teamMembers.length > 0 ? (
                 teamMembers.map((member, index) => (
                   <div key={`${member.id}-${member.role}-${index}`} className="text-sm border-b pb-3 last:border-b-0">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <p className="font-semibold text-slate-900">{member.displayName}</p>
                         <Badge className="text-xs mt-1" variant="outline">{member.role}</Badge>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleOpenMessage(member)}
+                        disabled={!canMessageMember(member)}
+                        title={getMessageDisabledReason(member)}
+                        aria-label={`Message ${member.displayName}`}
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
                     </div>
                     <div className="mt-2 space-y-1">
+                      {member.phone && member.role !== 'Loan Officer' && (
+                        <div className="flex items-center gap-1 text-slate-600">
+                          <Phone className="w-3 h-3" />
+                          <span className="text-xs">{member.phone}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 p-0"
+                            onClick={() => handleCopy(member.phone, "Phone number")}
+                            aria-label={`Copy ${member.displayName} phone`}
+                            title="Copy phone number"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
                       {member.email && (
                         <div className="flex items-center gap-1 text-slate-600">
                           <Mail className="w-3 h-3" />
                           <span className="text-xs">{member.email}</span>
-                        </div>
-                      )}
-                      {member.phone && (
-                        <div className="flex items-center gap-1 text-slate-600">
-                          <Phone className="w-3 h-3" />
-                          <span className="text-xs">{member.phone}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 p-0"
+                            onClick={() => handleCopy(member.email, "Email")}
+                            aria-label={`Copy ${member.displayName} email`}
+                            title="Copy email"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -552,6 +680,48 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         onUpdateProfiles={handleUpdateProfilesFromLoan}
         onSkipUpdate={handleSkipProfileUpdate}
       />
+
+      <Dialog
+        open={showMessageModal}
+        onOpenChange={(open) => {
+          setShowMessageModal(open);
+          if (!open) {
+            setMessageRecipient(null);
+            setMessageText('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {messageRecipient ? `Message ${messageRecipient.displayName}` : "Message"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              placeholder="Type your message..."
+              rows={4}
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setShowMessageModal(false)}
+                disabled={isSendingMessage}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!messageText.trim() || isSendingMessage}
+              >
+                {isSendingMessage ? "Sending..." : "Send Message"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
