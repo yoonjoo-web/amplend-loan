@@ -45,9 +45,9 @@ const normalizeColumnKeys = (keys = []) =>
 
 const getDefaultColumnKeys = (isBorrower) => {
   if (isBorrower) {
-    return ['loan_number', 'primary_loan_id', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
+    return ['loan_number', 'property_address', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
   }
-  return ['loan_number', 'primary_loan_id', 'borrower', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
+  return ['loan_number', 'property_address', 'borrower', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
 };
 
 const statusColors = {
