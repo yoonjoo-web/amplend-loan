@@ -433,41 +433,41 @@ Amplend Team`
                       </TableCell>
                       <TableCell>
                         <Input
-                          type="number"
-                          value={draw.approved_amount || ''}
-                          onChange={(e) => handleDrawChange(index, 'approved_amount', parseFloat(e.target.value) || 0)}
+                          value={draw.approved_amount === '' ? '' : formatCurrency(draw.approved_amount)}
+                          onChange={(e) => handleDrawChange(index, 'approved_amount', parseCurrencyInput(e.target.value))}
                           placeholder="$10,000"
                           disabled={!canEdit}
+                          inputMode="decimal"
                           className="w-32"
                         />
                       </TableCell>
                       <TableCell>
                         <Input
-                          type="number"
-                          value={draw.inspection_fee || ''}
-                          onChange={(e) => handleDrawChange(index, 'inspection_fee', parseFloat(e.target.value) || 0)}
+                          value={draw.inspection_fee === '' ? '' : formatCurrency(draw.inspection_fee)}
+                          onChange={(e) => handleDrawChange(index, 'inspection_fee', parseCurrencyInput(e.target.value))}
                           placeholder="$0"
                           disabled={!canEdit}
+                          inputMode="decimal"
                           className="w-28"
                         />
                       </TableCell>
                       <TableCell>
                         <Input
-                          type="number"
-                          value={draw.wire_fee || ''}
-                          onChange={(e) => handleDrawChange(index, 'wire_fee', parseFloat(e.target.value) || 0)}
+                          value={draw.wire_fee === '' ? '' : formatCurrency(draw.wire_fee)}
+                          onChange={(e) => handleDrawChange(index, 'wire_fee', parseCurrencyInput(e.target.value))}
                           placeholder="$25"
                           disabled={!canEdit}
+                          inputMode="decimal"
                           className="w-24"
                         />
                       </TableCell>
                       <TableCell>
                         <Input
-                          type="number"
-                          value={draw.rush_order_fee || ''}
-                          onChange={(e) => handleDrawChange(index, 'rush_order_fee', parseFloat(e.target.value) || 0)}
+                          value={draw.rush_order_fee === '' ? '' : formatCurrency(draw.rush_order_fee)}
+                          onChange={(e) => handleDrawChange(index, 'rush_order_fee', parseCurrencyInput(e.target.value))}
                           placeholder="$0"
                           disabled={!canEdit}
+                          inputMode="decimal"
                           className="w-24"
                         />
                       </TableCell>
@@ -550,37 +550,37 @@ Amplend Team`
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            value={draft.approved_amount || ''}
-                            onChange={(e) => handleDraftChange(index, 'approved_amount', parseFloat(e.target.value) || 0)}
+                            value={draft.approved_amount === '' ? '' : formatCurrency(draft.approved_amount)}
+                            onChange={(e) => handleDraftChange(index, 'approved_amount', parseCurrencyInput(e.target.value))}
                             placeholder="$10,000"
+                            inputMode="decimal"
                             className="w-32"
                           />
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            value={draft.inspection_fee || ''}
-                            onChange={(e) => handleDraftChange(index, 'inspection_fee', parseFloat(e.target.value) || 0)}
+                            value={draft.inspection_fee === '' ? '' : formatCurrency(draft.inspection_fee)}
+                            onChange={(e) => handleDraftChange(index, 'inspection_fee', parseCurrencyInput(e.target.value))}
                             placeholder="$0"
+                            inputMode="decimal"
                             className="w-28"
                           />
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            value={draft.wire_fee || ''}
-                            onChange={(e) => handleDraftChange(index, 'wire_fee', parseFloat(e.target.value) || 0)}
+                            value={draft.wire_fee === '' ? '' : formatCurrency(draft.wire_fee)}
+                            onChange={(e) => handleDraftChange(index, 'wire_fee', parseCurrencyInput(e.target.value))}
                             placeholder="$25"
+                            inputMode="decimal"
                             className="w-24"
                           />
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            value={draft.rush_order_fee || ''}
-                            onChange={(e) => handleDraftChange(index, 'rush_order_fee', parseFloat(e.target.value) || 0)}
+                            value={draft.rush_order_fee === '' ? '' : formatCurrency(draft.rush_order_fee)}
+                            onChange={(e) => handleDraftChange(index, 'rush_order_fee', parseCurrencyInput(e.target.value))}
                             placeholder="$0"
+                            inputMode="decimal"
                             className="w-24"
                           />
                         </TableCell>
