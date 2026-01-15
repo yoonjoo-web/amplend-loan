@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
   const { toast } = useToast();
   const [draws, setDraws] = useState(loan.draws || []);
+  const [draftDraws, setDraftDraws] = useState([]);
   const [drawRequests, setDrawRequests] = useState(loan.draw_requests || []);
   const [requestForm, setRequestForm] = useState({
     itemName: '',
@@ -45,6 +46,24 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
 
   const calculateFundsCumulative = (drawsList) => {
     return drawsList.reduce((sum, draw) => sum + (parseFloat(draw.funds_to_borrower) || 0), 0);
+  };
+
+  const applyDraftTotals = (draft) => {
+    const approvedAmount = parseFloat(draft.approved_amount) || 0;
+    const inspectionFee = parseFloat(draft.inspection_fee) || 0;
+    const wireFee = parseFloat(draft.wire_fee) || 0;
+    const rushOrderFee = parseFloat(draft.rush_order_fee) || 0;
+    const fundsToBorrower = Math.max(0, approvedAmount - inspectionFee - wireFee - rushOrderFee);
+    const baseDisburse = calculateDisimburseCumulative(draws);
+    const baseFunds = calculateFundsCumulative(draws);
+
+    return {
+      ...draft,
+      funds_to_borrower: fundsToBorrower,
+      total_disimburse: baseDisburse + approvedAmount,
+      net_funds_to_borrower: baseFunds + fundsToBorrower,
+      remaining_budget: (loan.total_rehab_budget || 0) - (baseDisburse + approvedAmount)
+    };
   };
 
   const recalculateDraws = (drawsList) => {
@@ -95,14 +114,8 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
     if (!request) return;
 
     const approvedAmount = parseFloat(request.request_amount) || 0;
-    const inspectionFee = 0;
-    const wireFee = 25;
-    const rushOrderFee = 0;
-    const fundsToBorrower = Math.max(0, approvedAmount - inspectionFee - wireFee - rushOrderFee);
-    const disimburseCumulative = calculateDisimburseCumulative(draws);
-    const fundsCumulative = calculateFundsCumulative(draws);
 
-    const newDraw = {
+    const draftDraw = applyDraftTotals({
       id: Date.now().toString(),
       draw_request_id: request.id,
       requested_item_name: request.item_name || '',
@@ -110,23 +123,73 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
       inspection_company: '',
       total_rehab_budget: loan.total_rehab_budget || 0,
       approved_amount: approvedAmount,
-      inspection_fee: inspectionFee,
-      wire_fee: wireFee,
-      rush_order_fee: rushOrderFee,
-      total_disimburse: disimburseCumulative,
-      funds_to_borrower: fundsToBorrower,
-      net_funds_to_borrower: fundsCumulative,
-      remaining_budget: (loan.total_rehab_budget || 0) - disimburseCumulative,
+      inspection_fee: 0,
+      wire_fee: 25,
+      rush_order_fee: 0,
       net_draw_released_date: ''
-    };
+    });
 
-    const updatedDraws = recalculateDraws([...draws, newDraw]);
+    const updatedDrafts = [...draftDraws, draftDraw];
     const updatedRequests = drawRequests.map((item) => (
       item.id === requestId
         ? {
           ...item,
+          status: 'draft',
+          draft_draw_id: draftDraw.id,
+          drafted_at: new Date().toISOString(),
+          drafted_by: currentUser?.id || 'unknown'
+        }
+        : item
+    ));
+
+    setDraftDraws(updatedDrafts);
+    setDrawRequests(updatedRequests);
+    saveDrawRequests(updatedRequests);
+
+    toast({
+      title: "Draft Created",
+      description: "The draw is ready for edits. Save it to finalize.",
+    });
+  };
+
+  const handleDraftChange = (index, field, value) => {
+    const updatedDrafts = [...draftDraws];
+    updatedDrafts[index] = applyDraftTotals({ ...updatedDrafts[index], [field]: value });
+    setDraftDraws(updatedDrafts);
+  };
+
+  const handleDiscardDraft = (index) => {
+    const draft = draftDraws[index];
+    const updatedDrafts = draftDraws.filter((_, i) => i !== index);
+    const updatedRequests = drawRequests.map((item) => (
+      item.id === draft.draw_request_id
+        ? {
+          ...item,
+          status: 'pending',
+          draft_draw_id: null,
+          drafted_at: null,
+          drafted_by: null
+        }
+        : item
+    ));
+
+    setDraftDraws(updatedDrafts);
+    setDrawRequests(updatedRequests);
+    saveDrawRequests(updatedRequests);
+  };
+
+  const handleSaveDraftDraw = (index) => {
+    const draft = draftDraws[index];
+    if (!draft) return;
+
+    const updatedDraws = recalculateDraws([...draws, draft]);
+    const updatedDrafts = draftDraws.filter((_, i) => i !== index);
+    const updatedRequests = drawRequests.map((item) => (
+      item.id === draft.draw_request_id
+        ? {
+          ...item,
           status: 'converted',
-          converted_draw_id: newDraw.id,
+          converted_draw_id: draft.id,
           converted_at: new Date().toISOString(),
           converted_by: currentUser?.id || 'unknown'
         }
@@ -134,12 +197,13 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
     ));
 
     setDraws(updatedDraws);
+    setDraftDraws(updatedDrafts);
     setDrawRequests(updatedRequests);
     onUpdate({ draws: updatedDraws, draw_requests: updatedRequests });
 
     toast({
-      title: "Draw Created",
-      description: "The draw request has been converted into a draw.",
+      title: "Draw Saved",
+      description: "The draw has been saved to the loan.",
     });
   };
 
@@ -314,6 +378,246 @@ Amplend Team`
         <div className="mb-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
+              <h3 className="text-base font-semibold text-slate-900">Draws</h3>
+              <p className="text-sm text-slate-500">
+                Saved draws appear here once finalized.
+              </p>
+            </div>
+          </div>
+
+          {draws.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-white p-6 text-center text-sm text-slate-500">
+              <p>No draws recorded yet.</p>
+              {canEdit && (
+                <Button onClick={handleAddDraw} variant="outline" className="mt-4">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Draw
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Draw #</TableHead>
+                    <TableHead>Inspection Company</TableHead>
+                    <TableHead>Approved Amount</TableHead>
+                    <TableHead>Inspection Fee</TableHead>
+                    <TableHead>Wire Fee</TableHead>
+                    <TableHead>Rush Order Fee</TableHead>
+                    <TableHead>Funds to Borrower</TableHead>
+                    <TableHead>Remaining Budget</TableHead>
+                    <TableHead>Release Date</TableHead>
+                    {canEdit && <TableHead>Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {draws.map((draw, index) => (
+                    <TableRow key={draw.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={draw.inspection_company}
+                          onValueChange={(value) => handleDrawChange(index, 'inspection_company', value)}
+                          disabled={!canEdit}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Trinity">Trinity</SelectItem>
+                            <SelectItem value="Sitewire">Sitewire</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={draw.approved_amount || ''}
+                          onChange={(e) => handleDrawChange(index, 'approved_amount', parseFloat(e.target.value) || 0)}
+                          placeholder="$10,000"
+                          disabled={!canEdit}
+                          className="w-32"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={draw.inspection_fee || ''}
+                          onChange={(e) => handleDrawChange(index, 'inspection_fee', parseFloat(e.target.value) || 0)}
+                          placeholder="$0"
+                          disabled={!canEdit}
+                          className="w-28"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={draw.wire_fee || ''}
+                          onChange={(e) => handleDrawChange(index, 'wire_fee', parseFloat(e.target.value) || 0)}
+                          placeholder="$25"
+                          disabled={!canEdit}
+                          className="w-24"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={draw.rush_order_fee || ''}
+                          onChange={(e) => handleDrawChange(index, 'rush_order_fee', parseFloat(e.target.value) || 0)}
+                          placeholder="$0"
+                          disabled={!canEdit}
+                          className="w-24"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        ${(draw.funds_to_borrower || 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        ${(draw.remaining_budget || 0).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="date"
+                          value={draw.net_draw_released_date || ''}
+                          onChange={(e) => handleDrawChange(index, 'net_draw_released_date', e.target.value)}
+                          disabled={!canEdit}
+                          className="w-40"
+                        />
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveDraw(index)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {draftDraws.length > 0 && (
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Draft Draws</h4>
+                <p className="text-xs text-slate-500">
+                  Review edits, then save to finalize.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Inspection Company</TableHead>
+                      <TableHead>Approved Amount</TableHead>
+                      <TableHead>Inspection Fee</TableHead>
+                      <TableHead>Wire Fee</TableHead>
+                      <TableHead>Rush Order Fee</TableHead>
+                      <TableHead>Funds to Borrower</TableHead>
+                      <TableHead>Remaining Budget</TableHead>
+                      <TableHead>Release Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {draftDraws.map((draft, index) => (
+                      <TableRow key={draft.id}>
+                        <TableCell className="font-medium text-slate-900">
+                          {draft.requested_item_name || 'Draw'}
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={draft.inspection_company}
+                            onValueChange={(value) => handleDraftChange(index, 'inspection_company', value)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Trinity">Trinity</SelectItem>
+                              <SelectItem value="Sitewire">Sitewire</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={draft.approved_amount || ''}
+                            onChange={(e) => handleDraftChange(index, 'approved_amount', parseFloat(e.target.value) || 0)}
+                            placeholder="$10,000"
+                            className="w-32"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={draft.inspection_fee || ''}
+                            onChange={(e) => handleDraftChange(index, 'inspection_fee', parseFloat(e.target.value) || 0)}
+                            placeholder="$0"
+                            className="w-28"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={draft.wire_fee || ''}
+                            onChange={(e) => handleDraftChange(index, 'wire_fee', parseFloat(e.target.value) || 0)}
+                            placeholder="$25"
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={draft.rush_order_fee || ''}
+                            onChange={(e) => handleDraftChange(index, 'rush_order_fee', parseFloat(e.target.value) || 0)}
+                            placeholder="$0"
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          ${(draft.funds_to_borrower || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          ${(draft.remaining_budget || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            value={draft.net_draw_released_date || ''}
+                            onChange={(e) => handleDraftChange(index, 'net_draw_released_date', e.target.value)}
+                            className="w-40"
+                          />
+                        </TableCell>
+                        <TableCell className="space-x-2">
+                          <Button size="sm" onClick={() => handleSaveDraftDraw(index)}>
+                            Save Draw
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDiscardDraft(index)}>
+                            Discard
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
               <h3 className="text-base font-semibold text-slate-900">Draw Requests</h3>
               <p className="text-sm text-slate-500">
                 Borrowers can submit requests. Loan officers and admins can convert them into draws.
@@ -409,9 +713,9 @@ Amplend Team`
                             size="sm"
                             variant="outline"
                             onClick={() => handleCreateDrawFromRequest(request.id)}
-                            disabled={request.status === 'converted'}
+                            disabled={request.status === 'converted' || request.status === 'draft'}
                           >
-                            Create Draw
+                            {request.status === 'draft' ? 'Draft Created' : 'Create Draw'}
                           </Button>
                         </TableCell>
                       )}
@@ -423,124 +727,6 @@ Amplend Team`
           )}
         </div>
 
-        {draws.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">
-            <p>No draws recorded yet</p>
-            {canEdit && (
-              <Button onClick={handleAddDraw} variant="outline" className="mt-4">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Draw
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Draw #</TableHead>
-                  <TableHead>Inspection Company</TableHead>
-                  <TableHead>Approved Amount</TableHead>
-                  <TableHead>Inspection Fee</TableHead>
-                  <TableHead>Wire Fee</TableHead>
-                  <TableHead>Rush Order Fee</TableHead>
-                  <TableHead>Funds to Borrower</TableHead>
-                  <TableHead>Remaining Budget</TableHead>
-                  <TableHead>Release Date</TableHead>
-                  {canEdit && <TableHead>Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {draws.map((draw, index) => (
-                  <TableRow key={draw.id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={draw.inspection_company}
-                        onValueChange={(value) => handleDrawChange(index, 'inspection_company', value)}
-                        disabled={!canEdit}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Trinity">Trinity</SelectItem>
-                          <SelectItem value="Sitewire">Sitewire</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={draw.approved_amount || ''}
-                        onChange={(e) => handleDrawChange(index, 'approved_amount', parseFloat(e.target.value) || 0)}
-                        placeholder="$10,000"
-                        disabled={!canEdit}
-                        className="w-32"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={draw.inspection_fee || ''}
-                        onChange={(e) => handleDrawChange(index, 'inspection_fee', parseFloat(e.target.value) || 0)}
-                        placeholder="$0"
-                        disabled={!canEdit}
-                        className="w-28"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={draw.wire_fee || ''}
-                        onChange={(e) => handleDrawChange(index, 'wire_fee', parseFloat(e.target.value) || 0)}
-                        placeholder="$25"
-                        disabled={!canEdit}
-                        className="w-24"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={draw.rush_order_fee || ''}
-                        onChange={(e) => handleDrawChange(index, 'rush_order_fee', parseFloat(e.target.value) || 0)}
-                        placeholder="$0"
-                        disabled={!canEdit}
-                        className="w-24"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      ${(draw.funds_to_borrower || 0).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      ${(draw.remaining_budget || 0).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="date"
-                        value={draw.net_draw_released_date || ''}
-                        onChange={(e) => handleDrawChange(index, 'net_draw_released_date', e.target.value)}
-                        disabled={!canEdit}
-                        className="w-40"
-                      />
-                    </TableCell>
-                    {canEdit && (
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveDraw(index)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
