@@ -402,13 +402,22 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   };
 
   const handleSendMessage = async () => {
+    if (!currentUser) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be signed in to send messages."
+      });
+      return;
+    }
     if (!messageRecipient?.messageUserId || !messageText.trim() || isSendingMessage) return;
     setIsSendingMessage(true);
 
     try {
       const conversationId = [currentUser.id, messageRecipient.messageUserId].sort().join('_');
-      const senderName = currentUser.first_name && currentUser.last_name
-        ? `${currentUser.first_name} ${currentUser.last_name}`
+      const senderNameParts = [currentUser.first_name, currentUser.last_name].filter(Boolean);
+      const senderName = senderNameParts.length > 0
+        ? senderNameParts.join(' ')
         : currentUser.full_name || currentUser.email;
 
       await Message.create({
@@ -421,6 +430,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         loan_id: loan.id,
         loan_number: loan.loan_number || loan.primary_loan_id,
         read_by: [currentUser.id],
+        mentions: [],
         attachments: []
       });
 
@@ -436,7 +446,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to send message. Please try again."
+        description: error?.message || "Failed to send message. Please try again."
       });
     }
 
