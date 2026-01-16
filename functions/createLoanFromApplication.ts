@@ -202,16 +202,30 @@ Deno.serve(async (req) => {
     // Prepare borrower IDs array
     console.log('[createLoanFromApplication] Building borrower IDs');
     const borrowerIds = [];
-    if (application.primary_borrower_id) {
-      borrowerIds.push(application.primary_borrower_id);
-    }
+    const allBorrowers = await base44.asServiceRole.entities.Borrower.list();
+    const resolveBorrowerId = (userId, email) => {
+      if (userId) {
+        const matchedByUser = allBorrowers.find(b => b.user_id === userId);
+        if (matchedByUser) return matchedByUser.id;
+      }
+      if (email) {
+        const normalizedEmail = email.toLowerCase();
+        const matchedByEmail = allBorrowers.find(b => b.email?.toLowerCase() === normalizedEmail);
+        if (matchedByEmail) return matchedByEmail.id;
+      }
+      return userId || null;
+    };
+    const addBorrowerId = (id) => {
+      if (!id || borrowerIds.includes(id)) return;
+      borrowerIds.push(id);
+    };
+
+    addBorrowerId(resolveBorrowerId(application.primary_borrower_id, application.borrower_email));
     
     // Add co-borrower IDs if they exist
     if (application.co_borrowers && Array.isArray(application.co_borrowers)) {
       application.co_borrowers.forEach(cb => {
-        if (cb.user_id) {
-          borrowerIds.push(cb.user_id);
-        }
+        addBorrowerId(resolveBorrowerId(cb.user_id, cb.email));
       });
     }
 
