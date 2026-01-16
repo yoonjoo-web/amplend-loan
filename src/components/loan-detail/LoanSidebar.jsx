@@ -193,7 +193,23 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
 
       const team = [];
 
-      // Add borrowers (look in users)
+      const addBorrowerMember = (borrower) => {
+        if (!borrower) return;
+        const alreadyAdded = team.some(member => member.id === borrower.id && member.role === 'Borrower');
+        if (alreadyAdded) return;
+        team.push({
+          id: borrower.id,
+          email: borrower.email,
+          phone: borrower.phone,
+          role: 'Borrower',
+          messageUserId: borrower.user_id || null,
+          displayName: borrower.first_name && borrower.last_name
+            ? `${borrower.first_name} ${borrower.last_name}`
+            : borrower.email || 'Unknown Contact'
+        });
+      };
+
+      // Add borrowers (prefer loan.borrower_ids)
       if (loan.borrower_ids && Array.isArray(loan.borrower_ids) && loan.borrower_ids.length > 0) {
         console.log('Processing borrowers:', loan.borrower_ids);
         loan.borrower_ids.forEach(id => {
@@ -213,19 +229,20 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           }
 
           const borrower = allBorrowers.find(b => b.id === id || b.user_id === id);
-          if (borrower) {
-            team.push({
-              id: borrower.id,
-              email: borrower.email,
-              phone: borrower.phone,
-              role: 'Borrower',
-              messageUserId: borrower.user_id || null,
-              displayName: borrower.first_name && borrower.last_name
-                ? `${borrower.first_name} ${borrower.last_name}`
-                : borrower.email || 'Unknown Contact'
-            });
-          }
+          addBorrowerMember(borrower);
         });
+      }
+
+      // Fallback: resolve borrowers from individual_information emails (primary + co-borrowers)
+      if ((!loan.borrower_ids || loan.borrower_ids.length === 0) && Array.isArray(loan.individual_information)) {
+        const normalizedEmails = loan.individual_information
+          .map(individual => individual?.individual_email)
+          .filter(Boolean)
+          .map(email => email.toLowerCase());
+        const matchedBorrowers = allBorrowers.filter(borrower =>
+          borrower.email && normalizedEmails.includes(borrower.email.toLowerCase())
+        );
+        matchedBorrowers.forEach(addBorrowerMember);
       }
 
       // Add loan officers (look in users)
