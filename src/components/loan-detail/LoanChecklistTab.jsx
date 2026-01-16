@@ -39,6 +39,7 @@ const DOCUMENT_STATUS_COLORS = {
 };
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const checklistKey = (type, name) => `${type}::${name}`.toLowerCase().trim();
 
 export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpened }) {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
@@ -135,7 +136,63 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
     }
   };
 
-  const loadChecklistItems = async () => {
+  const ensureChecklistItems = async (existingItems) => {
+    if (isInitializing || hasInitialized || !loan.loan_product) return;
+
+    const existingKeys = new Set(
+      existingItems.map((item) => checklistKey(item.checklist_type, item.item_name))
+    );
+    const templates = [
+      { type: "action_item", items: ACTION_ITEM_CHECKLIST_ITEMS },
+      { type: "document", items: DOCUMENT_CHECKLIST_ITEMS }
+    ];
+
+    const missingItems = [];
+
+    templates.forEach(({ type, items }) => {
+      items.forEach((templateItem) => {
+        const key = checklistKey(type, templateItem.item);
+        if (!existingKeys.has(key)) {
+          missingItems.push({ type, templateItem });
+        }
+      });
+    });
+
+    if (missingItems.length === 0) {
+      setHasInitialized(true);
+      return;
+    }
+
+    setIsInitializing(true);
+    setHasInitialized(true);
+
+    try {
+      for (const { type, templateItem } of missingItems) {
+        await ChecklistItem.create({
+          loan_id: loan.id,
+          checklist_type: type,
+          category: templateItem.category,
+          item_name: templateItem.item,
+          description: templateItem.description || '',
+          provider: templateItem.provider || '',
+          applicable_loan_types: templateItem.loan_types || [],
+          document_category: templateItem.document_category || '',
+          status: type === "action_item" ? "not_started" : "pending",
+          activity_history: []
+        });
+
+        await sleep(200);
+      }
+
+      await loadChecklistItems({ skipEnsure: true });
+    } catch (error) {
+      console.error("Error ensuring checklist items:", error);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  const loadChecklistItems = async ({ skipEnsure = false } = {}) => {
     console.log('[LoanChecklistTab] loadChecklistItems called');
     try {
       const items = await ChecklistItem.filter({ loan_id: loan.id });
@@ -145,6 +202,11 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
       // Only auto-initialize if loan_product is selected
       if (items.length === 0 && !hasInitialized && loan.loan_product) {
         await autoInitializeChecklists();
+        return;
+      }
+
+      if (!skipEnsure && loan.loan_product) {
+        await ensureChecklistItems(items);
       }
     } catch (error) {
       console.error("Error loading checklist items:", error);
