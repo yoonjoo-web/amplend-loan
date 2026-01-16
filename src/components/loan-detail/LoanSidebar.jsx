@@ -122,7 +122,16 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     loadTeamMembers();
     loadModificationHistory();
     loadFieldConfigs();
-  }, [loan.id, loan.borrower_ids, loan.loan_officer_ids, loan.guarantor_ids, loan.referrer_ids, loan.modification_history]); // Added modification_history to dependencies to ensure history reloads
+  }, [
+    loan.id,
+    loan.borrower_ids,
+    loan.borrower_entity_id,
+    loan.borrower_entity_name,
+    loan.loan_officer_ids,
+    loan.guarantor_ids,
+    loan.referrer_ids,
+    loan.modification_history
+  ]); // Added modification_history to dependencies to ensure history reloads
 
   const loadFieldConfigs = async () => {
     try {
@@ -163,6 +172,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       let allUsers = [];
       let allBorrowers = [];
       let allLoanPartners = [];
+      let allBorrowerEntities = [];
       
       try {
         allUsers = await base44.entities.User.list();
@@ -180,6 +190,12 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         allLoanPartners = await base44.entities.LoanPartner.list();
       } catch (error) {
         console.error('LoanSidebar - Error fetching loan partners:', error);
+      }
+
+      try {
+        allBorrowerEntities = await base44.entities.BorrowerEntity.list();
+      } catch (error) {
+        console.error('LoanSidebar - Error fetching borrower entities:', error);
       }
 
       const team = [];
@@ -200,8 +216,40 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                 ? `${user.first_name} ${user.last_name}`
                 : user.email || 'Unknown User'
             });
+            return;
+          }
+
+          const borrower = allBorrowers.find(b => b.id === id || b.user_id === id);
+          if (borrower) {
+            team.push({
+              id: borrower.id,
+              email: borrower.email,
+              phone: borrower.phone,
+              role: 'Borrower',
+              messageUserId: borrower.user_id || null,
+              displayName: borrower.first_name && borrower.last_name
+                ? `${borrower.first_name} ${borrower.last_name}`
+                : borrower.email || 'Unknown Contact'
+            });
           }
         });
+      }
+
+      if (loan.borrower_entity_id || loan.borrower_entity_name) {
+        const borrowerEntity = loan.borrower_entity_id
+          ? allBorrowerEntities.find(entity => entity.id === loan.borrower_entity_id)
+          : allBorrowerEntities.find(entity => entity.entity_name === loan.borrower_entity_name);
+
+        if (borrowerEntity || loan.borrower_entity_name) {
+          team.push({
+            id: borrowerEntity?.id || `entity-${loan.id}`,
+            email: borrowerEntity?.email || null,
+            phone: borrowerEntity?.phone || null,
+            role: 'Borrower Entity',
+            messageUserId: borrowerEntity?.user_id || null,
+            displayName: borrowerEntity?.entity_name || loan.borrower_entity_name || 'Unknown Entity'
+          });
+        }
       }
 
       // Add loan officers (look in users)
