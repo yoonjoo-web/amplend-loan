@@ -172,7 +172,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       let allUsers = [];
       let allBorrowers = [];
       let allLoanPartners = [];
-      let allBorrowerEntities = [];
       
       try {
         allUsers = await base44.entities.User.list();
@@ -190,12 +189,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         allLoanPartners = await base44.entities.LoanPartner.list();
       } catch (error) {
         console.error('LoanSidebar - Error fetching loan partners:', error);
-      }
-
-      try {
-        allBorrowerEntities = await base44.entities.BorrowerEntity.list();
-      } catch (error) {
-        console.error('LoanSidebar - Error fetching borrower entities:', error);
       }
 
       const team = [];
@@ -233,23 +226,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             });
           }
         });
-      }
-
-      if (loan.borrower_entity_id || loan.borrower_entity_name) {
-        const borrowerEntity = loan.borrower_entity_id
-          ? allBorrowerEntities.find(entity => entity.id === loan.borrower_entity_id)
-          : allBorrowerEntities.find(entity => entity.entity_name === loan.borrower_entity_name);
-
-        if (borrowerEntity || loan.borrower_entity_name) {
-          team.push({
-            id: borrowerEntity?.id || `entity-${loan.id}`,
-            email: borrowerEntity?.email || null,
-            phone: borrowerEntity?.phone || null,
-            role: 'Borrower Entity',
-            messageUserId: borrowerEntity?.user_id || null,
-            displayName: borrowerEntity?.entity_name || loan.borrower_entity_name || 'Unknown Entity'
-          });
-        }
       }
 
       // Add loan officers (look in users)
