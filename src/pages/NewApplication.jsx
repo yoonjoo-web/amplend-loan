@@ -92,6 +92,18 @@ export default function NewApplication() {
     return visibleSteps.findIndex(s => s.id === stepId) + 1;
   }, [visibleSteps]);
 
+  const getBorrowerNames = useCallback(() => {
+    const fallbackFirstName = formData?.borrower_first_name || 'Borrower';
+    const firstName = primaryBorrowerUser?.first_name || fallbackFirstName;
+    const lastName = primaryBorrowerUser?.last_name || formData?.borrower_last_name || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    return {
+      borrowerName: firstName,
+      borrowerFullName: fullName || firstName
+    };
+  }, [formData, primaryBorrowerUser]);
+
   const loadApplication = useCallback(async () => {
     setIsLoading(true);
     const searchParams = new URLSearchParams(location.search);
@@ -469,15 +481,23 @@ export default function NewApplication() {
         updates: { status: 'under_review' }
       });
       
-      const borrowerName = primaryBorrowerUser 
-        ? primaryBorrowerUser.first_name 
-        : formData.borrower_first_name || 'Borrower';
+      const { borrowerFullName } = getBorrowerNames();
 
       try {
-        await base44.integrations.Core.SendEmail({
-          to: formData.borrower_email,
-          subject: 'Your Loan Application is Under Review',
-          body: `Hello ${borrowerName},\n\nYour loan application #${formData.application_number} is now under review. We will notify you once the review is complete.\n\nThank you for your patience.`
+        await base44.functions.invoke('emailService', {
+          email_type: 'application_status_update',
+          recipient_email: formData.borrower_email,
+          recipient_name: borrowerFullName,
+          data: {
+            status_subject: 'Your Loan Application is Under Review',
+            status_title: 'Application Under Review',
+            status_message: `Your loan application #${formData.application_number} is now under review.`,
+            status_description: 'We will notify you once the review is complete.',
+            application_number: formData.application_number,
+            borrower_name: borrowerFullName,
+            status: 'under_review',
+            application_id: formData.id
+          }
         });
       } catch (emailError) {
         console.log('Could not send email notification:', emailError);
@@ -508,15 +528,23 @@ export default function NewApplication() {
         updates: { status: 'review_completed' }
       });
       
-      const borrowerName = primaryBorrowerUser 
-        ? primaryBorrowerUser.first_name 
-        : formData.borrower_first_name || 'Borrower';
+      const { borrowerFullName } = getBorrowerNames();
 
       try {
-        await base44.integrations.Core.SendEmail({
-          to: formData.borrower_email,
-          subject: 'Your Loan Application Review is Complete',
-          body: `Hello ${borrowerName},\n\nThe review of your loan application #${formData.application_number} has been completed. Please log in to review the comments and make any necessary changes before resubmitting.\n\nThank you for your patience.`
+        await base44.functions.invoke('emailService', {
+          email_type: 'application_status_update',
+          recipient_email: formData.borrower_email,
+          recipient_name: borrowerFullName,
+          data: {
+            status_subject: 'Your Loan Application Review is Complete',
+            status_title: 'Review Completed',
+            status_message: `The review of your loan application #${formData.application_number} has been completed.`,
+            status_description: 'Please log in to review the comments and make any necessary changes before resubmitting.',
+            application_number: formData.application_number,
+            borrower_name: borrowerFullName,
+            status: 'review_completed',
+            application_id: formData.id
+          }
         });
       } catch (emailError) {
         console.log('Could not send email notification:', emailError);
@@ -608,9 +636,7 @@ export default function NewApplication() {
         }
       });
       
-      const borrowerName = primaryBorrowerUser 
-        ? primaryBorrowerUser.first_name 
-        : formData.borrower_first_name || 'Borrower';
+      const { borrowerName } = getBorrowerNames();
 
       try {
         await base44.integrations.Core.SendEmail({
@@ -781,15 +807,23 @@ export default function NewApplication() {
       await LoanApplication.update(formData.id, finalData);
       setHasUnsavedChanges(false);
       
-      const borrowerName = primaryBorrowerUser 
-        ? primaryBorrowerUser.first_name 
-        : formData.borrower_first_name || 'Borrower';
-
       try {
-        await base44.integrations.Core.SendEmail({
-          to: formData.borrower_email,
-          subject: `Your Loan Application Has Been Submitted`,
-          body: `Hello ${borrowerName},\n\nYour loan application #${formData.application_number} has been submitted successfully (Submission #${newSubmissionCount}). We will review it shortly.\n\nThank you.`
+        const { borrowerFullName } = getBorrowerNames();
+
+        await base44.functions.invoke('emailService', {
+          email_type: 'application_status_update',
+          recipient_email: formData.borrower_email,
+          recipient_name: borrowerFullName,
+          data: {
+            status_subject: 'Your Loan Application Has Been Submitted',
+            status_title: 'Application Submitted',
+            status_message: `Your loan application #${formData.application_number} has been submitted successfully (Submission #${newSubmissionCount}).`,
+            status_description: 'We will review it shortly.',
+            application_number: formData.application_number,
+            borrower_name: borrowerFullName,
+            status: 'submitted',
+            application_id: formData.id
+          }
         });
       } catch (emailError) {
         console.log('Could not send submission email notification:', emailError);
