@@ -173,6 +173,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       let allBorrowers = [];
       let allLoanPartners = [];
       let loanOfficerOverrides = [];
+      let loanOfficerOverridesById = {};
       
       try {
         allUsers = await base44.entities.User.list();
@@ -198,6 +199,12 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             loan_id: loan.id
           });
           loanOfficerOverrides = response?.data?.loan_officers || response?.loan_officers || [];
+          loanOfficerOverridesById = loanOfficerOverrides.reduce((acc, officer) => {
+            if (officer?.id) {
+              acc[officer.id] = officer;
+            }
+            return acc;
+          }, {});
         } catch (error) {
           console.error('LoanSidebar - Error fetching loan officers for loan:', error);
         }
@@ -238,6 +245,9 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       };
 
       const resolveLoanOfficer = async (id) => {
+        if (loanOfficerOverridesById[id]) {
+          return loanOfficerOverridesById[id];
+        }
         const user =
           allUsers.find(u => u.id === id) ||
           (allLoanOfficers || []).find(u => u.id === id);
