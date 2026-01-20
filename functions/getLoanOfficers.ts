@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
     }
 
     const users = await base44.asServiceRole.entities.User.filter({
-      app_role: 'Loan Officer'
+      role: 'Loan Officer'
     });
 
     return Response.json({ users });
