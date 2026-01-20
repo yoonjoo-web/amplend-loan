@@ -172,6 +172,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       let allUsers = [];
       let allBorrowers = [];
       let allLoanPartners = [];
+      let loanOfficerOverrides = [];
       
       try {
         allUsers = await base44.entities.User.list();
@@ -189,6 +190,17 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         allLoanPartners = await base44.entities.LoanPartner.list();
       } catch (error) {
         console.error('LoanSidebar - Error fetching loan partners:', error);
+      }
+
+      if (!canManage && loan?.id) {
+        try {
+          const response = await base44.functions.invoke('getLoanOfficerTeam', {
+            loan_id: loan.id
+          });
+          loanOfficerOverrides = response?.data?.loan_officers || response?.loan_officers || [];
+        } catch (error) {
+          console.error('LoanSidebar - Error fetching loan officers for loan:', error);
+        }
       }
 
       const team = [];
@@ -297,6 +309,10 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             displayName: `Loan Officer ${index + 1}`
           });
         });
+      }
+
+      if (!team.some(member => member.role === 'Loan Officer') && loanOfficerOverrides.length > 0) {
+        loanOfficerOverrides.forEach(addLoanOfficerMember);
       }
 
       // Add guarantors (look in borrowers)
