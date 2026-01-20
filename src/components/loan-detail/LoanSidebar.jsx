@@ -209,6 +209,35 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         });
       };
 
+      const addLoanOfficerMember = (user) => {
+        if (!user) return;
+        const alreadyAdded = team.some(member => member.id === user.id && member.role === 'Loan Officer');
+        if (alreadyAdded) return;
+        team.push({
+          id: user.id,
+          email: user.email,
+          phone: user.phone,
+          role: 'Loan Officer',
+          messageUserId: user.id,
+          displayName: user.first_name && user.last_name
+            ? `${user.first_name} ${user.last_name}`
+            : user.email || 'Unknown User'
+        });
+      };
+
+      const resolveLoanOfficer = async (id) => {
+        const user =
+          allUsers.find(u => u.id === id) ||
+          (allLoanOfficers || []).find(u => u.id === id);
+        if (user) return user;
+        try {
+          return await base44.entities.User.get(id);
+        } catch (error) {
+          console.error('LoanSidebar - Error fetching loan officer by id:', error);
+          return null;
+        }
+      };
+
       // Add borrowers (prefer loan.borrower_ids)
       if (loan.borrower_ids && Array.isArray(loan.borrower_ids) && loan.borrower_ids.length > 0) {
         console.log('Processing borrowers:', loan.borrower_ids);
@@ -248,20 +277,25 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       // Add loan officers (look in users)
       if (loan.loan_officer_ids && Array.isArray(loan.loan_officer_ids) && loan.loan_officer_ids.length > 0) {
         console.log('Processing loan officers:', loan.loan_officer_ids);
-        loan.loan_officer_ids.forEach(id => {
-          const user = allUsers.find(u => u.id === id);
+        const loanOfficerUsers = await Promise.all(
+          loan.loan_officer_ids.map(id => resolveLoanOfficer(id))
+        );
+        loanOfficerUsers.forEach((user, index) => {
           if (user) {
-            team.push({
-              id: user.id,
-              email: user.email,
-              phone: user.phone,
-              role: 'Loan Officer',
-              messageUserId: user.id,
-              displayName: user.first_name && user.last_name
-                ? `${user.first_name} ${user.last_name}`
-                : user.email || 'Unknown User'
-            });
+            addLoanOfficerMember(user);
+            return;
           }
+          const fallbackId = loan.loan_officer_ids[index];
+          const alreadyAdded = team.some(member => member.id === fallbackId && member.role === 'Loan Officer');
+          if (alreadyAdded) return;
+          team.push({
+            id: fallbackId,
+            email: null,
+            phone: null,
+            role: 'Loan Officer',
+            messageUserId: fallbackId,
+            displayName: `Loan Officer ${index + 1}`
+          });
         });
       }
 
@@ -649,7 +683,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         </Card>
 
         {/* Loan Contacts */}
-        <LoanContactsSection loan={loan} onUpdate={onUpdate} />
+        <LoanContactsSection loan={loan} onUpdate={onUpdate} readOnly={!canManage} />
 
         {/* Version History */}
         <Card className="border-0 shadow-sm">

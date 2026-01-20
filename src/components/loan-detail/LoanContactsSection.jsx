@@ -5,7 +5,7 @@ import { Plus, Mail, Phone, Building2, X } from "lucide-react";
 
 import AddContactModal from "./AddContactModal";
 
-export default function LoanContactsSection({ loan, onUpdate }) {
+export default function LoanContactsSection({ loan, onUpdate, readOnly = false }) {
   const [contacts, setContacts] = useState(loan.loan_contacts || {});
   const [showModal, setShowModal] = useState(false);
   const [selectedContactType, setSelectedContactType] = useState('');
@@ -15,17 +15,20 @@ export default function LoanContactsSection({ loan, onUpdate }) {
   }, [loan.loan_contacts]);
 
   const handleAddContact = (type) => {
+    if (readOnly) return;
     setSelectedContactType(type);
     setShowModal(true);
   };
 
   const handleSaveContact = async (type, data) => {
+    if (readOnly) return;
     const updatedContacts = { ...contacts, [type]: data };
     setContacts(updatedContacts);
     await onUpdate({ loan_contacts: updatedContacts });
   };
 
   const handleRemoveContact = async (type) => {
+    if (readOnly) return;
     const updatedContacts = { ...contacts };
     delete updatedContacts[type];
     setContacts(updatedContacts);
@@ -39,15 +42,19 @@ export default function LoanContactsSection({ loan, onUpdate }) {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-slate-700">{label}</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddContact(type)}
-            className="w-full"
-          >
-            <Plus className="w-3 h-3 mr-1" />
-            Add {label}
-          </Button>
+          {readOnly ? (
+            <p className="text-xs text-slate-500">No contact provided.</p>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleAddContact(type)}
+              className="w-full"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add {label}
+            </Button>
+          )}
         </div>
       );
     }
@@ -56,14 +63,16 @@ export default function LoanContactsSection({ loan, onUpdate }) {
       <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
         <div className="flex items-start justify-between mb-2">
           <span className="text-sm font-semibold text-slate-700">{label}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => handleRemoveContact(type)}
-          >
-            <X className="w-3 h-3" />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => handleRemoveContact(type)}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          )}
         </div>
         <div className="space-y-2">
           {data.name && (
@@ -142,12 +151,14 @@ export default function LoanContactsSection({ loan, onUpdate }) {
         </CardContent>
       </Card>
 
-      <AddContactModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        contactType={selectedContactType}
-        onSave={handleSaveContact}
-      />
+      {!readOnly && (
+        <AddContactModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          contactType={selectedContactType}
+          onSave={handleSaveContact}
+        />
+      )}
     </>
   );
 }
