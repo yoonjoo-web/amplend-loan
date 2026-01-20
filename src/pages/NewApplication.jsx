@@ -37,7 +37,7 @@ import DynamicFormRenderer from "../components/forms/DynamicFormRenderer";
 
 const allSteps = [
   { id: 1, title: 'Loan Type', component: LoanTypeStep, description: 'Select the type of loan you need' },
-  { id: 2, title: 'Borrower Information', component: BorrowerInfoStep, description: 'Provide your personal details', hiddenForCoBorrower: true },
+  { id: 2, title: 'Borrower Information', component: BorrowerInfoStep, description: 'Provide your personal details' },
   { id: 3, title: 'Entity Information', component: EntityInformationStep, description: 'Provide entity details if applicable', conditional: true, condition: (data) => data?.borrower_type === 'entity'},
   { id: 4, title: 'Co-Borrowers', component: CoBorrowerStep, description: 'Add details for any co-borrowers', conditional: true, condition: (data) => data?.has_coborrowers === 'yes' },
   { id: 5, title: 'Property Information', component: PropertyInfoStep, description: 'Tell us about the property'},
@@ -261,12 +261,6 @@ export default function NewApplication() {
         isLoanOfficer: permissions.isLoanOfficer,
         status: appData.status
       });
-      
-      // Set read-only if borrower is viewing (regardless of status)
-      if (permissions.isBorrower) {
-        shouldBeReadOnly = true;
-        console.log('DEBUG - Set readonly because isBorrower');
-      }
       
       // Set read-only if application is approved or rejected
       if (appData.status === 'approved' || appData.status === 'rejected') {
@@ -857,11 +851,8 @@ export default function NewApplication() {
     if (isReadOnly) return true;
     if (isStaffViewing) return false;
     
-    // Co-borrower view: loan type and entity steps are read-only, borrower info hidden, rest editable
-    if (isCoBorrowerViewing) {
-      if (stepId === 1 || stepId === 3) return true; // Loan Type and Entity are read-only
-      return false; // Co-borrower info, Property, Consent are editable
-    }
+    // Co-borrowers can edit all steps except the primary borrower info page.
+    if (isCoBorrowerViewing && stepId === 2) return true;
     
     // Primary borrower: all editable except they don't edit co-borrower details
     return false;
@@ -903,21 +894,7 @@ export default function NewApplication() {
     const StepComponent = currentStepObj.component;
 
     // Special handling for Borrower Info Step (step 2)
-    // Co-borrowers should not see this step - they have their own co-borrower form
     if (currentStepObj.id === 2 && StepComponent === BorrowerInfoStep) {
-      if (isCoBorrowerViewing) {
-        // Co-borrowers see a message that this step is for the primary borrower
-        return (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-8 text-center">
-              <p className="text-slate-600">
-                This section is for the primary borrower. Please proceed to your co-borrower information section.
-              </p>
-            </CardContent>
-          </Card>
-        );
-      }
-      
       return (
         <BorrowerInfoStep
           applicationData={{
@@ -928,6 +905,7 @@ export default function NewApplication() {
             status: formData.status
           }}
           onUpdate={handleStepDataChange}
+          isReadOnly={stepIsReadOnly}
           onNext={handleNext}
           onBack={handlePrevious}
         />

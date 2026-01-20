@@ -16,7 +16,7 @@ import DynamicFormRenderer from '../forms/DynamicFormRenderer';
 import SearchExistingModal from '../shared/SearchExistingModal';
 import { syncEntities } from '@/components/utils/entitySyncHelper';
 
-export default function BorrowerInfoStep({ applicationData, onUpdate }) {
+export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly = false }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [showSearchDialog, setShowSearchDialog] = useState(false);
@@ -48,7 +48,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate }) {
         // Check for primary borrower by looking for borrower data, not just ID
         const hasPrimaryBorrower = applicationData.borrower_first_name || applicationData.borrower_email || applicationData.primary_borrower_id;
         
-        if (user.app_role === 'Borrower' && !hasPrimaryBorrower) {
+        if (!isReadOnly && user.app_role === 'Borrower' && !hasPrimaryBorrower) {
           const userBorrower = borrowers.find(b => b.user_id === user.id);
           if (userBorrower) {
             const mappedData = syncEntities('Borrower', 'LoanApplication', userBorrower);
@@ -183,7 +183,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate }) {
     onUpdate(newData);
   };
 
-  const canSearchOrInvite = currentUser && (
+  const canSearchOrInvite = !isReadOnly && currentUser && (
     currentUser.role === 'admin' ||
     currentUser.app_role === 'Administrator' ||
     currentUser.app_role === 'Loan Officer'
@@ -223,7 +223,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate }) {
         categoryFilter="borrowerInformation"
         data={applicationData}
         onChange={handleDataChange}
-        isReadOnly={false}
+        isReadOnly={isReadOnly}
         showTabs={false}
         currentUser={currentUser}
         profileType="borrower"
