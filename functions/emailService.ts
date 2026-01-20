@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
                     <div class="info-box-title">${template.info_box.title}</div>
                     ${template.info_box.items.map(item => `
                       <div class="info-row">
-                        <span class="info-label">${item.label}</span>
+                        <span class="info-label">${item.label}:&nbsp;</span>
                         <span class="info-value">${item.value}</span>
                       </div>
                     `).join('')}

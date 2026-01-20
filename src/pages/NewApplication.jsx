@@ -481,27 +481,7 @@ export default function NewApplication() {
         updates: { status: 'under_review' }
       });
       
-      const { borrowerFullName } = getBorrowerNames();
-
-      try {
-        await base44.functions.invoke('emailService', {
-          email_type: 'application_status_update',
-          recipient_email: formData.borrower_email,
-          recipient_name: borrowerFullName,
-          data: {
-            status_subject: 'Your Loan Application is Under Review',
-            status_title: 'Application Under Review',
-            status_message: `Your loan application #${formData.application_number} is now under review.`,
-            status_description: 'We will notify you once the review is complete.',
-            application_number: formData.application_number,
-            borrower_name: borrowerFullName,
-            status: 'under_review',
-            application_id: formData.id
-          }
-        });
-      } catch (emailError) {
-        console.log('Could not send email notification:', emailError);
-      }
+      // Email is sent by updateApplicationStatus to avoid duplicate notifications.
 
       toast({
         title: "Review Started",
@@ -528,27 +508,7 @@ export default function NewApplication() {
         updates: { status: 'review_completed' }
       });
       
-      const { borrowerFullName } = getBorrowerNames();
-
-      try {
-        await base44.functions.invoke('emailService', {
-          email_type: 'application_status_update',
-          recipient_email: formData.borrower_email,
-          recipient_name: borrowerFullName,
-          data: {
-            status_subject: 'Your Loan Application Review is Complete',
-            status_title: 'Review Completed',
-            status_message: `The review of your loan application #${formData.application_number} has been completed.`,
-            status_description: 'Please log in to review the comments and make any necessary changes before resubmitting.',
-            application_number: formData.application_number,
-            borrower_name: borrowerFullName,
-            status: 'review_completed',
-            application_id: formData.id
-          }
-        });
-      } catch (emailError) {
-        console.log('Could not send email notification:', emailError);
-      }
+      // Email is sent by updateApplicationStatus to avoid duplicate notifications.
 
       toast({
         title: "Review Completed",
