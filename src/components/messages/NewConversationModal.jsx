@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { User, Loan, Message } from "@/entities/all";
 import { Loader2, User as UserIcon, Hash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { base44 } from "@/api/base44Client";
 import {
   Command,
   CommandEmpty,
@@ -55,6 +56,23 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
         // Try to get loan officers from a different approach
         allUsers = [];
       }
+
+      if (permissions.canMessageOnlyLoanOfficers) {
+        const hasLoanOfficer = allUsers.some(u => 
+          u.app_role === 'Loan Officer' || 
+          u.app_role === 'Administrator' ||
+          u.role === 'admin'
+        );
+        if (!hasLoanOfficer) {
+          try {
+            const response = await base44.functions.invoke('getLoanOfficers');
+            allUsers = response?.data?.users || [];
+          } catch (loanOfficerError) {
+            console.log('Cannot load loan officers:', loanOfficerError);
+            allUsers = [];
+          }
+        }
+      }
       
       // Try to load loans - may fail for some users
       try {
@@ -70,9 +88,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       if (permissions.canMessageOnlyLoanOfficers) {
         // Non-admin/non-LO users can only message loan officers
         filteredUsers = filteredUsers.filter(u => 
-          u.app_role === 'Loan Officer' || 
-          u.app_role === 'Administrator' ||
-          u.role === 'admin'
+          u.app_role === 'Loan Officer'
         );
       }
       // Otherwise (canMessageAnyUser), show all users except self
