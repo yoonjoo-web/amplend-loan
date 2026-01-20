@@ -122,6 +122,37 @@ export default function Messages() {
           });
         }
       });
+
+      const relevantConversationIds = Array.from(new Set(
+        allMessages
+          .filter(msg => Array.isArray(msg.participant_ids) && msg.participant_ids.includes(currentUserId))
+          .map(msg => msg.conversation_id)
+          .filter(Boolean)
+      ));
+
+      if (relevantConversationIds.length > 0) {
+        try {
+          const response = await base44.functions.invoke('getConversationParticipants', {
+            conversation_ids: relevantConversationIds
+          });
+          const fetchedUsers = response?.data?.users || response?.users || [];
+
+          fetchedUsers.forEach(user => {
+            if (!user?.id || userMap.has(user.id)) return;
+            const fullName = user.full_name || [user.first_name, user.last_name].filter(Boolean).join(' ');
+            userMap.set(user.id, {
+              id: user.id,
+              full_name: fullName || 'Unknown',
+              first_name: user.first_name || fullName.split(' ')[0] || '',
+              last_name: user.last_name || fullName.split(' ').slice(1).join(' ') || '',
+              email: user.email || ''
+            });
+          });
+        } catch (participantsError) {
+          console.log('Cannot load conversation participants:', participantsError);
+        }
+      }
+
       users = Array.from(userMap.values());
     }
 
