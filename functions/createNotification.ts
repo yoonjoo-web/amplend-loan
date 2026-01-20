@@ -30,19 +30,33 @@ Deno.serve(async (req) => {
 
     // Create notifications for each user using service role
     const notifications = [];
+    const notificationErrors = [];
     for (const userId of user_ids) {
-      const notification = await base44.asServiceRole.entities.Notification.create({
-        user_id: userId,
-        message,
-        type,
-        entity_type: entity_type || null,
-        entity_id: entity_id || null,
-        link_url: link_url || null,
-        priority,
-        read: false
-      });
-      
-      notifications.push(notification);
+      try {
+        const notification = await base44.asServiceRole.entities.Notification.create({
+          user_id: userId,
+          message,
+          type,
+          entity_type: entity_type || null,
+          entity_id: entity_id || null,
+          link_url: link_url || null,
+          priority,
+          read: false
+        });
+        
+        notifications.push(notification);
+      } catch (createError) {
+        console.error('[createNotification] Failed to create notification', {
+          user_id: userId,
+          entity_type,
+          entity_id,
+          type,
+          priority,
+          message_preview: message?.slice(0, 120),
+          error: createError?.message || createError
+        });
+        notificationErrors.push({ user_id: userId, error: createError?.message || 'Unknown error' });
+      }
     }
 
     // Optionally send email notification
@@ -81,13 +95,14 @@ Deno.serve(async (req) => {
     }
 
     return Response.json({ 
-      success: true, 
+      success: notificationErrors.length === 0, 
       notifications,
-      count: notifications.length
+      count: notifications.length,
+      errors: notificationErrors.length > 0 ? notificationErrors : undefined
     });
 
   } catch (error) {
-    console.error('Error creating notification:', error);
+    console.error('[createNotification] Fatal error:', error);
     return Response.json({ 
       error: error.message || 'Unknown error'
     }, { status: 500 });

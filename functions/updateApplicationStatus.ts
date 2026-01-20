@@ -99,7 +99,12 @@ Deno.serve(async (req) => {
             link_url: `/NewApplication?id=${application_id}&action=view`,
             priority: newStatus === 'rejected' ? 'high' : 'normal'
           });
+        } catch (notifError) {
+          console.error('[updateApplicationStatus] Notification error:', notifError);
+          // Continue even if in-app notification fails
+        }
 
+        try {
           // Send enhanced email notification via Resend
           for (const userId of notificationUserIds) {
             const recipient = await base44.asServiceRole.entities.User.get(userId);
@@ -122,13 +127,11 @@ Deno.serve(async (req) => {
                   application_id: application_id
                 }
               });
-
-
             }
           }
-        } catch (notifError) {
-          console.error('Error creating notification:', notifError);
-          // Continue even if notification fails
+        } catch (emailError) {
+          console.error('[updateApplicationStatus] Email error:', emailError);
+          // Continue even if email fails
         }
       }
     }
