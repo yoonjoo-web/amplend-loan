@@ -1,4 +1,3 @@
-deno
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -108,7 +107,7 @@ Deno.serve(async (req) => {
               const appUrl = 'https://loan-portal.amplend.net';
               const viewUrl = `${appUrl}/NewApplication?id=${application_id}&action=view`;
               
-              await base44.asServiceRole.functions.invoke('emailService', {
+              await base44.functions.invoke('emailService', {
                 email_type: 'application_status_update',
                 recipient_email: recipient.email,
                 recipient_name: `${recipient.first_name} ${recipient.last_name}`,

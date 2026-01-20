@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { input, placeId } = await req.json();
+        const { input, placeId, types } = await req.json();
         const apiKey = Deno.env.get("address-api");
 
         if (!apiKey) {
@@ -35,6 +35,9 @@ Deno.serve(async (req) => {
                 subpremise: '',
                 locality: '',
                 administrative_area_level_1: '',
+                administrative_area_level_2: '',
+                administrative_area_level_3: '',
+                postal_town: '',
                 postal_code: '',
                 country: ''
             };
@@ -53,10 +56,16 @@ Deno.serve(async (req) => {
             });
 
             // Format the response
+            const city =
+                parsedAddress.locality ||
+                parsedAddress.postal_town ||
+                parsedAddress.administrative_area_level_3 ||
+                parsedAddress.administrative_area_level_2;
+
             return Response.json({
                 street: `${parsedAddress.street_number} ${parsedAddress.route}`.trim(),
                 unit: parsedAddress.subpremise,
-                city: parsedAddress.locality,
+                city,
                 state: parsedAddress.administrative_area_level_1,
                 zip: parsedAddress.postal_code
             });
@@ -69,7 +78,8 @@ Deno.serve(async (req) => {
                 return Response.json({ suggestions: [] });
             }
 
-            const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=address&components=country:us&key=${apiKey}`;
+            const placeTypes = types || 'address';
+            const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=${encodeURIComponent(placeTypes)}&components=country:us&key=${apiKey}`;
             const autocompleteResponse = await fetch(autocompleteUrl);
             const autocompleteData = await autocompleteResponse.json();
 

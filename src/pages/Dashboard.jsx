@@ -22,6 +22,7 @@ import InviteLoanPartnerModal from "../components/dashboard/InviteLoanPartnerMod
 import PrivateTicketsWidget from "../components/dashboard/PrivateTicketsWidget";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { base44 } from "@/api/base44Client";
 
 const statusColors = {
   pending: "bg-amber-100 text-amber-800",
@@ -274,6 +275,43 @@ export default function Dashboard() {
     });
   };
 
+  const handleNewApplication = async () => {
+    if (!permissions.canCreateApplication) {
+      toast({
+        variant: "destructive",
+        title: "Permission Denied",
+        description: "You do not have permission to create new applications."
+      });
+      return;
+    }
+
+    try {
+      const appNumber = `APP-${Date.now()}`;
+
+      const applicationData = {
+        application_number: appNumber,
+        status: 'draft',
+        current_step: 1,
+        borrower_type: 'individual',
+        has_coborrowers: 'no'
+      };
+
+      if (permissions.isBorrower) {
+        applicationData.primary_borrower_id = currentUser.id;
+      }
+
+      const newApp = await base44.entities.LoanApplication.create(applicationData);
+      navigate(createPageUrl("NewApplication") + `?id=${newApp.id}`);
+    } catch (error) {
+      console.error('Error creating application:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to Create Application",
+        description: "An error occurred while creating the application. Please try again."
+      });
+    }
+  };
+
   if (permissionsLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -306,12 +344,10 @@ export default function Dashboard() {
             className="flex gap-3"
             data-tour="quick-actions"
           >
-            <Link to={createPageUrl("NewApplication")}>
-              <Button className="bg-slate-700 hover:bg-slate-800">
-                <Plus className="w-4 h-4 mr-2" />
-                New Application
-              </Button>
-            </Link>
+            <Button className="bg-slate-700 hover:bg-slate-800" onClick={handleNewApplication}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Application
+            </Button>
             <Button
               variant="outline"
               onClick={() => setShowInviteBorrowerModal(true)}

@@ -26,8 +26,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
+import CityAutocomplete from "../shared/CityAutocomplete";
 import { US_STATES } from "../utils/usStates";
-import { US_CITIES_BY_STATE } from "../utils/usCitiesData";
 import { US_COUNTIES_BY_STATE } from "../utils/usCountiesData";
 import { evaluateFormula } from "../utils/formulaEvaluator";
 import { LoanPartner } from "@/entities/all";
@@ -866,24 +866,25 @@ export default function DynamicField({
         );
 
       case 'city':
-        const stateForCity = allFieldValues[fieldConfig.field_name.replace('_city', '_state')];
-        const cities = stateForCity ? US_CITIES_BY_STATE[stateForCity] || [] : [];
+        const stateFieldForCity = fieldConfig.field_name.includes('_city')
+          ? fieldConfig.field_name.replace('_city', '_state')
+          : null;
         return (
-          <Select
+          <CityAutocomplete
+            id={fieldConfig.field_name}
             value={value || ''}
-            onValueChange={onChange}
-            disabled={effectiveReadOnly || !stateForCity}
-            required={fieldConfig.required}
-          >
-            <SelectTrigger className="h-10 text-sm">
-              <SelectValue placeholder={stateForCity ? 'Select city...' : 'Select state first...'} />
-            </SelectTrigger>
-            <SelectContent>
-              {cities.map((city) => (
-                <SelectItem key={city} value={city} className="text-sm py-2">{city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(newValue) => onChange(newValue)}
+            onCitySelect={(cityData) => {
+              const updates = { [fieldConfig.field_name]: cityData.city || value || '' };
+              if (stateFieldForCity && cityData.state) {
+                updates[stateFieldForCity] = cityData.state;
+              }
+              onChange(updates);
+            }}
+            disabled={effectiveReadOnly}
+            placeholder={fieldConfig.placeholder || 'Start typing a city...'}
+            className="h-10 text-sm"
+          />
         );
 
       case 'county':

@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
+import CityAutocomplete from "../shared/CityAutocomplete";
 import { US_STATES } from "../utils/usStates";
-import { US_CITIES_BY_STATE } from "../utils/usCitiesData";
 import { US_COUNTIES_BY_STATE } from "../utils/usCountiesData";
 import { base44 } from "@/api/base44Client";
 
@@ -81,7 +81,6 @@ export default function AddressGroupInput({ value, onChange, fieldNamePrefix, al
     }
   }, [currentCity, currentState, currentCounty, isReadOnly, countyField, onChange]);
 
-  const cities = currentState ? US_CITIES_BY_STATE[currentState] || [] : [];
   const counties = currentState ? US_COUNTIES_BY_STATE[currentState] || [] : [];
 
   return (
@@ -148,22 +147,21 @@ export default function AddressGroupInput({ value, onChange, fieldNamePrefix, al
 
         <div className="space-y-2">
           <Label>City</Label>
-          <Select
+          <CityAutocomplete
+            id={cityField}
             value={currentCity}
-            onValueChange={(value) => handleFieldChange(cityField, value)}
-            disabled={isReadOnly || !currentState} // Disable if no state selected
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={currentState ? "Select city..." : "Select state first..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {cities.map((city) => (
-                <SelectItem key={city} value={city}>
-                  {city}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(value) => handleFieldChange(cityField, value)}
+            onCitySelect={(cityData) => {
+              const updates = { [cityField]: cityData.city || currentCity };
+              if (cityData.state) {
+                updates[stateField] = cityData.state;
+              }
+              onChange(updates);
+            }}
+            disabled={isReadOnly}
+            placeholder="Start typing a city..."
+            className="h-10 text-sm"
+          />
         </div>
       </div>
 

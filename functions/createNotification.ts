@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
             // Ensure link_url is absolute
             const fullLinkUrl = link_url ? (link_url.startsWith('http') ? link_url : `${appUrl}${link_url}`) : null;
             
-            await base44.asServiceRole.functions.invoke('emailService', {
+            await base44.functions.invoke('emailService', {
               email_type: 'generic_notification',
               recipient_email: recipient.email,
               recipient_name: `${recipient.first_name} ${recipient.last_name}`,

@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
               const appUrl = 'https://loan-portal.amplend.net'; // Hardcoded as per outline
               const viewUrl = `${appUrl}/LoanDetail?id=${loan_id}`;
               
-              await base44.asServiceRole.functions.invoke('emailService', {
+              await base44.functions.invoke('emailService', {
                 email_type: 'loan_status_update',
                 recipient_email: recipient.email,
                 recipient_name: `${recipient.first_name} ${recipient.last_name}`,
