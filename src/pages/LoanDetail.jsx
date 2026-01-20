@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Loan, LoanDocument } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FileText, CheckSquare, DollarSign, Folder, TrendingUp } from "lucide-react";
+import { ArrowLeft, FileText, CheckSquare, Folder, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,7 +15,6 @@ import LoanChecklistTab from "../components/loan-detail/LoanChecklistTab";
 import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
-import LoanCalculatorTab from "../components/loan-detail/LoanCalculatorTab";
 import ClosingScheduleSection from "../components/loan-detail/ClosingScheduleSection";
 
 
@@ -283,7 +282,7 @@ export default function LoanDetail() {
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList data-tour="loan-tabs" className={isLoanPartner ? "grid w-full grid-cols-1 lg:w-auto lg:inline-grid" : "grid w-full grid-cols-5 lg:w-auto lg:inline-grid"}>
+                <TabsList data-tour="loan-tabs" className={isLoanPartner ? "grid w-full grid-cols-1 lg:w-auto lg:inline-grid" : "grid w-full grid-cols-4 lg:w-auto lg:inline-grid"}>
                   <TabsTrigger value="overview" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Overview
@@ -301,10 +300,6 @@ export default function LoanDetail() {
                       <TabsTrigger value="draws" className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4" />
                         Draws
-                      </TabsTrigger>
-                      <TabsTrigger value="calculator" className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4" />
-                        Calculator
                       </TabsTrigger>
                     </>
                   )}
@@ -353,11 +348,6 @@ export default function LoanDetail() {
                       />
                     </TabsContent>
                     
-                    <TabsContent value="calculator" className="space-y-6">
-                      <LoanCalculatorTab 
-                        loan={loan}
-                      />
-                    </TabsContent>
                   </>
                 )}
               </Tabs>
