@@ -527,6 +527,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         sender_id: currentUser.id,
         sender_name: senderName,
         participant_ids: [currentUser.id, messageRecipient.messageUserId],
+        participant_names: [senderName, messageRecipient.displayName],
         content: messageText.trim(),
         loan_id: loan.id,
         loan_number: loan.loan_number || loan.primary_loan_id,

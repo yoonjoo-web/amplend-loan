@@ -118,6 +118,10 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
           sender_id: currentUser.id,
           sender_name: currentUser.full_name || currentUser.email,
           participant_ids: [currentUser.id, selectedUser.id],
+          participant_names: [
+            currentUser.full_name || currentUser.email,
+            selectedUser.full_name || selectedUser.email
+          ],
           content: "👋 Started a conversation",
           read_by: [currentUser.id],
           attachments: []

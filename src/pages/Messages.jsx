@@ -108,6 +108,19 @@ export default function Messages() {
             email: ''
           });
         }
+        if (Array.isArray(msg.participant_ids) && Array.isArray(msg.participant_names)) {
+          msg.participant_ids.forEach((id, index) => {
+            const name = msg.participant_names[index];
+            if (!id || !name || userMap.has(id)) return;
+            userMap.set(id, {
+              id,
+              full_name: name,
+              first_name: name.split(' ')[0] || '',
+              last_name: name.split(' ').slice(1).join(' ') || '',
+              email: ''
+            });
+          });
+        }
       });
       users = Array.from(userMap.values());
     }
@@ -250,6 +263,7 @@ export default function Messages() {
         ? `${currentUser.first_name} ${currentUser.last_name}`
         : currentUser.full_name || currentUser.email,
       participant_ids: activeConversation.participants,
+      participant_names: activeConversation.participants.map(id => getUserName(id)),
       content: messageContent,
       loan_id: activeConversation.loan_id || null,
       loan_number: activeConversation.loan_number || null,
@@ -272,6 +286,7 @@ export default function Messages() {
           ? `${currentUser.first_name} ${currentUser.last_name}`
           : currentUser.full_name || currentUser.email,
         participant_ids: activeConversation.participants,
+        participant_names: activeConversation.participants.map(id => getUserName(id)),
         content: messageContent,
         loan_id: activeConversation.loan_id || null,
         loan_number: activeConversation.loan_number || null,
