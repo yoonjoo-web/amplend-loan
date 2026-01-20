@@ -44,29 +44,30 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         const filteredBorrowers = borrowers.filter(b => !currentBorrowerIds.includes(b.user_id));
         setAllBorrowers(filteredBorrowers);
         
-        // Auto-populate borrower information if user is a borrower and no primary borrower set yet
-        // Check for primary borrower by looking for borrower data, not just ID
-        const hasPrimaryBorrower = applicationData.borrower_first_name || applicationData.borrower_email || applicationData.primary_borrower_id;
-        
-        if (!isReadOnly && user.app_role === 'Borrower' && !hasPrimaryBorrower) {
+        // Auto-populate borrower information for borrowers while completing the application.
+        if (!isReadOnly && user.app_role === 'Borrower') {
           const userBorrower = borrowers.find(b => b.user_id === user.id);
-          if (userBorrower) {
-            const mappedData = syncEntities('Borrower', 'LoanApplication', userBorrower);
-            onUpdate({
-              ...applicationData,
-              primary_borrower_id: user.id,
-              ...mappedData
-            });
-          } else {
-            // If no borrower profile exists, populate from user data
-            onUpdate({
-              ...applicationData,
-              primary_borrower_id: user.id,
-              borrower_first_name: user.first_name || '',
-              borrower_last_name: user.last_name || '',
-              borrower_email: user.email || ''
-            });
+          const mappedData = userBorrower
+            ? syncEntities('Borrower', 'LoanApplication', userBorrower)
+            : {
+                borrower_first_name: user.first_name || '',
+                borrower_last_name: user.last_name || '',
+                borrower_email: user.email || ''
+              };
+
+          const updatedData = { ...applicationData };
+          if (!updatedData.primary_borrower_id) {
+            updatedData.primary_borrower_id = user.id;
           }
+
+          Object.entries(mappedData).forEach(([key, value]) => {
+            const currentValue = updatedData[key];
+            if (currentValue === null || currentValue === undefined || currentValue === '') {
+              updatedData[key] = value;
+            }
+          });
+
+          onUpdate(updatedData);
         }
         
         setIsInitialized(true);
