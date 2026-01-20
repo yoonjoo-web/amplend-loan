@@ -166,8 +166,8 @@ export default function Dashboard() {
         userLoans = loans.filter(l => l.referrer_ids?.includes(currentUser.id));
       }
 
-      const userActiveLoans = userLoans.filter(l => l.status !== 'archived').slice(0, 5);
-      setActiveLoans(userActiveLoans);
+      const userRecentLoans = userLoans.slice(0, 5);
+      setActiveLoans(userRecentLoans);
 
       // Filter applications based on user role
       let userApps = applications || [];
@@ -180,10 +180,8 @@ export default function Dashboard() {
         );
       }
 
-      const userActiveApps = userApps.filter(a =>
-        a.status === 'submitted' || a.status === 'under_review' || a.status === 'draft'
-      ).slice(0, 5);
-      setActiveApplications(userActiveApps);
+      const userRecentApps = userApps.slice(0, 5);
+      setActiveApplications(userRecentApps);
 
       // Get loan IDs for user's loans to fetch tasks
       const userLoanIds = userLoans.map(l => l.id);

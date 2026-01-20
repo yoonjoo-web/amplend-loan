@@ -1,5 +1,5 @@
 /**
- * Entity Sync Helper for Backend Functions
+ *  Sync Helper for Backend Functions
  * Simplified version for use in Deno backend functions
  */
 
