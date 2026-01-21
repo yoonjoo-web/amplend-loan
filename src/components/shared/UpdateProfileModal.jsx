@@ -10,7 +10,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from 'lucide-react';
 
-export default function UpdateProfileModal({ isOpen, onClose, onUpdateProfile, onKeepApplicationOnly, fieldLabel }) {
+export default function UpdateProfileModal({
+  isOpen,
+  onClose,
+  onUpdateProfile,
+  onKeepApplicationOnly,
+  title = 'Update Contact?',
+  description = 'Do you want to also update the underlying contact with this new value?',
+  primaryLabel = 'Yes, Update Contact',
+  secondaryLabel = 'Application Only'
+}) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-6 gap-6">
@@ -19,10 +28,10 @@ export default function UpdateProfileModal({ isOpen, onClose, onUpdateProfile, o
             <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
             </div>
-            <DialogTitle>Update Contact Profile?</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
           </div>
           <DialogDescription className="font-semibold text-sm leading-relaxed">
-            Do you want to also update the underlying contact with this new value?
+            {description}
           </DialogDescription>
         </DialogHeader>
 
@@ -32,10 +41,10 @@ export default function UpdateProfileModal({ isOpen, onClose, onUpdateProfile, o
             onClick={onKeepApplicationOnly}
             className="border-slate-300"
           >
-            Application Only
+            {secondaryLabel}
           </Button>
           <Button onClick={onUpdateProfile} className="bg-blue-600 hover:bg-blue-700">
-            Yes, Update Profile
+            {primaryLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

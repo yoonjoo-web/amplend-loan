@@ -34,6 +34,7 @@ import ReviewActions from "../components/application-review/ReviewActions";
 import FieldCommentModal from "../components/application-review/FieldCommentModal";
 import LoanOfficerReassignModal from "../components/applications/LoanOfficerReassignModal";
 import DynamicFormRenderer from "../components/forms/DynamicFormRenderer";
+import UpdateProfileModal from "../components/shared/UpdateProfileModal";
 
 const allSteps = [
   { id: 1, title: 'Loan Type', component: LoanTypeStep, description: 'Select the type of loan you need' },
@@ -61,6 +62,8 @@ export default function NewApplication() {
   const [allLoanOfficers, setAllLoanOfficers] = useState([]);
   const [overallReviewComment, setOverallReviewComment] = useState('');
   const [primaryBorrowerUser, setPrimaryBorrowerUser] = useState(null);
+  const [showSubmitContactSyncModal, setShowSubmitContactSyncModal] = useState(false);
+  const [pendingSubmitType, setPendingSubmitType] = useState(null);
 
   const { toast } = useToast();
 
@@ -714,7 +717,7 @@ export default function NewApplication() {
     setIsProcessing(false);
   };
 
-  const handleSubmit = async (submitType) => {
+  const submitApplication = async (submitType) => {
     if (isReadOnly) return;
 
     const hasCoBorrowers = formData.has_coborrowers === 'yes' && 
@@ -803,6 +806,25 @@ export default function NewApplication() {
       });
     }
     setIsProcessing(false);
+  };
+
+  const handleSubmit = async (submitType) => {
+    if (isReadOnly) return;
+    const isStaffUser = permissions?.isLoanOfficer || permissions?.isAdministrator || permissions?.isPlatformAdmin;
+    if (isStaffUser) {
+      setPendingSubmitType(submitType);
+      setShowSubmitContactSyncModal(true);
+      return;
+    }
+    await submitApplication(submitType);
+  };
+
+  const handleConfirmSubmit = async () => {
+    const submitType = pendingSubmitType;
+    setShowSubmitContactSyncModal(false);
+    setPendingSubmitType(null);
+    if (!submitType) return;
+    await submitApplication(submitType);
   };
 
   const handleBackNavigation = () => {
@@ -1248,6 +1270,23 @@ export default function NewApplication() {
           field={currentCommentField}
           currentComment={formData.field_comments?.[currentCommentField]}
           onSave={handleSaveComment}
+        />
+
+        <UpdateProfileModal
+          isOpen={showSubmitContactSyncModal}
+          onClose={() => {
+            setShowSubmitContactSyncModal(false);
+            setPendingSubmitType(null);
+          }}
+          onUpdateProfile={handleConfirmSubmit}
+          onKeepApplicationOnly={() => {
+            setShowSubmitContactSyncModal(false);
+            setPendingSubmitType(null);
+          }}
+          title="Confirm Submission?"
+          description="Submit this application now? Contact changes will remain on the application only."
+          primaryLabel="Submit Application"
+          secondaryLabel="Cancel"
         />
 
         {showReassignModal && formData && (

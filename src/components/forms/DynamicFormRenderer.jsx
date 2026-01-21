@@ -179,6 +179,10 @@ export default function DynamicFormRenderer({
     // Check if this is an inherited field from a profile
     const inheritedFields = profileType && profileId ? getInheritedFieldsForProfile(profileType) : [];
     const isInheritedField = inheritedFields.includes(fieldName);
+    const overriddenFields = data.overridden_fields || [];
+    const isAlreadyOverridden = overriddenFields.includes(fieldName);
+    const isObjectUpdate = typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date);
+    const isOverrideOnlyUpdate = isObjectUpdate && Object.keys(value).every(key => key === 'overridden_fields');
     
     console.log('[DynamicFormRenderer] isInheritedField check:', { 
       fieldName, 
@@ -188,14 +192,19 @@ export default function DynamicFormRenderer({
       inheritedFields 
     });
     
-    if (isInheritedField && canOverride && !isReadOnly) {
+    if (isOverrideOnlyUpdate) {
+      onChange({ ...data, ...value });
+      return;
+    }
+
+    if (isInheritedField && canOverride && !isReadOnly && !isAlreadyOverridden) {
       // For admins/loan officers editing inherited field, show modal
       setPendingFieldChange({ fieldName, value, fieldLabel });
       setShowUpdateProfileModal(true);
     } else {
       // For borrowers or non-inherited fields, just update
       const updates = {};
-      if (typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
+      if (isObjectUpdate) {
         Object.assign(updates, value);
       } else {
         updates[fieldName] = value;
@@ -203,7 +212,6 @@ export default function DynamicFormRenderer({
       
       // Track override for inherited fields when changed by any user
       if (isInheritedField) {
-        const overriddenFields = data.overridden_fields || [];
         if (!overriddenFields.includes(fieldName)) {
           console.log('[DynamicFormRenderer] Adding inherited field to overridden_fields:', fieldName);
           updates.overridden_fields = [...overriddenFields, fieldName];
@@ -211,7 +219,6 @@ export default function DynamicFormRenderer({
       }
       
       // Always preserve overridden_fields, and add if this is a manually edited calculated field
-      const overriddenFields = data.overridden_fields || [];
       if (isCalculatedField && !isReadOnly && !overriddenFields.includes(fieldName)) {
         console.log('[DynamicFormRenderer] Adding calculated field to overridden_fields:', fieldName);
         updates.overridden_fields = [...overriddenFields, fieldName];
