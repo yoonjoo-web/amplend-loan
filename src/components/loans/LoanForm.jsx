@@ -23,7 +23,7 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
     term_months: '',
     purpose: '',
     collateral: '',
-    application_date: format(new Date(), 'yyyy-MM-dd'),
+    application_date: '',
     status: 'pending',
     notes: '',
     ...loan

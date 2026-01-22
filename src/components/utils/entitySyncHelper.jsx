@@ -149,6 +149,69 @@ export function mapBorrowerEntityToLoanApplication(entity) {
   return baseMapping;
 }
 
+// ==================== LOAN APPLICATION → BORROWER ====================
+
+export function mapLoanApplicationToBorrower(application, fieldFilter = null) {
+  if (!application) return {};
+
+  const shouldInclude = (fieldName) => !fieldFilter || fieldFilter.includes(fieldName);
+  const mapping = {};
+
+  if (shouldInclude('borrower_first_name')) mapping.first_name = application.borrower_first_name;
+  if (shouldInclude('borrower_last_name')) mapping.last_name = application.borrower_last_name;
+  if (shouldInclude('borrower_email')) mapping.email = application.borrower_email;
+  if (shouldInclude('borrower_phone')) mapping.phone = application.borrower_phone;
+
+  if (shouldInclude('borrower_address_street')) mapping.address_street = application.borrower_address_street;
+  if (shouldInclude('borrower_address_unit')) mapping.address_unit = application.borrower_address_unit;
+  if (shouldInclude('borrower_address_city')) mapping.address_city = application.borrower_address_city;
+  if (shouldInclude('borrower_address_state')) mapping.address_state = application.borrower_address_state;
+  if (shouldInclude('borrower_address_zip')) mapping.address_zip = application.borrower_address_zip;
+
+  if (shouldInclude('borrower_mailing_address_street')) mapping.mailing_address_street = application.borrower_mailing_address_street;
+  if (shouldInclude('borrower_mailing_address_unit')) mapping.mailing_address_unit = application.borrower_mailing_address_unit;
+  if (shouldInclude('borrower_mailing_address_city')) mapping.mailing_address_city = application.borrower_mailing_address_city;
+  if (shouldInclude('borrower_mailing_address_state')) mapping.mailing_address_state = application.borrower_mailing_address_state;
+  if (shouldInclude('borrower_mailing_address_zip')) mapping.mailing_address_zip = application.borrower_mailing_address_zip;
+
+  if (shouldInclude('borrower_date_of_birth')) mapping.date_of_birth = toDateString(application.borrower_date_of_birth);
+  if (shouldInclude('borrower_ssn')) mapping.ssn = application.borrower_ssn;
+  if (shouldInclude('borrower_annual_gross_income')) mapping.annual_gross_income = toNumber(application.borrower_annual_gross_income);
+  if (shouldInclude('borrower_liquidity_amount')) mapping.liquidity_amount = toNumber(application.borrower_liquidity_amount);
+  if (shouldInclude('borrower_rehabs_done_36_months')) mapping.rehabs_done_36_months = toInteger(application.borrower_rehabs_done_36_months);
+  if (shouldInclude('borrower_rentals_owned_36_months')) mapping.rentals_owned_36_months = toInteger(application.borrower_rentals_owned_36_months);
+  if (shouldInclude('borrower_credit_score')) mapping.credit_score = toNumber(application.borrower_credit_score);
+
+  return mapping;
+}
+
+// ==================== LOAN APPLICATION → BORROWER ENTITY ====================
+
+export function mapLoanApplicationToBorrowerEntity(application, fieldFilter = null) {
+  if (!application) return {};
+
+  const shouldInclude = (fieldName) => !fieldFilter || fieldFilter.includes(fieldName);
+  const mapping = {};
+
+  if (shouldInclude('entity_name')) mapping.entity_name = application.entity_name;
+  if (shouldInclude('entity_ein')) mapping.registration_number = application.entity_ein;
+  if (shouldInclude('entity_type')) mapping.entity_type = application.entity_type;
+
+  if (shouldInclude('entity_address_street')) mapping.address_street = application.entity_address_street;
+  if (shouldInclude('entity_address_unit')) mapping.address_unit = application.entity_address_unit;
+  if (shouldInclude('entity_address_city')) mapping.address_city = application.entity_address_city;
+  if (shouldInclude('entity_address_state')) mapping.address_state = application.entity_address_state;
+  if (shouldInclude('entity_address_zip')) mapping.address_zip = application.entity_address_zip;
+
+  if (shouldInclude('entity_mailing_address_street')) mapping.mailing_address_street = application.entity_mailing_address_street;
+  if (shouldInclude('entity_mailing_address_unit')) mapping.mailing_address_unit = application.entity_mailing_address_unit;
+  if (shouldInclude('entity_mailing_address_city')) mapping.mailing_address_city = application.entity_mailing_address_city;
+  if (shouldInclude('entity_mailing_address_state')) mapping.mailing_address_state = application.entity_mailing_address_state;
+  if (shouldInclude('entity_mailing_address_zip_code')) mapping.mailing_address_zip = application.entity_mailing_address_zip_code;
+
+  return mapping;
+}
+
 // ==================== LOAN APPLICATION → LOAN ====================
 
 export function mapLoanApplicationToLoan(application) {

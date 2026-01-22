@@ -18,8 +18,43 @@ export default function UpdateProfileModal({
   title = 'Update Contact?',
   description = 'Do you want to also update the underlying contact with this new value?',
   primaryLabel = 'Yes, Update Contact',
-  secondaryLabel = 'Application Only'
+  secondaryLabel = 'Application Only',
+  actions = null
 }) {
+  const renderActions = () => {
+    if (actions && actions.length > 0) {
+      return (
+        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+          {actions.map((action, index) => (
+            <Button
+              key={action.label || index}
+              variant={action.variant || 'default'}
+              onClick={action.onClick}
+              className={action.className}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </DialogFooter>
+      );
+    }
+
+    return (
+      <DialogFooter className="grid grid-cols-2 gap-3">
+        <Button 
+          variant="outline" 
+          onClick={onKeepApplicationOnly}
+          className="border-slate-300"
+        >
+          {secondaryLabel}
+        </Button>
+        <Button onClick={onUpdateProfile} className="bg-blue-600 hover:bg-blue-700">
+          {primaryLabel}
+        </Button>
+      </DialogFooter>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-6 gap-6">
@@ -35,18 +70,7 @@ export default function UpdateProfileModal({
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            onClick={onKeepApplicationOnly}
-            className="border-slate-300"
-          >
-            {secondaryLabel}
-          </Button>
-          <Button onClick={onUpdateProfile} className="bg-blue-600 hover:bg-blue-700">
-            {primaryLabel}
-          </Button>
-        </DialogFooter>
+        {renderActions()}
       </DialogContent>
     </Dialog>
   );

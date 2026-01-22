@@ -40,8 +40,13 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         setCurrentUser(user);
         
         const borrowers = await base44.entities.Borrower.list();
-        const currentBorrowerIds = [applicationData.primary_borrower_id, ...(applicationData.co_borrowers || []).map(cb => cb.user_id)].filter(Boolean);
-        const filteredBorrowers = borrowers.filter(b => !currentBorrowerIds.includes(b.user_id));
+        const currentBorrowerIds = [
+          applicationData.primary_borrower_id,
+          ...(applicationData.co_borrowers || []).map(cb => cb.user_id || cb.borrower_id)
+        ].filter(Boolean);
+        const filteredBorrowers = borrowers.filter(
+          b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
+        );
         setAllBorrowers(filteredBorrowers);
         
         // Auto-populate borrower information for borrowers while completing the application.
@@ -100,6 +105,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
       // Set the borrower info but mark that invitation is pending
       onUpdate({
         ...applicationData,
+        primary_borrower_id: borrower.id,
         ...mappedData,
         borrower_invitation_status: 'pending'
       });

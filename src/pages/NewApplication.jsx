@@ -35,6 +35,7 @@ import FieldCommentModal from "../components/application-review/FieldCommentModa
 import LoanOfficerReassignModal from "../components/applications/LoanOfficerReassignModal";
 import DynamicFormRenderer from "../components/forms/DynamicFormRenderer";
 import UpdateProfileModal from "../components/shared/UpdateProfileModal";
+import { mapLoanApplicationToBorrower, mapLoanApplicationToBorrowerEntity } from "@/components/utils/entitySyncHelper";
 
 const allSteps = [
   { id: 1, title: 'Loan Type', component: LoanTypeStep, description: 'Select the type of loan you need' },
@@ -819,11 +820,95 @@ export default function NewApplication() {
     await submitApplication(submitType);
   };
 
+  const getOverriddenFieldFilter = () => {
+    const overriddenFields = formData?.overridden_fields || [];
+    return overriddenFields.filter((fieldName) => typeof fieldName === 'string' && !fieldName.includes('['));
+  };
+
+  const resolveBorrowerId = async () => {
+    if (formData?.primary_borrower_id) {
+      const borrowers = await base44.entities.Borrower.filter({ user_id: formData.primary_borrower_id });
+      if (borrowers && borrowers.length > 0) return borrowers[0].id;
+    }
+
+    if (formData?.borrower_email) {
+      const borrowersByEmail = await base44.entities.Borrower.filter({ email: formData.borrower_email });
+      if (borrowersByEmail && borrowersByEmail.length > 0) return borrowersByEmail[0].id;
+    }
+
+    return null;
+  };
+
+  const updateContactFromOverrides = async (target) => {
+    const overriddenFieldFilter = getOverriddenFieldFilter();
+    if (overriddenFieldFilter.length === 0) {
+      return true;
+    }
+
+    try {
+      if (target === 'borrower' || target === 'both') {
+        const borrowerUpdates = mapLoanApplicationToBorrower(formData, overriddenFieldFilter);
+        if (Object.keys(borrowerUpdates).length > 0) {
+          const borrowerId = await resolveBorrowerId();
+          if (!borrowerId) {
+            toast({
+              variant: "destructive",
+              title: "Contact Not Found",
+              description: "Could not find the borrower contact to update.",
+            });
+            return false;
+          }
+          await base44.entities.Borrower.update(borrowerId, borrowerUpdates);
+        }
+      }
+
+      if (target === 'entity' || target === 'both') {
+        const entityUpdates = mapLoanApplicationToBorrowerEntity(formData, overriddenFieldFilter);
+        if (Object.keys(entityUpdates).length > 0) {
+          if (!formData?.borrower_entity_id) {
+            toast({
+              variant: "destructive",
+              title: "Contact Not Found",
+              description: "Could not find the entity contact to update.",
+            });
+            return false;
+          }
+          await base44.entities.BorrowerEntity.update(formData.borrower_entity_id, entityUpdates);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating contact from overrides:', error);
+      toast({
+        variant: "destructive",
+        title: "Contact Update Failed",
+        description: "Could not update the selected contact. Please try again.",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleConfirmSubmit = async () => {
     const submitType = pendingSubmitType;
     setShowSubmitContactSyncModal(false);
     setPendingSubmitType(null);
     if (!submitType) return;
+    await submitApplication(submitType);
+  };
+
+  const handleSubmitWithContactUpdate = async (target) => {
+    const submitType = pendingSubmitType;
+    setShowSubmitContactSyncModal(false);
+    setPendingSubmitType(null);
+    if (!submitType) return;
+
+    setIsProcessing(true);
+    const didUpdate = await updateContactFromOverrides(target);
+    if (!didUpdate) {
+      setIsProcessing(false);
+      return;
+    }
     await submitApplication(submitType);
   };
 
@@ -1284,9 +1369,26 @@ export default function NewApplication() {
             setPendingSubmitType(null);
           }}
           title="Confirm Submission?"
-          description="Submit this application now? Contact changes will remain on the application only."
-          primaryLabel="Submit Application"
-          secondaryLabel="Cancel"
+          description="Choose whether to update contacts before submitting this application."
+          actions={[
+            {
+              label: "Update Borrower Contact + Submit",
+              onClick: () => handleSubmitWithContactUpdate('borrower'),
+            },
+            {
+              label: "Update Entity Contact + Submit",
+              onClick: () => handleSubmitWithContactUpdate('entity'),
+            },
+            {
+              label: "Update Both Contacts + Submit",
+              onClick: () => handleSubmitWithContactUpdate('both'),
+            },
+            {
+              label: "Submit Without Updating",
+              variant: "outline",
+              onClick: handleConfirmSubmit,
+            },
+          ]}
         />
 
         {showReassignModal && formData && (

@@ -179,8 +179,13 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
     const loadBorrowers = async () => {
       try {
         const borrowers = await base44.entities.Borrower.list();
-        const currentBorrowerIds = [data.primary_borrower_id, ...coBorrowers.map(cb => cb.user_id)].filter(Boolean);
-        const filtered = borrowers.filter(b => !currentBorrowerIds.includes(b.user_id));
+        const currentBorrowerIds = [
+          data.primary_borrower_id,
+          ...coBorrowers.map(cb => cb.user_id || cb.borrower_id)
+        ].filter(Boolean);
+        const filtered = borrowers.filter(
+          b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
+        );
         setAllBorrowers(filtered);
       } catch (error) {
         console.error('Error loading borrowers:', error);
