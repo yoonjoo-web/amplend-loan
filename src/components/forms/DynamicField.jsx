@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, AlertCircle, AlertTriangle, HelpCircle, Info, Search } from 'lucide-react';
+import { format } from "date-fns";
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
 import CityAutocomplete from "../shared/CityAutocomplete";
 import { US_STATES } from "../utils/usStates";
@@ -33,6 +35,7 @@ import { evaluateFormula } from "../utils/formulaEvaluator";
 import { LoanPartner } from "@/entities/all";
 import { RotateCcw } from 'lucide-react';
 import FieldChangeIndicator from "../application-steps/FieldChangeIndicator";
+import { cn } from "@/lib/utils";
 
 // Formatting functions
 function formatPhoneNumber(value) {
@@ -93,6 +96,19 @@ function parseCurrency(value) {
   const cleaned = String(value).replace(/[^\d.]/g, '');
   const number = parseFloat(cleaned);
   return isNaN(number) ? null : number;
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.split('T')[0];
+    const parsed = new Date(`${normalized}T00:00:00`);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
 }
 
 function formatOptionLabel(option) {
@@ -766,16 +782,48 @@ export default function DynamicField({
         );
 
       case 'date':
+        const selectedDate = parseDateValue(value);
+        const datePlaceholder = fieldConfig.placeholder || 'MM/DD/YYYY';
+        const displayDate = selectedDate ? format(selectedDate, 'MM/dd/yyyy') : '';
+
         return (
-          <Input
-            type="date"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="MM/DD/YYYY"
-            disabled={effectiveReadOnly}
-            required={fieldConfig.required}
-            className="h-10 text-sm"
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={effectiveReadOnly}
+                className={cn(
+                  "h-10 w-full justify-start text-left text-sm font-normal",
+                  !displayDate && "text-muted-foreground"
+                )}
+              >
+                {displayDate || datePlaceholder}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="p-3">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                  initialFocus
+                />
+                {!effectiveReadOnly && displayDate && (
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onChange('')}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         );
 
       case 'datetime':
