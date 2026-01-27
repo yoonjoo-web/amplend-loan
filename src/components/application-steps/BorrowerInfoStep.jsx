@@ -127,7 +127,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
           first_name: selectedBorrowerToLink.first_name,
           last_name: selectedBorrowerToLink.last_name,
           application_number: applicationData.application_number,
-          application_id: applicationData.id,
+          application_id: applicationData.id || applicationData.application_id,
           role: 'Borrower'
         }
       });
