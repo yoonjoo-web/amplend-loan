@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
         ],
         cta_text: 'Complete Your Account Setup',
         cta_url: data.application_number 
-          ? `${appUrl}/Onboarding?app_role=Borrower&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}&next=${encodeURIComponent(`${appUrl}/NewApplication?id=${data.application_id || ''}&action=view`)}`
-          : `${appUrl}/Onboarding?app_role=Borrower&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}`,
+          ? `${appUrl}/Onboarding?app_role=${encodeURIComponent(data.role || 'Borrower')}&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}${data.application_id ? `&next=${encodeURIComponent(`${appUrl}/NewApplication?id=${data.application_id}&action=view`)}` : ''}`
+          : `${appUrl}/Onboarding?app_role=${encodeURIComponent(data.role || 'Borrower')}&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}`,
         cta_note: data.application_number 
           ? `You are being invited as ${data.role || 'Borrower'} for Application #${data.application_number}. Click the button above to sign in or create your account.`
           : 'Click the button above to sign in or create your account.'
