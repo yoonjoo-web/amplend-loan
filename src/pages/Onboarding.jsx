@@ -33,11 +33,14 @@ export default function Onboarding() {
       
       // Read URL params before any async operations to ensure they're captured
       const params = new URLSearchParams(window.location.search);
-      const requestedFirstName = params.get('requested_first_name');
-      const requestedLastName = params.get('requested_last_name');
-      const firstNameFromUrl = params.get('first_name');
-      const lastNameFromUrl = params.get('last_name');
-      const roleFromUrl = params.get('app_role') || params.get('role');
+      const storedQueryParams = sessionStorage.getItem('onboardingQueryParams');
+      const storedParams = storedQueryParams ? new URLSearchParams(storedQueryParams) : null;
+      const getParam = (key) => params.get(key) || (storedParams ? storedParams.get(key) : null);
+      const requestedFirstName = getParam('requested_first_name');
+      const requestedLastName = getParam('requested_last_name');
+      const firstNameFromUrl = getParam('first_name');
+      const lastNameFromUrl = getParam('last_name');
+      const roleFromUrl = getParam('app_role') || getParam('role');
       
       // Priority: requested_first_name > first_name > user.first_name
       const firstName = requestedFirstName || firstNameFromUrl || user.first_name || '';
@@ -52,6 +55,13 @@ export default function Onboarding() {
 
       // Only redirect if user already has both names set AND no URL params provided
       if (user.first_name && user.last_name && !requestedFirstName && !requestedLastName && !firstNameFromUrl && !lastNameFromUrl) {
+        const storedRedirect = sessionStorage.getItem('postOnboardingRedirect');
+        if (storedRedirect) {
+          sessionStorage.removeItem('postOnboardingRedirect');
+          sessionStorage.removeItem('onboardingQueryParams');
+          window.location.href = storedRedirect;
+          return;
+        }
         window.location.href = createPageUrl('Dashboard');
         return;
       }
@@ -93,7 +103,9 @@ export default function Onboarding() {
     setIsProcessing(true);
     try {
       const params = new URLSearchParams(window.location.search);
-      const roleFromUrl = params.get('app_role') || params.get('role');
+      const storedQueryParams = sessionStorage.getItem('onboardingQueryParams');
+      const storedParams = storedQueryParams ? new URLSearchParams(storedQueryParams) : null;
+      const roleFromUrl = params.get('app_role') || params.get('role') || (storedParams ? storedParams.get('app_role') || storedParams.get('role') : null);
       
       const updateData = {
         first_name: formData.first_name.trim(),
@@ -140,7 +152,12 @@ export default function Onboarding() {
         });
       }
 
-      const nextUrl = params.get('next');
+      const storedRedirect = sessionStorage.getItem('postOnboardingRedirect');
+      const nextUrl = params.get('next') || (storedParams ? storedParams.get('next') : null) || storedRedirect;
+      if (storedRedirect) {
+        sessionStorage.removeItem('postOnboardingRedirect');
+        sessionStorage.removeItem('onboardingQueryParams');
+      }
       if (nextUrl) {
         window.location.href = nextUrl;
       } else {

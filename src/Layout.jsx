@@ -95,6 +95,11 @@ export default function Layout({ children, currentPageName }) {
       // Redirect to onboarding if needed and not already there
       if (needsOnboarding && !isOnOnboardingPage) {
         const nextSearch = location.search || '';
+        const redirectPath = `${location.pathname}${nextSearch}`;
+        sessionStorage.setItem('postOnboardingRedirect', redirectPath);
+        if (nextSearch) {
+          sessionStorage.setItem('onboardingQueryParams', nextSearch);
+        }
         window.location.href = `${createPageUrl('Onboarding')}${nextSearch}`;
         return;
       }
