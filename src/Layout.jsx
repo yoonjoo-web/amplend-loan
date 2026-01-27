@@ -94,7 +94,8 @@ export default function Layout({ children, currentPageName }) {
       
       // Redirect to onboarding if needed and not already there
       if (needsOnboarding && !isOnOnboardingPage) {
-        window.location.href = createPageUrl('Onboarding');
+        const nextSearch = location.search || '';
+        window.location.href = `${createPageUrl('Onboarding')}${nextSearch}`;
         return;
       }
       
