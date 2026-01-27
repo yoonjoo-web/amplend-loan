@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
       data = {}
     } = body;
 
-
     if (!email_type || !recipient_email) {
       return Response.json({ 
         error: 'email_type and recipient_email are required' 
