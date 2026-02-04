@@ -205,41 +205,41 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
       };
       onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
       
-      // Send email notification
-      try {
-        const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
-        await base44.functions.invoke('emailService', {
-          email_type: 'invite_co_borrower',
-          recipient_email: borrower.email,
-          recipient_name: `${borrower.first_name} ${borrower.last_name}`,
-          data: {
-            first_name: borrower.first_name,
-            last_name: borrower.last_name,
-            inviter_name: borrowerName,
-            application_number: data.application_number,
-            application_id: data.id,
-            role: 'Co-Borrower'
-          }
-        });
-      } catch (emailError) {
-        console.log('Could not send email notification:', emailError);
-      }
+      // TEMPORARILY DISABLED: Send email notification
+      // try {
+      //   const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
+      //   await base44.functions.invoke('emailService', {
+      //     email_type: 'invite_co_borrower',
+      //     recipient_email: borrower.email,
+      //     recipient_name: `${borrower.first_name} ${borrower.last_name}`,
+      //     data: {
+      //       first_name: borrower.first_name,
+      //       last_name: borrower.last_name,
+      //       inviter_name: borrowerName,
+      //       application_number: data.application_number,
+      //       application_id: data.id,
+      //       role: 'Co-Borrower'
+      //     }
+      //   });
+      // } catch (emailError) {
+      //   console.log('Could not send email notification:', emailError);
+      // }
 
-      // Create in-app notification
-      try {
-        const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
-        await base44.entities.Notification.create({
-          user_id: borrower.user_id,
-          message: `You have been added as a co-borrower to application #${data.application_number} by ${borrowerName}`,
-          type: 'other',
-          entity_type: 'LoanApplication',
-          entity_id: data.id,
-          link_url: `/new-application?id=${data.id}`,
-          priority: 'high'
-        });
-      } catch (notifError) {
-        console.log('Could not create in-app notification:', notifError);
-      }
+      // TEMPORARILY DISABLED: Create in-app notification
+      // try {
+      //   const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
+      //   await base44.entities.Notification.create({
+      //     user_id: borrower.user_id,
+      //     message: `You have been added as a co-borrower to application #${data.application_number} by ${borrowerName}`,
+      //     type: 'other',
+      //     entity_type: 'LoanApplication',
+      //     entity_id: data.id,
+      //     link_url: `/new-application?id=${data.id}`,
+      //     priority: 'high'
+      //   });
+      // } catch (notifError) {
+      //   console.log('Could not create in-app notification:', notifError);
+      // }
       
       toast({
         title: "Co-Borrower Added",
@@ -255,32 +255,33 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
     if (!selectedBorrowerToLink) return;
 
     try {
-      await base44.functions.invoke('emailService', {
-        email_type: 'invite_co_borrower',
-        recipient_email: selectedBorrowerToLink.email,
-        recipient_name: `${selectedBorrowerToLink.first_name} ${selectedBorrowerToLink.last_name}`,
-        data: {
-          first_name: selectedBorrowerToLink.first_name,
-          last_name: selectedBorrowerToLink.last_name,
-          application_number: data.application_number,
-          application_id: data.id,
-          role: 'Co-Borrower'
-        }
-      });
+      // TEMPORARILY DISABLED: Email invitation
+      // await base44.functions.invoke('emailService', {
+      //   email_type: 'invite_co_borrower',
+      //   recipient_email: selectedBorrowerToLink.email,
+      //   recipient_name: `${selectedBorrowerToLink.first_name} ${selectedBorrowerToLink.last_name}`,
+      //   data: {
+      //     first_name: selectedBorrowerToLink.first_name,
+      //     last_name: selectedBorrowerToLink.last_name,
+      //     application_number: data.application_number,
+      //     application_id: data.id,
+      //     role: 'Co-Borrower'
+      //   }
+      // });
 
       toast({
-        title: "Invitation Sent",
-        description: `Invitation sent to ${selectedBorrowerToLink.email} to link their account.`
+        title: "Co-Borrower Added",
+        description: `${selectedBorrowerToLink.email} has been added (invitation temporarily disabled).`
       });
 
       setShowInviteLinkDialog(false);
       setSelectedBorrowerToLink(null);
     } catch (error) {
-      console.error('Error sending link invitation:', error);
+      console.error('Error adding co-borrower:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to send invitation. Please try again."
+        description: "Failed to add co-borrower. Please try again."
       });
     }
   };
@@ -289,42 +290,43 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
     e.preventDefault();
 
     try {
-      const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
+      // TEMPORARILY DISABLED: Email and notification sending
+      // const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
 
-      // Send email notification
-      await base44.functions.invoke('emailService', {
-        email_type: 'invite_co_borrower',
-        recipient_email: inviteData.requested_email,
-        recipient_name: `${inviteData.requested_first_name} ${inviteData.requested_last_name}`,
-        data: {
-          first_name: inviteData.requested_first_name,
-          last_name: inviteData.requested_last_name,
-          inviter_name: borrowerName,
-          application_number: data.application_number,
-          application_id: data.id,
-          role: 'Co-Borrower'
-        }
-      });
+      // // Send email notification
+      // await base44.functions.invoke('emailService', {
+      //   email_type: 'invite_co_borrower',
+      //   recipient_email: inviteData.requested_email,
+      //   recipient_name: `${inviteData.requested_first_name} ${inviteData.requested_last_name}`,
+      //   data: {
+      //     first_name: inviteData.requested_first_name,
+      //     last_name: inviteData.requested_last_name,
+      //     inviter_name: borrowerName,
+      //     application_number: data.application_number,
+      //     application_id: data.id,
+      //     role: 'Co-Borrower'
+      //   }
+      // });
 
-      // Create in-app notification for the co-borrower (if they have an account)
-      try {
-        const allUsers = await base44.entities.User.list();
-        const coBorrowerUser = allUsers.find(u => u.email?.toLowerCase() === inviteData.requested_email.toLowerCase());
-        
-        if (coBorrowerUser) {
-          await base44.entities.Notification.create({
-            user_id: coBorrowerUser.id,
-            message: `You have been added as a co-borrower to application #${data.application_number} by ${borrowerName}`,
-            type: 'other',
-            entity_type: 'LoanApplication',
-            entity_id: data.id,
-            link_url: `/new-application?id=${data.id}`,
-            priority: 'high'
-          });
-        }
-      } catch (notifError) {
-        console.log('Could not create in-app notification:', notifError);
-      }
+      // // Create in-app notification for the co-borrower (if they have an account)
+      // try {
+      //   const allUsers = await base44.entities.User.list();
+      //   const coBorrowerUser = allUsers.find(u => u.email?.toLowerCase() === inviteData.requested_email.toLowerCase());
+      //   
+      //   if (coBorrowerUser) {
+      //     await base44.entities.Notification.create({
+      //       user_id: coBorrowerUser.id,
+      //       message: `You have been added as a co-borrower to application #${data.application_number} by ${borrowerName}`,
+      //       type: 'other',
+      //       entity_type: 'LoanApplication',
+      //       entity_id: data.id,
+      //       link_url: `/new-application?id=${data.id}`,
+      //       priority: 'high'
+      //     });
+      //   }
+      // } catch (notifError) {
+      //   console.log('Could not create in-app notification:', notifError);
+      // }
 
       const newCoBorrower = {
         id: `temp_${Date.now()}`,
@@ -336,8 +338,8 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
       onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
 
       toast({
-        title: "Invitation Sent",
-        description: `An invitation is sent to ${inviteData.requested_first_name} ${inviteData.requested_last_name}`,
+        title: "Co-Borrower Added",
+        description: `${inviteData.requested_first_name} ${inviteData.requested_last_name} has been added (invitation temporarily disabled).`,
       });
 
       setShowInviteModal(false);
@@ -347,11 +349,11 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         requested_last_name: ''
       });
     } catch (error) {
-      console.error('Error inviting co-borrower:', error);
+      console.error('Error adding co-borrower:', error);
       toast({
         variant: "destructive",
-        title: "Invitation Failed",
-        description: "Failed to send invitation. Please try again.",
+        title: "Error",
+        description: "Failed to add co-borrower. Please try again.",
       });
     }
   };
