@@ -46,11 +46,15 @@ const CoBorrowerForm = ({ coBorrower, index, onUpdate, onRemove, isReadOnly, can
   }, [loadFieldConfigurations]);
 
   const handleFieldChange = (fieldName, value) => {
+    const updatedCoBorrower = { ...coBorrower };
+    
     if (typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
-      onUpdate(index, { ...coBorrower, ...value });
+      Object.assign(updatedCoBorrower, value);
     } else {
-      onUpdate(index, { ...coBorrower, [fieldName]: value });
+      updatedCoBorrower[fieldName] = value;
     }
+    
+    onUpdate(index, updatedCoBorrower);
   };
 
   // Group fields by section
