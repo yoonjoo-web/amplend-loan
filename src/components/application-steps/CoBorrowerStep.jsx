@@ -134,6 +134,9 @@ const CoBorrowerForm = ({ coBorrower, index, onUpdate, onRemove, isReadOnly, can
                           allFieldValues={coBorrower}
                           isReadOnly={isReadOnly || (coBorrower.user_id && !isThisCoBorrower && !canManage)}
                           canManage={canManage}
+                          profileType="borrower"
+                          profileId={coBorrower.user_id}
+                          overriddenFields={coBorrower.overridden_fields || []}
                         />
                       </div>
                     );

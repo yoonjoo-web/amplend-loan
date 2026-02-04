@@ -24,13 +24,17 @@ export default function UpdateProfileModal({
   const renderActions = () => {
     if (actions && actions.length > 0) {
       return (
-        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+        <DialogFooter className="flex flex-col gap-3 pt-6 border-t border-slate-200">
           {actions.map((action, index) => (
             <Button
               key={action.label || index}
               variant={action.variant || 'default'}
               onClick={action.onClick}
-              className={action.className}
+              className={`h-12 text-base font-medium transition-all ${action.className || ''} ${
+                action.variant === 'outline' 
+                  ? 'border-2 hover:bg-slate-50' 
+                  : 'shadow-md hover:shadow-lg'
+              }`}
             >
               {action.label}
             </Button>
@@ -40,15 +44,18 @@ export default function UpdateProfileModal({
     }
 
     return (
-      <DialogFooter className="grid grid-cols-2 gap-3">
+      <DialogFooter className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200">
         <Button 
           variant="outline" 
           onClick={onKeepApplicationOnly}
-          className="border-slate-300"
+          className="h-12 border-2 hover:bg-slate-50 font-medium"
         >
           {secondaryLabel}
         </Button>
-        <Button onClick={onUpdateProfile} className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          onClick={onUpdateProfile} 
+          className="h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg font-medium"
+        >
           {primaryLabel}
         </Button>
       </DialogFooter>
@@ -57,17 +64,19 @@ export default function UpdateProfileModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6 gap-6">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+      <DialogContent className="max-w-xl">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+              <AlertTriangle className="w-6 h-6 text-white" />
             </div>
-            <DialogTitle>{title}</DialogTitle>
+            <div className="flex-1">
+              <DialogTitle className="text-xl font-semibold text-slate-900">{title}</DialogTitle>
+              <DialogDescription className="text-slate-600 mt-2 text-base leading-relaxed">
+                {description}
+              </DialogDescription>
+            </div>
           </div>
-          <DialogDescription className="font-semibold text-sm leading-relaxed">
-            {description}
-          </DialogDescription>
         </DialogHeader>
 
         {renderActions()}
