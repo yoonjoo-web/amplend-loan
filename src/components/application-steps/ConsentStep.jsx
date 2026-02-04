@@ -10,7 +10,7 @@ import { FileText, PenTool, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import FieldChangeIndicator from "./FieldChangeIndicator";
 
-export default React.memo(function ConsentStep({ data, onChange, isReadOnly, borrowerData, onSubmit, isProcessing, isCoBorrowerConsent = false, coBorrowerUserId = null }) {
+export default React.memo(function ConsentStep({ data, onChange, isReadOnly, borrowerData, onSubmit, isProcessing, isCoBorrowerConsent = false, coBorrowerUserId = null, canManage = false }) {
   const { toast } = useToast();
   const hasInitialized = useRef(false);
 
@@ -95,7 +95,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
   }, [data, isReadOnly, isCoBorrowerConsent, coBorrowerData]);
 
   const handleDeclarationChange = (key, value) => {
-    if (isReadOnly) return;
+    if (isReadOnly && !canManage) return;
 
     switch (key) {
       case 'outstanding_judgments':setOutstandingJudgments(value);break;
@@ -126,7 +126,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
   };
 
   const handleAcknowledgementChange = (checked) => {
-    if (isReadOnly) return;
+    if (isReadOnly && !canManage) return;
     setAcknowledgementAgreed(checked);
     
     if (isCoBorrowerConsent && coBorrowerUserId && data?.co_borrowers) {
@@ -144,7 +144,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
   };
 
   const handleAuthorizationChange = (checked) => {
-    if (isReadOnly) return;
+    if (isReadOnly && !canManage) return;
     setAuthorizationAgreed(checked);
     
     if (isCoBorrowerConsent && coBorrowerUserId && data?.co_borrowers) {
@@ -162,7 +162,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
   };
 
   const handleEsignatureChange = (e) => {
-    if (isReadOnly) return;
+    if (isReadOnly && !canManage) return;
     const value = e.target.value;
     setEsignature(value);
     setSignatureError('');
@@ -254,7 +254,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
           value={value}
           onValueChange={(val) => onChangeHandler(questionKey, val)}
           className="flex space-x-6"
-          disabled={isReadOnly}>
+          disabled={isReadOnly && !canManage}>
 
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="yes" id={`${questionKey}-yes`} />
@@ -369,7 +369,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               id="acknowledgement"
               checked={acknowledgementAgreed}
               onCheckedChange={handleAcknowledgementChange}
-              disabled={isReadOnly} />
+              disabled={isReadOnly && !canManage} />
 
             <div className="flex-1">
               <Label htmlFor="acknowledgement" className="text-sm leading-relaxed cursor-pointer font-medium">
@@ -410,7 +410,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               id="authorization"
               checked={authorizationAgreed}
               onCheckedChange={handleAuthorizationChange}
-              disabled={isReadOnly} />
+              disabled={isReadOnly && !canManage} />
 
             <div className="flex-1">
               <Label htmlFor="authorization" className="text-sm leading-relaxed cursor-pointer font-medium">
@@ -437,7 +437,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
             onChange={(e) => onChange({ notes: e.target.value })}
             placeholder="Add any additional comments, questions, or information here..."
             className="h-32 resize-none"
-            readOnly={isReadOnly} />
+            readOnly={isReadOnly && !canManage} />
 
         </CardContent>
       </Card>
@@ -465,7 +465,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               placeholder="John Smith"
               value={esignature}
               onChange={handleEsignatureChange}
-              disabled={isReadOnly}
+              disabled={isReadOnly && !canManage}
               className="font-serif text-lg" />
 
             {signatureError && <p className="text-red-500 text-sm">{signatureError}</p>}

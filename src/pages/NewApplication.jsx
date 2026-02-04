@@ -721,12 +721,15 @@ export default function NewApplication() {
   const submitApplication = async (submitType) => {
     if (isReadOnly) return;
 
+    // TEMPORARY: Allow staff to bypass co-borrower signature check
+    const isStaff = permissions?.isLoanOfficer || permissions?.isAdministrator || permissions?.isPlatformAdmin;
+
     const hasCoBorrowers = formData.has_coborrowers === 'yes' && 
                            formData.co_borrowers && 
                            formData.co_borrowers.length > 0;
 
-    // Check if all co-borrowers have signed their consent
-    if (hasCoBorrowers) {
+    // Check if all co-borrowers have signed their consent (skip check for staff)
+    if (hasCoBorrowers && !isStaff) {
       const allCoBorrowersSigned = formData.co_borrowers.every(cb => cb.esignature && cb.esignature.trim() !== '');
       
       if (!allCoBorrowersSigned) {
@@ -1075,6 +1078,7 @@ export default function NewApplication() {
         props.borrowerData = formData;
         props.onSubmit = handleSubmit;
         props.isProcessing = isProcessing;
+        props.canManage = canManage;
         
         // For co-borrowers, they sign their own consent
         if (isCoBorrowerViewing) {
