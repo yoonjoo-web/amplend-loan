@@ -255,6 +255,16 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
     if (!selectedBorrowerToLink) return;
 
     try {
+      // Add the borrower to the application
+      const mappedData = syncEntities('Borrower', 'LoanApplication', selectedBorrowerToLink);
+      const newCoBorrower = {
+        id: `temp_${Date.now()}`,
+        borrower_id: selectedBorrowerToLink.id,
+        ...mappedData,
+        completion_status: 'pending'
+      };
+      onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
+
       // TEMPORARILY DISABLED: Email invitation
       // await base44.functions.invoke('emailService', {
       //   email_type: 'invite_co_borrower',
@@ -271,7 +281,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
 
       toast({
         title: "Co-Borrower Added",
-        description: `${selectedBorrowerToLink.email} has been added (invitation temporarily disabled).`
+        description: `${selectedBorrowerToLink.first_name} ${selectedBorrowerToLink.last_name} has been added (invitation temporarily disabled).`
       });
 
       setShowInviteLinkDialog(false);
