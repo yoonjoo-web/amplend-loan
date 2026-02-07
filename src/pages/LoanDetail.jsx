@@ -15,7 +15,6 @@ import LoanChecklistTab from "../components/loan-detail/LoanChecklistTab";
 import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
-import ClosingScheduleSection from "../components/loan-detail/ClosingScheduleSection";
 
 
 export default function LoanDetail() {
@@ -312,11 +311,6 @@ export default function LoanDetail() {
                     currentUser={currentUser}
                     allLoanOfficers={allLoanOfficers}
                     onLoanChange={() => setHasUnsavedChanges(true)}
-                  />
-                  <ClosingScheduleSection
-                    loan={loan}
-                    onUpdate={handleLoanUpdate}
-                    currentUser={currentUser}
                   />
                 </TabsContent>
 

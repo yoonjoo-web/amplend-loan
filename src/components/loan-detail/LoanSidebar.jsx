@@ -12,6 +12,7 @@ import { Message } from "@/entities/all";
 import TeamManagementModal from "./TeamManagementModal";
 import VersionHistoryModal from "./VersionHistoryModal";
 import LoanContactsSection from "./LoanContactsSection";
+import ClosingScheduleSection from "./ClosingScheduleSection";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -713,6 +714,12 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             </div>
           </CardContent>
         </Card>
+
+        <ClosingScheduleSection
+          loan={loan}
+          onUpdate={onUpdate}
+          currentUser={currentUser}
+        />
 
         {/* Loan Contacts */}
         <LoanContactsSection loan={loan} onUpdate={onUpdate} readOnly={!canManage} />
