@@ -52,7 +52,6 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
     user_id: '',
     first_name: '',
     last_name: '',
-    type: 'individual',
     borrower_type: 'individual',
     email: '',
     phone: '',
@@ -180,8 +179,7 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
     e.preventDefault();
 
     const cleanedData = { ...formData };
-    cleanedData.type = cleanedData.type || cleanedData.borrower_type || 'individual';
-    cleanedData.borrower_type = cleanedData.borrower_type || cleanedData.type || 'individual';
+    cleanedData.borrower_type = cleanedData.borrower_type || 'individual';
 
     // Convert empty strings to null for numeric fields
     ['rehabs_done_36_months', 'rentals_owned_36_months', 'credit_score'].forEach(field => {
@@ -408,11 +406,8 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
             <div className="space-y-2">
               <Label htmlFor="borrower_type">Borrower Type</Label>
               <Select
-                value={formData.type || formData.borrower_type || 'individual'}
-                onValueChange={(value) => {
-                  handleInputChange('type', value);
-                  handleInputChange('borrower_type', value);
-                }}
+                value={formData.borrower_type || 'individual'}
+                onValueChange={(value) => handleInputChange('borrower_type', value)}
               >
                 <SelectTrigger id="borrower_type">
                   <SelectValue placeholder="Select borrower type" />

@@ -505,13 +505,8 @@ export default function ContactDetail() {
 
   const handleEditContactInfo = () => {
     const nextData = { ...contact };
-    if (contactType === 'borrower' && !nextData.type && !nextData.borrower_type) {
-      nextData.type = 'individual';
+    if (contactType === 'borrower' && !nextData.borrower_type) {
       nextData.borrower_type = 'individual';
-    } else if (contactType === 'borrower') {
-      const normalizedType = getBorrowerContactTypeValue(nextData);
-      nextData.type = normalizedType;
-      nextData.borrower_type = normalizedType;
     }
     setEditedContactData(nextData);
     setIsEditingContactInfo(true);
@@ -820,8 +815,8 @@ export default function ContactDetail() {
       setEditedContactData(prev => ({ ...prev, [field]: formatted.replace(/\D/g, '') }));
       return;
     }
-    if (contactType === 'borrower' && field === 'type') {
-      setEditedContactData(prev => ({ ...prev, type: value, borrower_type: value }));
+    if (contactType === 'borrower' && field === 'borrower_type') {
+      setEditedContactData(prev => ({ ...prev, borrower_type: value }));
       return;
     }
     setEditedContactData(prev => ({ ...prev, [field]: value }));
@@ -964,7 +959,7 @@ export default function ContactDetail() {
       case 'borrower':
         return {
           name: `${contact.first_name} ${contact.last_name}`,
-          subtitle: formatBorrowerContactType(getBorrowerContactTypeValue(contact)),
+          subtitle: formatBorrowerContactType(contact.borrower_type),
           icon: Users,
           iconColor: 'bg-blue-500'
         };
@@ -1008,10 +1003,6 @@ export default function ContactDetail() {
       return specialLabels[fieldKey];
     }
     return fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const getBorrowerContactTypeValue = (contactData) => {
-    return contactData?.type || contactData?.borrower_type || 'individual';
   };
 
   const formatBorrowerContactType = (value) => {
@@ -1729,8 +1720,8 @@ export default function ContactDetail() {
                         <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Borrower Type</Label>
                         {isEditingContactInfo ? (
                           <Select
-                            value={getBorrowerContactTypeValue(editedContactData)}
-                            onValueChange={(value) => handleContactFieldChange('type', value)}
+                            value={editedContactData.borrower_type || 'individual'}
+                            onValueChange={(value) => handleContactFieldChange('borrower_type', value)}
                           >
                             <SelectTrigger className="h-8 text-sm mt-0.5">
                               <SelectValue placeholder="Select type" />
@@ -1742,7 +1733,7 @@ export default function ContactDetail() {
                           </Select>
                         ) : (
                           <p className="text-sm text-slate-900 font-medium mt-0.5">
-                            {formatBorrowerContactType(contact.type)}
+                            {formatBorrowerContactType(contact.borrower_type)}
                           </p>
                         )}
                       </div>

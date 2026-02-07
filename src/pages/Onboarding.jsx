@@ -116,8 +116,7 @@ export default function Onboarding() {
           user_id: currentUser.id,
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim(),
-          type: borrowers[0].type || borrowers[0].borrower_type || 'individual',
-          borrower_type: borrowers[0].borrower_type || borrowers[0].type || 'individual'
+          borrower_type: borrowers[0].borrower_type || 'individual'
         });
       } else if (roleFromUrl === 'Borrower') {
         await base44.entities.Borrower.create({
@@ -125,7 +124,6 @@ export default function Onboarding() {
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim(),
           email: email,
-          type: 'individual',
           borrower_type: 'individual'
         });
       }

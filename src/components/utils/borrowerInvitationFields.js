@@ -30,6 +30,11 @@ export const getBorrowerInvitationFields = async (base44) => {
       const dateField = DATE_FIELD_CANDIDATES.find((key) => keys.includes(key)) || null;
       const statusField = STATUS_FIELD_CANDIDATES.find((key) => keys.includes(key)) || null;
 
+      // If fields are missing, don't cache so later calls can re-check after schema updates.
+      if (!dateField && !statusField) {
+        cachedFieldsPromise = null;
+      }
+
       return { dateField, statusField };
     } catch (error) {
       console.error('[borrowerInvitationFields] Failed to load borrower schema:', error);
