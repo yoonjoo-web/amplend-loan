@@ -125,6 +125,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     console.log('loan.loan_officer_ids:', loan.loan_officer_ids);
     console.log('loan.guarantor_ids:', loan.guarantor_ids);
     console.log('loan.referrer_ids:', loan.referrer_ids);
+    console.log('loan.liaison_ids:', loan.liaison_ids);
     loadTeamMembers();
     loadModificationHistory();
     loadFieldConfigs();
@@ -135,6 +136,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     loan.borrower_entity_name,
     loan.loan_officer_ids,
     loan.guarantor_ids,
+    loan.liaison_ids,
     loan.referrer_ids,
     loan.modification_history
   ]); // Added modification_history to dependencies to ensure history reloads
@@ -227,6 +229,22 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           email: borrower.email,
           phone: borrower.phone,
           role: 'Borrower',
+          messageUserId: borrower.user_id || null,
+          displayName: borrower.first_name && borrower.last_name
+            ? `${borrower.first_name} ${borrower.last_name}`
+            : borrower.email || 'Unknown Contact'
+        });
+      };
+
+      const addLiaisonMember = (borrower) => {
+        if (!borrower) return;
+        const alreadyAdded = team.some(member => member.id === borrower.id && member.role === 'Liaison');
+        if (alreadyAdded) return;
+        team.push({
+          id: borrower.id,
+          email: borrower.email,
+          phone: borrower.phone,
+          role: 'Liaison',
           messageUserId: borrower.user_id || null,
           displayName: borrower.first_name && borrower.last_name
             ? `${borrower.first_name} ${borrower.last_name}`
@@ -347,6 +365,17 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                 ? `${borrower.first_name} ${borrower.last_name}`
                 : borrower.email || 'Unknown Contact'
             });
+          }
+        });
+      }
+
+      // Add liaisons (look in borrowers)
+      if (loan.liaison_ids && Array.isArray(loan.liaison_ids) && loan.liaison_ids.length > 0) {
+        console.log('Processing liaisons:', loan.liaison_ids);
+        loan.liaison_ids.forEach(id => {
+          const borrower = allBorrowers.find(b => b.id === id || b.user_id === id);
+          if (borrower) {
+            addLiaisonMember(borrower);
           }
         });
       }

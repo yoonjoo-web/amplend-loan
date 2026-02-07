@@ -114,6 +114,7 @@ export default function LoanDetail() {
         user.app_role === 'Loan Officer' ||
         loanData.borrower_ids?.includes(user.id) ||
         loanData.guarantor_ids?.includes(user.id) ||
+        loanData.liaison_ids?.includes(user.id) ||
         loanData.referrer_ids?.includes(user.id);
 
       if (!canViewLoan) {

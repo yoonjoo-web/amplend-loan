@@ -59,6 +59,23 @@ export default function Borrowers() {
     }
   }, [permissionsLoading]);
 
+  const ensureBorrowerContactTypes = async (borrowersData) => {
+    const missingType = borrowersData.filter(borrower => !borrower.type);
+    if (missingType.length === 0) {
+      return borrowersData;
+    }
+
+    try {
+      await Promise.all(
+        missingType.map(borrower => Borrower.update(borrower.id, { type: 'individual' }))
+      );
+      return await Borrower.list('-created_date');
+    } catch (error) {
+      console.error('Error backfilling borrower contact types:', error);
+      return borrowersData;
+    }
+  };
+
   const loadData = async () => {
     try {
       const [initialBorrowersData, loansData, usersData] = await Promise.all([
@@ -78,6 +95,7 @@ export default function Borrowers() {
               first_name: user.first_name || '',
               last_name: user.last_name || '',
               email: user.email,
+              type: 'individual',
             });
           } catch (error) {
             console.error(`Error auto-creating borrower for ${user.email}:`, error);
@@ -86,8 +104,9 @@ export default function Borrowers() {
       }
       
       const updatedBorrowersData = await Borrower.list('-created_date');
+      const borrowersWithTypes = await ensureBorrowerContactTypes(updatedBorrowersData);
       
-      setAllBorrowers(updatedBorrowersData);
+      setAllBorrowers(borrowersWithTypes);
       setAllLoans(loansData);
       setAllUsers(usersData);
     } catch(e) {

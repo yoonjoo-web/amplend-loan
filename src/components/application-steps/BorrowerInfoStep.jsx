@@ -16,6 +16,7 @@ import DynamicFormRenderer from '../forms/DynamicFormRenderer';
 import SearchExistingModal from '../shared/SearchExistingModal';
 import { syncEntities } from '@/components/utils/entitySyncHelper';
 import { getBorrowerInvitationFields } from '@/components/utils/borrowerInvitationFields';
+import { setLocalBorrowerInvite } from '@/components/utils/borrowerInvitationStorage';
 
 export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly = false }) {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -135,16 +136,19 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
 
       const { dateField, statusField } = await getBorrowerInvitationFields(base44);
       const inviteUpdate = {};
+      const inviteSentAt = new Date().toISOString();
 
       if (statusField) {
         inviteUpdate[statusField] = 'invited';
       }
       if (dateField) {
-        inviteUpdate[dateField] = new Date().toISOString();
+        inviteUpdate[dateField] = inviteSentAt;
       }
 
       if (Object.keys(inviteUpdate).length > 0) {
         await base44.entities.Borrower.update(selectedBorrowerToLink.id, inviteUpdate);
+      } else {
+        setLocalBorrowerInvite(selectedBorrowerToLink.id, { status: 'invited', sentAt: inviteSentAt });
       }
 
       toast({

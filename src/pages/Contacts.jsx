@@ -99,6 +99,23 @@ export default function Contacts() {
     }
   }, [permissionsLoading, currentUser]);
 
+  const ensureBorrowerContactTypes = async (borrowersData) => {
+    const missingType = borrowersData.filter(borrower => !borrower.type);
+    if (missingType.length === 0) {
+      return borrowersData;
+    }
+
+    try {
+      await Promise.all(
+        missingType.map(borrower => Borrower.update(borrower.id, { type: 'individual' }))
+      );
+      return await Borrower.list('-created_date');
+    } catch (error) {
+      console.error('Error backfilling borrower contact types:', error);
+      return borrowersData;
+    }
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -108,7 +125,8 @@ export default function Contacts() {
         LoanPartner.list('-created_date')
       ]);
 
-      setBorrowers(borrowersData || []);
+      const borrowersWithTypes = await ensureBorrowerContactTypes(borrowersData || []);
+      setBorrowers(borrowersWithTypes);
       setEntities(entitiesData || []);
       setPartners(partnersData || []);
     } catch (error) {

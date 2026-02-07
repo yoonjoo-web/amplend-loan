@@ -155,8 +155,10 @@ export default function NewApplication() {
           
           const isPrimaryBorrower = appData.primary_borrower_id === currentUser.id;
           const isCoBorrower = appData.co_borrowers?.some(cb => cb.user_id === currentUser.id);
+          const createdById = typeof appData.created_by === 'object' ? appData.created_by?.id : appData.created_by;
+          const isCreator = createdById === currentUser.id;
           
-          if (!permissions.canManageApplications && !permissions.canManageOwnApplications && !isPrimaryBorrower && !isCoBorrower) {
+          if (!permissions.canManageApplications && !permissions.canManageOwnApplications && !isPrimaryBorrower && !isCoBorrower && !isCreator) {
             accessDenied = true;
             throw new Error('You do not have permission to access this application');
           }

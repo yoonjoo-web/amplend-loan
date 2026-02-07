@@ -51,6 +51,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import PropagateProfileChangesModal from "../components/shared/PropagateProfileChangesModal";
 import { getBorrowerInvitationFields } from "@/components/utils/borrowerInvitationFields";
+import { getLocalBorrowerInvite, setLocalBorrowerInvite } from "@/components/utils/borrowerInvitationStorage";
 
 const InfoItem = ({ icon: Icon, label, value, href, isEmail, isPhone }) => {
   if (!value) return null;
@@ -317,6 +318,7 @@ export default function ContactDetail() {
   const [ongoingApplications, setOngoingApplications] = useState([]);
   const [ongoingLoans, setOngoingLoans] = useState([]);
   const [inviteFieldKeys, setInviteFieldKeys] = useState({ dateField: null, statusField: null });
+  const [localInviteRecord, setLocalInviteRecord] = useState(null);
   const [creditExpirationDate, setCreditExpirationDate] = useState(null);
   const [visibleAdditionalFields, setVisibleAdditionalFields] = useState(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -343,6 +345,14 @@ export default function ContactDetail() {
       getBorrowerInvitationFields(base44).then(setInviteFieldKeys);
     }
   }, [contactType]);
+
+  useEffect(() => {
+    if (contactType === 'borrower' && contact?.id) {
+      setLocalInviteRecord(getLocalBorrowerInvite(contact.id));
+    } else {
+      setLocalInviteRecord(null);
+    }
+  }, [contactType, contact?.id]);
 
   const loadContactData = async () => {
     setIsLoading(true);
@@ -494,7 +504,11 @@ export default function ContactDetail() {
   };
 
   const handleEditContactInfo = () => {
-    setEditedContactData({ ...contact });
+    const nextData = { ...contact };
+    if (contactType === 'borrower' && !nextData.type) {
+      nextData.type = 'individual';
+    }
+    setEditedContactData(nextData);
     setIsEditingContactInfo(true);
   };
 
@@ -987,6 +1001,11 @@ export default function ContactDetail() {
     return fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const formatBorrowerContactType = (value) => {
+    const normalized = value || 'individual';
+    return normalized.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const getFieldValue = (fieldKey) => {
     const value = contact[fieldKey];
     
@@ -1082,8 +1101,19 @@ export default function ContactDetail() {
   const invitationDateValue = contactType === 'borrower' && inviteFieldKeys.dateField
     ? contact?.[inviteFieldKeys.dateField]
     : null;
+  const localInvitationDateValue = localInviteRecord?.sentAt || null;
+  const hasInviteRecord = Boolean(
+    invitationStatus === 'invited' ||
+    invitationDateValue ||
+    localInviteRecord?.status === 'invited' ||
+    localInvitationDateValue
+  );
   const invitationDateLabel = contactType === 'borrower'
-    ? getInvitationDateLabel(invitationDateValue || (invitationStatus === 'invited' ? contact?.updated_date : null))
+    ? getInvitationDateLabel(
+        invitationDateValue ||
+        localInvitationDateValue ||
+        (invitationStatus === 'invited' ? contact?.updated_date : null)
+      )
     : null;
 
   return (
@@ -1118,7 +1148,7 @@ export default function ContactDetail() {
                         </h1>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-md text-slate-500">{header?.subtitle}</p>
-                          {invitationDateLabel && (
+                          {hasInviteRecord && invitationDateLabel && (
                             <div className="flex items-center gap-2">
                               <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] px-1.5 py-0.5">
                                 Invited
@@ -1496,6 +1526,15 @@ export default function ContactDetail() {
                         const firstName = contact.first_name || contact.name?.split(' ')[0] || '';
                         const lastName = contact.last_name || contact.name?.split(' ').slice(1).join(' ') || '';
 
+                        if (!contact.email) {
+                          toast({
+                            variant: "destructive",
+                            title: "Missing Email",
+                            description: "This contact does not have an email address.",
+                          });
+                          return;
+                        }
+
                         await base44.functions.invoke('emailService', {
                           email_type: contactType === 'partner' ? 'invite_loan_partner' : 'invite_borrower',
                           recipient_email: contact.email,
@@ -1507,27 +1546,35 @@ export default function ContactDetail() {
                           }
                         });
 
+                        toast({
+                          title: "Invitation Sent",
+                          description: `An invitation email has been sent to ${contact.email}`,
+                        });
+
                         if (contactType === 'borrower') {
                           const { dateField, statusField } = await getBorrowerInvitationFields(base44);
                           const inviteUpdate = {};
+                          const inviteSentAt = new Date().toISOString();
 
                           if (statusField) {
                             inviteUpdate[statusField] = 'invited';
                           }
                           if (dateField) {
-                            inviteUpdate[dateField] = new Date().toISOString();
+                            inviteUpdate[dateField] = inviteSentAt;
                           }
 
                           if (Object.keys(inviteUpdate).length > 0) {
                             const updatedContact = await base44.entities.Borrower.update(contact.id, inviteUpdate);
                             setContact(updatedContact);
+                          } else {
+                            setLocalBorrowerInvite(contact.id, { status: 'invited', sentAt: inviteSentAt });
+                            setLocalInviteRecord({ status: 'invited', sentAt: inviteSentAt });
+                            toast({
+                              title: "Invite Stored Locally",
+                              description: "Borrower schema has no invitation fields. Add invitation fields to persist this status.",
+                            });
                           }
                         }
-
-                        toast({
-                          title: "Invitation Sent",
-                          description: `An invitation email has been sent to ${contact.email}`,
-                        });
                       } catch (error) {
                         console.error('Error sending invitation:', error);
                         toast({
@@ -1660,6 +1707,27 @@ export default function ContactDetail() {
                         ) : (
                           <p className="text-sm text-slate-900 font-medium mt-0.5">
                             {contact.date_of_birth ? format(new Date(contact.date_of_birth + 'T00:00:00'), 'MMM d, yyyy') : 'N/A'}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Borrower Type</Label>
+                        {isEditingContactInfo ? (
+                          <Select
+                            value={editedContactData.type || 'individual'}
+                            onValueChange={(value) => handleContactFieldChange('type', value)}
+                          >
+                            <SelectTrigger className="h-8 text-sm mt-0.5">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="individual">Individual</SelectItem>
+                              <SelectItem value="liaison">Liaison</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                            {formatBorrowerContactType(contact.type)}
                           </p>
                         )}
                       </div>

@@ -137,6 +137,8 @@ export default function Dashboard() {
   const [showInviteBorrowerModal, setShowInviteBorrowerModal] = useState(false);
   const [showInviteTeamModal, setShowInviteTeamModal] = useState(false);
   const [showInviteLoanPartnerModal, setShowInviteLoanPartnerModal] = useState(false);
+  const isStaffUser = permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer;
+  const canShowQuickActions = isStaffUser || permissions.isBroker;
 
   useEffect(() => {
     if (!permissionsLoading && currentUser) {
@@ -336,7 +338,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Quick Actions */}
-        {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+        {canShowQuickActions && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -356,22 +358,26 @@ export default function Dashboard() {
               <Users className="w-4 h-4 mr-2" />
               Invite Borrower
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowInviteTeamModal(true)}
-              className="border-emerald-300 hover:bg-emerald-50"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Invite Team
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowInviteLoanPartnerModal(true)}
-              className="border-amber-300 hover:bg-amber-50"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Invite Loan Partner
-            </Button>
+            {isStaffUser && (
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteTeamModal(true)}
+                className="border-emerald-300 hover:bg-emerald-50"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Invite Team
+              </Button>
+            )}
+            {isStaffUser && (
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteLoanPartnerModal(true)}
+                className="border-amber-300 hover:bg-amber-50"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Invite Loan Partner
+              </Button>
+            )}
           </motion.div>
         )}
 

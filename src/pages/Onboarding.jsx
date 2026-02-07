@@ -115,14 +115,16 @@ export default function Onboarding() {
         await base44.entities.Borrower.update(borrowers[0].id, {
           user_id: currentUser.id,
           first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim()
+          last_name: formData.last_name.trim(),
+          type: borrowers[0].type || 'individual'
         });
       } else if (roleFromUrl === 'Borrower') {
         await base44.entities.Borrower.create({
           user_id: currentUser.id,
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim(),
-          email: email
+          email: email,
+          type: 'individual'
         });
       }
       

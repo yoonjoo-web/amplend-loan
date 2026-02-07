@@ -7,6 +7,7 @@ const defaultPermissions = {
   isAdministrator: false,
   isLoanOfficer: false,
   isBorrower: false,
+  isBroker: false,
   isLoanPartner: false,
   
   // Application permissions
@@ -79,6 +80,7 @@ export const usePermissions = () => {
         p.isAdministrator = user.app_role === 'Administrator';
         p.isLoanOfficer = user.app_role === 'Loan Officer';
         p.isBorrower = user.app_role === 'Borrower';
+        p.isBroker = user.app_role === 'Broker';
         p.isLoanPartner = ['Referrer', 'Broker', 'Guarantor', 'Title Company'].includes(user.app_role);
 
         // --- Rule 1: Administrator = Platform Admin ---
@@ -102,6 +104,13 @@ export const usePermissions = () => {
           p.canCreateApplication = true;
           p.canViewAnyApplication = false;
           p.canManageOwnApplications = true;
+          p.canReviewApplication = false;
+          p.canManageApplications = false;
+          p.canReassignLoanOfficer = false;
+        } else if (p.isBroker) {
+          p.canCreateApplication = true;
+          p.canViewAnyApplication = false;
+          p.canManageOwnApplications = false;
           p.canReviewApplication = false;
           p.canManageApplications = false;
           p.canReassignLoanOfficer = false;

@@ -52,6 +52,7 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
     user_id: '',
     first_name: '',
     last_name: '',
+    type: 'individual',
     email: '',
     phone: '',
     // Removed the single 'address' field
@@ -178,6 +179,7 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
     e.preventDefault();
 
     const cleanedData = { ...formData };
+    cleanedData.type = cleanedData.type || 'individual';
 
     // Convert empty strings to null for numeric fields
     ['rehabs_done_36_months', 'rentals_owned_36_months', 'credit_score'].forEach(field => {
@@ -399,6 +401,22 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
                   required
                 />
               </FieldWrapper>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="borrower_type">Borrower Type</Label>
+              <Select
+                value={formData.type || 'individual'}
+                onValueChange={(value) => handleInputChange('type', value)}
+              >
+                <SelectTrigger id="borrower_type">
+                  <SelectValue placeholder="Select borrower type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Individual</SelectItem>
+                  <SelectItem value="liaison">Liaison</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

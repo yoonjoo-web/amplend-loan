@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
     const isLoanOfficer = user.app_role === 'Loan Officer';
     const isAssignedOfficer = application.assigned_loan_officer_id === user.id;
     const isPrimaryBorrower = application.primary_borrower_id === user.id;
+    const createdById = typeof application.created_by === 'object'
+      ? application.created_by?.id
+      : application.created_by;
+    const isCreator = createdById === user.id;
     
     // Check if user is a co-borrower
     let isCoBorrower = false;
@@ -51,7 +55,7 @@ Deno.serve(async (req) => {
     // - User is the assigned loan officer
     // - User is the primary borrower
     // - User is a co-borrower
-    const hasAccess = isAdmin || isAssignedOfficer || isPrimaryBorrower || isCoBorrower;
+    const hasAccess = isAdmin || isAssignedOfficer || isPrimaryBorrower || isCoBorrower || isCreator;
 
     if (!hasAccess) {
       return Response.json({ 

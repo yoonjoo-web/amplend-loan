@@ -26,6 +26,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   const [loanOfficerIds, setLoanOfficerIds] = useState([]);
   const [guarantorIds, setGuarantorIds] = useState([]);
   const [referrerIds, setReferrerIds] = useState([]);
+  const [liaisonIds, setLiaisonIds] = useState([]);
   
   // New member to add
   const [newMemberRole, setNewMemberRole] = useState('');
@@ -38,6 +39,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       setLoanOfficerIds(loan?.loan_officer_ids || []);
       setGuarantorIds(loan?.guarantor_ids || []);
       setReferrerIds(loan?.referrer_ids || []);
+      setLiaisonIds(loan?.liaison_ids || []);
     }
   }, [isOpen, loan]);
 
@@ -67,8 +69,8 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   };
 
   const getUserDisplayName = (userId, roleKey) => {
-    // For guarantors, look in borrowers
-    if (roleKey === 'guarantor') {
+    // For guarantors and liaisons, look in borrowers
+    if (roleKey === 'guarantor' || roleKey === 'liaison') {
       const borrower = allBorrowers.find(b => b.id === userId);
       if (borrower && borrower.first_name && borrower.last_name) {
         return `${borrower.first_name} ${borrower.last_name}`;
@@ -93,7 +95,13 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     return 'Unknown User';
   };
 
-  const getUserRole = (userId) => {
+  const getUserRole = (userId, roleKey) => {
+    if (roleKey === 'guarantor' || roleKey === 'liaison') {
+      return 'Borrower';
+    }
+    if (roleKey === 'referrer') {
+      return 'Loan Partner';
+    }
     const user = allUsers.find(u => u.id === userId);
     return user?.app_role || '';
   };
@@ -122,6 +130,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
           setReferrerIds([...referrerIds, newMemberId]);
         }
         break;
+      case 'liaison':
+        if (!liaisonIds.includes(newMemberId)) {
+          setLiaisonIds([...liaisonIds, newMemberId]);
+        }
+        break;
     }
     
     setNewMemberRole('');
@@ -142,6 +155,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'referrer':
         setReferrerIds(referrerIds.filter(id => id !== userId));
         break;
+      case 'liaison':
+        setLiaisonIds(liaisonIds.filter(id => id !== userId));
+        break;
     }
   };
 
@@ -152,7 +168,8 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
         borrower_ids: borrowerIds,
         loan_officer_ids: loanOfficerIds,
         guarantor_ids: guarantorIds,
-        referrer_ids: referrerIds
+        referrer_ids: referrerIds,
+        liaison_ids: liaisonIds
       });
       
       toast({
@@ -198,6 +215,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'referrer':
         existingIds = referrerIds;
         return allReferrerPartners.filter(p => !existingIds.includes(p.id));
+      case 'liaison':
+        existingIds = liaisonIds;
+        return allBorrowers.filter(b => b.type === 'liaison' && !existingIds.includes(b.id));
     }
     
     return [];
@@ -214,7 +234,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
             <div key={userId} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-900">{getUserDisplayName(userId, roleKey)}</p>
-                <p className="text-xs text-slate-500">{getUserRole(userId)}</p>
+                <p className="text-xs text-slate-500">{getUserRole(userId, roleKey)}</p>
               </div>
               <Button
                 variant="ghost"
@@ -266,6 +286,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                       <SelectContent>
                         <SelectItem value="loan_officer">Loan Officer</SelectItem>
                         <SelectItem value="guarantor">Guarantor</SelectItem>
+                        <SelectItem value="liaison">Liaison</SelectItem>
                         <SelectItem value="referrer">Referrer</SelectItem>
                       </SelectContent>
                     </Select>
@@ -318,10 +339,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                 {renderTeamSection('Borrowers', borrowerIds, 'borrower')}
                 {renderTeamSection('Loan Officers', loanOfficerIds, 'loan_officer')}
                 {renderTeamSection('Guarantors', guarantorIds, 'guarantor')}
+                {renderTeamSection('Liaisons', liaisonIds, 'liaison')}
                 {renderTeamSection('Referrers', referrerIds, 'referrer')}
                 
                 {borrowerIds.length === 0 && loanOfficerIds.length === 0 && 
-                 guarantorIds.length === 0 && referrerIds.length === 0 && (
+                 guarantorIds.length === 0 && liaisonIds.length === 0 && referrerIds.length === 0 && (
                   <p className="text-sm text-slate-500 text-center py-4">No team members added yet</p>
                 )}
               </div>
