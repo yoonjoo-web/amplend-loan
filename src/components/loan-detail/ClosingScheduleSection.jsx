@@ -59,7 +59,7 @@ export default function ClosingScheduleSection({ loan, onUpdate, currentUser }) 
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="space-y-5">
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
               Target Closing Date
@@ -73,17 +73,17 @@ export default function ClosingScheduleSection({ loan, onUpdate, currentUser }) 
               Actual Closing Date
             </div>
             {canEdit ? (
-              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="mt-2 flex flex-col gap-2">
                 <Input
                   type="date"
                   value={actualClosingDate || ''}
                   onChange={(event) => setActualClosingDate(event.target.value)}
-                  className="sm:max-w-[220px]"
                 />
                 <Button
                   onClick={handleSave}
                   disabled={isSaving || !hasChanges}
-                  className="bg-slate-700 hover:bg-slate-800"
+                  size="sm"
+                  className="w-full bg-slate-700 hover:bg-slate-800"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Saving...' : 'Save'}
