@@ -50,6 +50,7 @@ import AddFieldModal from "../components/contacts/AddFieldModal";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import PropagateProfileChangesModal from "../components/shared/PropagateProfileChangesModal";
+import { getBorrowerInvitationFields } from "@/components/utils/borrowerInvitationFields";
 
 const InfoItem = ({ icon: Icon, label, value, href, isEmail, isPhone }) => {
   if (!value) return null;
@@ -315,6 +316,7 @@ export default function ContactDetail() {
   const [showPropagateModal, setShowPropagateModal] = useState(false);
   const [ongoingApplications, setOngoingApplications] = useState([]);
   const [ongoingLoans, setOngoingLoans] = useState([]);
+  const [inviteFieldKeys, setInviteFieldKeys] = useState({ dateField: null, statusField: null });
   const [creditExpirationDate, setCreditExpirationDate] = useState(null);
   const [visibleAdditionalFields, setVisibleAdditionalFields] = useState(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -333,6 +335,12 @@ export default function ContactDetail() {
     if (contactType) {
       const stored = localStorage.getItem(`contact_visible_fields_${contactType}`);
       setVisibleAdditionalFields(stored ? JSON.parse(stored) : []);
+    }
+  }, [contactType]);
+
+  useEffect(() => {
+    if (contactType === 'borrower') {
+      getBorrowerInvitationFields(base44).then(setInviteFieldKeys);
     }
   }, [contactType]);
 
@@ -1068,8 +1076,14 @@ export default function ContactDetail() {
 
   const header = contact ? getContactHeader() : null;
   const Icon = header?.icon;
+  const invitationStatus = contactType === 'borrower' && inviteFieldKeys.statusField
+    ? contact?.[inviteFieldKeys.statusField]
+    : null;
+  const invitationDateValue = contactType === 'borrower' && inviteFieldKeys.dateField
+    ? contact?.[inviteFieldKeys.dateField]
+    : null;
   const invitationDateLabel = contactType === 'borrower'
-    ? getInvitationDateLabel(contact?.invitation_sent_date)
+    ? getInvitationDateLabel(invitationDateValue || (invitationStatus === 'invited' ? contact?.updated_date : null))
     : null;
 
   return (
@@ -1494,11 +1508,20 @@ export default function ContactDetail() {
                         });
 
                         if (contactType === 'borrower') {
-                          const updatedContact = await base44.entities.Borrower.update(contact.id, {
-                            invitation_status: 'invited',
-                            invitation_sent_date: new Date().toISOString()
-                          });
-                          setContact(updatedContact);
+                          const { dateField, statusField } = await getBorrowerInvitationFields(base44);
+                          const inviteUpdate = {};
+
+                          if (statusField) {
+                            inviteUpdate[statusField] = 'invited';
+                          }
+                          if (dateField) {
+                            inviteUpdate[dateField] = new Date().toISOString();
+                          }
+
+                          if (Object.keys(inviteUpdate).length > 0) {
+                            const updatedContact = await base44.entities.Borrower.update(contact.id, inviteUpdate);
+                            setContact(updatedContact);
+                          }
                         }
 
                         toast({

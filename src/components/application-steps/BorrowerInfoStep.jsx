@@ -15,6 +15,7 @@ import { base44 } from "@/api/base44Client";
 import DynamicFormRenderer from '../forms/DynamicFormRenderer';
 import SearchExistingModal from '../shared/SearchExistingModal';
 import { syncEntities } from '@/components/utils/entitySyncHelper';
+import { getBorrowerInvitationFields } from '@/components/utils/borrowerInvitationFields';
 
 export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly = false }) {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -132,10 +133,19 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         }
       });
 
-      await base44.entities.Borrower.update(selectedBorrowerToLink.id, {
-        invitation_status: 'invited',
-        invitation_sent_date: new Date().toISOString()
-      });
+      const { dateField, statusField } = await getBorrowerInvitationFields(base44);
+      const inviteUpdate = {};
+
+      if (statusField) {
+        inviteUpdate[statusField] = 'invited';
+      }
+      if (dateField) {
+        inviteUpdate[dateField] = new Date().toISOString();
+      }
+
+      if (Object.keys(inviteUpdate).length > 0) {
+        await base44.entities.Borrower.update(selectedBorrowerToLink.id, inviteUpdate);
+      }
 
       toast({
         title: "Invitation Sent",
