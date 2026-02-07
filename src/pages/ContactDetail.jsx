@@ -956,6 +956,15 @@ export default function ContactDetail() {
     }
   };
 
+  const getInvitationDateLabel = (invitedAt) => {
+    if (!invitedAt) return null;
+    try {
+      return format(new Date(invitedAt), 'MMM d, yyyy');
+    } catch (error) {
+      return null;
+    }
+  };
+
   const getDisplayLabel = (fieldKey) => {
     const specialLabels = {
       'dscr': 'DSCR',
@@ -1059,6 +1068,9 @@ export default function ContactDetail() {
 
   const header = contact ? getContactHeader() : null;
   const Icon = header?.icon;
+  const invitationDateLabel = contactType === 'borrower'
+    ? getInvitationDateLabel(contact?.invitation_sent_date)
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -1090,7 +1102,17 @@ export default function ContactDetail() {
                         <h1 className="text-3xl font-bold text-slate-900 mb-1 tracking-tight">
                           {contact?.first_name} {contact?.last_name}
                         </h1>
-                        <p className="text-md text-slate-500">{header?.subtitle}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-md text-slate-500">{header?.subtitle}</p>
+                          {invitationDateLabel && (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] px-1.5 py-0.5">
+                                Invited
+                              </Badge>
+                              <span className="text-xs text-slate-500">Sent {invitationDateLabel}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -1470,6 +1492,14 @@ export default function ContactDetail() {
                             ...(contactType === 'partner' && { partner_type: contact.type })
                           }
                         });
+
+                        if (contactType === 'borrower') {
+                          const updatedContact = await base44.entities.Borrower.update(contact.id, {
+                            invitation_status: 'invited',
+                            invitation_sent_date: new Date().toISOString()
+                          });
+                          setContact(updatedContact);
+                        }
 
                         toast({
                           title: "Invitation Sent",

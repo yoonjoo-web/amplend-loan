@@ -132,6 +132,11 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         }
       });
 
+      await base44.entities.Borrower.update(selectedBorrowerToLink.id, {
+        invitation_status: 'invited',
+        invitation_sent_date: new Date().toISOString()
+      });
+
       toast({
         title: "Invitation Sent",
         description: `Invitation sent to ${selectedBorrowerToLink.email} to link their account.`

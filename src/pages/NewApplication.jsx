@@ -63,8 +63,7 @@ export default function NewApplication() {
   const [allLoanOfficers, setAllLoanOfficers] = useState([]);
   const [overallReviewComment, setOverallReviewComment] = useState('');
   const [primaryBorrowerUser, setPrimaryBorrowerUser] = useState(null);
-  const [showSubmitContactSyncModal, setShowSubmitContactSyncModal] = useState(false);
-  const [pendingSubmitType, setPendingSubmitType] = useState(null);
+  const [showProceedContactSyncModal, setShowProceedContactSyncModal] = useState(false);
 
   const { toast } = useToast();
 
@@ -531,7 +530,7 @@ export default function NewApplication() {
     setIsProcessing(false);
   };
 
-  const handleProceedToLoan = async () => {
+  const proceedToLoan = async () => {
     setIsProcessing(true);
     try {
       console.error('[handleProceedToLoan] fired');
@@ -814,12 +813,6 @@ export default function NewApplication() {
 
   const handleSubmit = async (submitType) => {
     if (isReadOnly) return;
-    const isStaffUser = permissions?.isLoanOfficer || permissions?.isAdministrator || permissions?.isPlatformAdmin;
-    if (isStaffUser) {
-      setPendingSubmitType(submitType);
-      setShowSubmitContactSyncModal(true);
-      return;
-    }
     await submitApplication(submitType);
   };
 
@@ -892,27 +885,21 @@ export default function NewApplication() {
     return true;
   };
 
-  const handleConfirmSubmit = async () => {
-    const submitType = pendingSubmitType;
-    setShowSubmitContactSyncModal(false);
-    setPendingSubmitType(null);
-    if (!submitType) return;
-    await submitApplication(submitType);
+  const handleProceedToLoan = () => {
+    setShowProceedContactSyncModal(true);
   };
 
-  const handleSubmitWithContactUpdate = async (target) => {
-    const submitType = pendingSubmitType;
-    setShowSubmitContactSyncModal(false);
-    setPendingSubmitType(null);
-    if (!submitType) return;
-
-    setIsProcessing(true);
-    const didUpdate = await updateContactFromOverrides(target);
-    if (!didUpdate) {
-      setIsProcessing(false);
-      return;
+  const handleProceedToLoanWithContactUpdate = async (target) => {
+    setShowProceedContactSyncModal(false);
+    if (target) {
+      setIsProcessing(true);
+      const didUpdate = await updateContactFromOverrides(target);
+      if (!didUpdate) {
+        setIsProcessing(false);
+        return;
+      }
     }
-    await submitApplication(submitType);
+    await proceedToLoan();
   };
 
   const handleBackNavigation = () => {
@@ -1362,29 +1349,17 @@ export default function NewApplication() {
         />
 
         <UpdateProfileModal
-          isOpen={showSubmitContactSyncModal}
-          onClose={() => {
-            setShowSubmitContactSyncModal(false);
-            setPendingSubmitType(null);
-          }}
-          onUpdateProfile={handleConfirmSubmit}
-          onKeepApplicationOnly={() => {
-            setShowSubmitContactSyncModal(false);
-            setPendingSubmitType(null);
-          }}
-          title="Confirm Submission?"
-          description="Select a contact to update before submitting this application (optional)."
+          isOpen={showProceedContactSyncModal}
+          onClose={() => setShowProceedContactSyncModal(false)}
+          title="Proceed to Loan"
+          description="Select a contact to update before creating the loan (optional)."
           options={[
             { value: "borrower", label: "Update Borrower Contact" },
             { value: "entity", label: "Update Entity Contact" },
           ]}
-          submitLabel="Submit Application"
+          submitLabel="Proceed to Loan"
           onSubmitOption={(option) => {
-            if (!option) {
-              handleConfirmSubmit();
-              return;
-            }
-            handleSubmitWithContactUpdate(option);
+            handleProceedToLoanWithContactUpdate(option);
           }}
         />
 

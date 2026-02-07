@@ -32,7 +32,6 @@ export default function ReviewActions({
   isProcessing
 }) {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [showProceedDialog, setShowProceedDialog] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -126,7 +125,7 @@ export default function ReviewActions({
             {applicationStatus === 'review_completed' && (
               <>
                 <Button
-                  onClick={() => setShowProceedDialog(true)}
+                  onClick={onProceedToLoan}
                   disabled={isProcessing}
                   className="bg-slate-900 hover:bg-slate-800"
                 >
@@ -198,23 +197,6 @@ export default function ReviewActions({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Proceed to Loan Dialog */}
-      <AlertDialog open={showProceedDialog} onOpenChange={setShowProceedDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Proceed to Loan</AlertDialogTitle>
-            <AlertDialogDescription>
-              Approve this application and create a new loan record? The borrower will be notified of approval.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { onProceedToLoan(); setShowProceedDialog(false); }} className="bg-slate-900 hover:bg-slate-800">
-              Approve & Create Loan
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
