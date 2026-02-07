@@ -43,18 +43,25 @@ export default function LoanOfficerQueue() {
         Loan.list()
       ]);
 
+      const activeApplications = applications.filter(app =>
+        ['submitted', 'under_review'].includes(app.status)
+      );
+      const activeLoans = loans.filter(loan =>
+        ['pending', 'approved', 'active'].includes(loan.status)
+      );
+
       const officers = users.filter(u => u.app_role === 'Loan Officer');
       setLoanOfficers(officers);
 
       const officerWorkload = {};
       
-      applications.forEach(app => {
+      activeApplications.forEach(app => {
         if (app.assigned_loan_officer_id) {
           officerWorkload[app.assigned_loan_officer_id] = (officerWorkload[app.assigned_loan_officer_id] || 0) + 1;
         }
       });
 
-      loans.forEach(loan => {
+      activeLoans.forEach(loan => {
         if (loan.loan_officer_ids && loan.loan_officer_ids.length > 0) {
           loan.loan_officer_ids.forEach(officerId => {
             officerWorkload[officerId] = (officerWorkload[officerId] || 0) + 1;
@@ -342,7 +349,7 @@ export default function LoanOfficerQueue() {
                   <li>Officers are automatically sorted by workload (lowest first).</li>
                   <li>Drag-and-drop an officer to manually lock their position.</li>
                   <li>Locked positions stay fixed while unlocked officers are re-sorted by workload.</li>
-                  <li>Workload counts all applications and loans assigned to each officer.</li>
+                  <li>Workload counts applications in submitted/under review and loans in pending/approved/active.</li>
                 </ul>
               </div>
             </div>
