@@ -217,7 +217,10 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
         return allReferrerPartners.filter(p => !existingIds.includes(p.id));
       case 'liaison':
         existingIds = liaisonIds;
-        return allBorrowers.filter(b => b.type === 'liaison' && !existingIds.includes(b.id));
+        return allBorrowers.filter(b => {
+          const contactType = b.type || b.borrower_type;
+          return contactType === 'liaison' && !existingIds.includes(b.id);
+        });
     }
     
     return [];

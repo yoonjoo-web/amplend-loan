@@ -505,8 +505,13 @@ export default function ContactDetail() {
 
   const handleEditContactInfo = () => {
     const nextData = { ...contact };
-    if (contactType === 'borrower' && !nextData.type) {
+    if (contactType === 'borrower' && !nextData.type && !nextData.borrower_type) {
       nextData.type = 'individual';
+      nextData.borrower_type = 'individual';
+    } else if (contactType === 'borrower') {
+      const normalizedType = getBorrowerContactTypeValue(nextData);
+      nextData.type = normalizedType;
+      nextData.borrower_type = normalizedType;
     }
     setEditedContactData(nextData);
     setIsEditingContactInfo(true);
@@ -815,6 +820,10 @@ export default function ContactDetail() {
       setEditedContactData(prev => ({ ...prev, [field]: formatted.replace(/\D/g, '') }));
       return;
     }
+    if (contactType === 'borrower' && field === 'type') {
+      setEditedContactData(prev => ({ ...prev, type: value, borrower_type: value }));
+      return;
+    }
     setEditedContactData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -955,7 +964,7 @@ export default function ContactDetail() {
       case 'borrower':
         return {
           name: `${contact.first_name} ${contact.last_name}`,
-          subtitle: formatBorrowerContactType(contact.type),
+          subtitle: formatBorrowerContactType(getBorrowerContactTypeValue(contact)),
           icon: Users,
           iconColor: 'bg-blue-500'
         };
@@ -999,6 +1008,10 @@ export default function ContactDetail() {
       return specialLabels[fieldKey];
     }
     return fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getBorrowerContactTypeValue = (contactData) => {
+    return contactData?.type || contactData?.borrower_type || 'individual';
   };
 
   const formatBorrowerContactType = (value) => {
@@ -1716,7 +1729,7 @@ export default function ContactDetail() {
                         <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Borrower Type</Label>
                         {isEditingContactInfo ? (
                           <Select
-                            value={editedContactData.type || 'individual'}
+                            value={getBorrowerContactTypeValue(editedContactData)}
                             onValueChange={(value) => handleContactFieldChange('type', value)}
                           >
                             <SelectTrigger className="h-8 text-sm mt-0.5">

@@ -60,14 +60,14 @@ export default function Borrowers() {
   }, [permissionsLoading]);
 
   const ensureBorrowerContactTypes = async (borrowersData) => {
-    const missingType = borrowersData.filter(borrower => !borrower.type);
+    const missingType = borrowersData.filter(borrower => !borrower.type && !borrower.borrower_type);
     if (missingType.length === 0) {
       return borrowersData;
     }
 
     try {
       await Promise.all(
-        missingType.map(borrower => Borrower.update(borrower.id, { type: 'individual' }))
+        missingType.map(borrower => Borrower.update(borrower.id, { type: 'individual', borrower_type: 'individual' }))
       );
       return await Borrower.list('-created_date');
     } catch (error) {
@@ -96,6 +96,7 @@ export default function Borrowers() {
               last_name: user.last_name || '',
               email: user.email,
               type: 'individual',
+              borrower_type: 'individual',
             });
           } catch (error) {
             console.error(`Error auto-creating borrower for ${user.email}:`, error);

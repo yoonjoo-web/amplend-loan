@@ -100,14 +100,14 @@ export default function Contacts() {
   }, [permissionsLoading, currentUser]);
 
   const ensureBorrowerContactTypes = async (borrowersData) => {
-    const missingType = borrowersData.filter(borrower => !borrower.type);
+    const missingType = borrowersData.filter(borrower => !borrower.type && !borrower.borrower_type);
     if (missingType.length === 0) {
       return borrowersData;
     }
 
     try {
       await Promise.all(
-        missingType.map(borrower => Borrower.update(borrower.id, { type: 'individual' }))
+        missingType.map(borrower => Borrower.update(borrower.id, { type: 'individual', borrower_type: 'individual' }))
       );
       return await Borrower.list('-created_date');
     } catch (error) {
@@ -298,6 +298,10 @@ export default function Contacts() {
     }
   };
 
+  const getBorrowerContactTypeValue = (contact) => {
+    return contact?.type || contact?.borrower_type || 'individual';
+  };
+
   const formatBorrowerContactType = (value) => {
     const normalized = value || 'individual';
     return normalized.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -394,7 +398,7 @@ export default function Contacts() {
                 }
 
                 const typeLabelForTab = () => {
-                  if (type === 'borrower') return formatBorrowerContactType(contact.type);
+                  if (type === 'borrower') return formatBorrowerContactType(getBorrowerContactTypeValue(contact));
                   if (type === 'entity') return contact.entity_type || 'Entity';
                   if (type === 'partner') return contact.type || 'Partner';
                   return null;
