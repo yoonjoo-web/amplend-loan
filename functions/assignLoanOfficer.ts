@@ -19,28 +19,30 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        // Get all active applications and loans
+        // Get all applications and loans (filter after fetch)
         const [applications, loans] = await Promise.all([
-            base44.asServiceRole.entities.LoanApplication.filter({
-                status: { $in: ['submitted', 'under_review'] }
-            }),
-            base44.asServiceRole.entities.Loan.filter({
-                status: { $in: ['pending', 'approved', 'active'] }
-            })
+            base44.asServiceRole.entities.LoanApplication.list(),
+            base44.asServiceRole.entities.Loan.list()
         ]);
 
         // Count workload per officer (applications + loans)
         const workloadCount = {};
         
         // Count applications
-        applications.forEach(app => {
+        const activeApplications = applications.filter(app =>
+            !['approved', 'rejected'].includes(app.status)
+        );
+        activeApplications.forEach(app => {
             if (app.assigned_loan_officer_id) {
                 workloadCount[app.assigned_loan_officer_id] = (workloadCount[app.assigned_loan_officer_id] || 0) + 1;
             }
         });
 
         // Count loans
-        loans.forEach(loan => {
+        const activeLoans = loans.filter(loan =>
+            !['archived', 'dead'].includes(loan.status)
+        );
+        activeLoans.forEach(loan => {
             if (loan.loan_officer_ids && loan.loan_officer_ids.length > 0) {
                 loan.loan_officer_ids.forEach(officerId => {
                     workloadCount[officerId] = (workloadCount[officerId] || 0) + 1;

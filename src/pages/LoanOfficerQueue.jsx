@@ -44,10 +44,10 @@ export default function LoanOfficerQueue() {
       ]);
 
       const activeApplications = applications.filter(app =>
-        ['submitted', 'under_review'].includes(app.status)
+        !['approved', 'rejected'].includes(app.status)
       );
       const activeLoans = loans.filter(loan =>
-        ['pending', 'approved', 'active'].includes(loan.status)
+        !['archived', 'dead'].includes(loan.status)
       );
 
       const officers = users.filter(u => u.app_role === 'Loan Officer');
@@ -349,7 +349,7 @@ export default function LoanOfficerQueue() {
                   <li>Officers are automatically sorted by workload (lowest first).</li>
                   <li>Drag-and-drop an officer to manually lock their position.</li>
                   <li>Locked positions stay fixed while unlocked officers are re-sorted by workload.</li>
-                  <li>Workload counts applications in submitted/under review and loans in pending/approved/active.</li>
+                  <li>Workload counts applications except approved/rejected and loans except archived/dead.</li>
                 </ul>
               </div>
             </div>
