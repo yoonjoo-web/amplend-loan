@@ -1373,26 +1373,22 @@ export default function NewApplication() {
             setPendingSubmitType(null);
           }}
           title="Confirm Submission?"
-          description="Choose whether to update contacts before submitting this application."
-          actions={[
-            {
-              label: "Update Borrower Contact + Submit",
-              onClick: () => handleSubmitWithContactUpdate('borrower'),
-            },
-            {
-              label: "Update Entity Contact + Submit",
-              onClick: () => handleSubmitWithContactUpdate('entity'),
-            },
-            {
-              label: "Update Both Contacts + Submit",
-              onClick: () => handleSubmitWithContactUpdate('both'),
-            },
-            {
-              label: "Submit Without Updating",
-              variant: "outline",
-              onClick: handleConfirmSubmit,
-            },
+          description="Select whether to update contacts before submitting this application."
+          options={[
+            { value: "borrower", label: "Update Borrower Contact" },
+            { value: "entity", label: "Update Entity Contact" },
+            { value: "both", label: "Update Both Contacts" },
+            { value: "none", label: "Submit Without Updating" },
           ]}
+          defaultOption="none"
+          submitLabel="Submit Application"
+          onSubmitOption={(option) => {
+            if (option === "none") {
+              handleConfirmSubmit();
+              return;
+            }
+            handleSubmitWithContactUpdate(option);
+          }}
         />
 
         {showReassignModal && formData && (
