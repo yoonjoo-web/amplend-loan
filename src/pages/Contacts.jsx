@@ -298,6 +298,11 @@ export default function Contacts() {
     }
   };
 
+  const formatBorrowerContactType = (value) => {
+    const normalized = value || 'individual';
+    return normalized.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const renderListView = (contacts, type) => {
     if (contacts.length === 0 && !isLoading) {
       return (
@@ -364,20 +369,21 @@ export default function Contacts() {
               {contacts.map((contact) => {
                 const contactType = type || contact._type;
                 let name, subtitle, email, phone;
+                const showNameSubtitle = !type;
 
                 if (contactType === 'borrower') {
                   name = `${contact.first_name} ${contact.last_name}`;
-                  subtitle = 'Borrower';
+                  subtitle = showNameSubtitle ? 'Borrower' : '';
                   email = contact.email;
                   phone = contact.phone;
                 } else if (contactType === 'entity') {
                   name = contact.entity_name;
-                  subtitle = contact.entity_type || 'Entity';
+                  subtitle = showNameSubtitle ? 'Entity' : '';
                   email = contact.email;
                   phone = contact.phone;
                 } else if (contactType === 'partner') {
                   name = contact.name;
-                  subtitle = contact.type;
+                  subtitle = showNameSubtitle ? 'Partner' : '';
                   email = contact.email;
                   phone = contact.phone;
                 } else {
@@ -386,6 +392,13 @@ export default function Contacts() {
                   email = '';
                   phone = '';
                 }
+
+                const typeLabelForTab = () => {
+                  if (type === 'borrower') return formatBorrowerContactType(contact.type);
+                  if (type === 'entity') return contact.entity_type || 'Entity';
+                  if (type === 'partner') return contact.type || 'Partner';
+                  return null;
+                };
 
                 return (
                   <TableRow
@@ -397,20 +410,32 @@ export default function Contacts() {
                       <TableCell>
                         <div>
                           <p className="font-semibold text-slate-900">{name}</p>
-                          <p className="text-sm text-slate-500 capitalize">{subtitle}</p>
+                          {showNameSubtitle && (
+                            <p className="text-sm text-slate-500 capitalize">{subtitle}</p>
+                          )}
                         </div>
                       </TableCell>
                     )}
                     {visibleColumns.type && (
                       <TableCell>
-                        <Badge className={
-                          contactType === 'borrower' ? 'bg-blue-100 text-blue-800' :
-                          contactType === 'entity' ? 'bg-indigo-100 text-indigo-800' :
-                          'bg-amber-100 text-amber-800'
-                        }>
-                          {contactType === 'borrower' ? 'Borrower' :
-                           contactType === 'entity' ? 'Entity' : 'Partner'}
-                        </Badge>
+                        {type ? (
+                          <Badge className={
+                            contactType === 'borrower' ? 'bg-blue-100 text-blue-800' :
+                            contactType === 'entity' ? 'bg-indigo-100 text-indigo-800' :
+                            'bg-amber-100 text-amber-800'
+                          }>
+                            {typeLabelForTab()}
+                          </Badge>
+                        ) : (
+                          <Badge className={
+                            contactType === 'borrower' ? 'bg-blue-100 text-blue-800' :
+                            contactType === 'entity' ? 'bg-indigo-100 text-indigo-800' :
+                            'bg-amber-100 text-amber-800'
+                          }>
+                            {contactType === 'borrower' ? 'Borrower' :
+                             contactType === 'entity' ? 'Entity' : 'Partner'}
+                          </Badge>
+                        )}
                       </TableCell>
                     )}
                     {visibleColumns.email && (

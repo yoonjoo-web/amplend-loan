@@ -955,7 +955,7 @@ export default function ContactDetail() {
       case 'borrower':
         return {
           name: `${contact.first_name} ${contact.last_name}`,
-          subtitle: 'Borrower',
+          subtitle: formatBorrowerContactType(contact.type),
           icon: Users,
           iconColor: 'bg-blue-500'
         };
@@ -1146,17 +1146,7 @@ export default function ContactDetail() {
                         <h1 className="text-3xl font-bold text-slate-900 mb-1 tracking-tight">
                           {contact?.first_name} {contact?.last_name}
                         </h1>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-md text-slate-500">{header?.subtitle}</p>
-                          {hasInviteRecord && invitationDateLabel && (
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] px-1.5 py-0.5">
-                                Invited
-                              </Badge>
-                              <span className="text-xs text-slate-500">Sent {invitationDateLabel}</span>
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-md text-slate-500">{header?.subtitle}</p>
                       </div>
                     ) : (
                       <>
@@ -1515,10 +1505,22 @@ export default function ContactDetail() {
             {/* Invite to Platform Button */}
             {!contact.user_id && (contactType === 'borrower' || contactType === 'partner') && (
               <Card className="border-2 border-blue-200 bg-blue-50 mb-6">
-                <CardContent className="p-4 flex items-center justify-between">
+                <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-blue-900">This contact is not linked to a user account</p>
-                    <p className="text-xs text-blue-700 mt-1">Invite them to create an account and access the platform</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <p className="text-xs text-blue-700">Invite them to create an account and access the platform</p>
+                      {contactType === 'borrower' && hasInviteRecord && (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] px-1.5 py-0.5">
+                            Invited
+                          </Badge>
+                          {invitationDateLabel && (
+                            <span className="text-xs text-slate-500">Sent {invitationDateLabel}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <Button
                     onClick={async () => {
@@ -1587,7 +1589,7 @@ export default function ContactDetail() {
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Invite to Platform
+                    {contactType === 'borrower' && hasInviteRecord ? 'Resend Invitation' : 'Invite to Platform'}
                   </Button>
                 </CardContent>
               </Card>
