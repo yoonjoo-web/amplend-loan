@@ -36,6 +36,11 @@ const STATUS_DESCRIPTIONS = {
     description: "The loan is being placed on hold until further notice.",
     color: "bg-slate-100 text-slate-800"
   },
+  preclosed_review: {
+    label: "Preclosed Review",
+    description: "The loan file is being reviewed before the post-appraisal term sheet is sent.",
+    color: "bg-sky-100 text-sky-800"
+  },
   term_sheet_sent: {
     label: "Term Sheet Sent (Post-Appraisal)",
     description: "The post-appraisal term sheet is sent along with a completed appraisal report.",

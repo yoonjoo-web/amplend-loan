@@ -55,6 +55,7 @@ const statusColors = {
   underwriting: 'bg-purple-100 text-purple-800',
   processing: 'bg-amber-100 text-amber-800',
   on_hold: 'bg-slate-100 text-slate-800',
+  preclosed_review: 'bg-sky-100 text-sky-800',
   term_sheet_sent: 'bg-cyan-100 text-cyan-800',
   conditional_approval: 'bg-yellow-100 text-yellow-800',
   final_approval: 'bg-emerald-100 text-emerald-800',

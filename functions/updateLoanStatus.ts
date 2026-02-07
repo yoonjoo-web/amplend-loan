@@ -91,6 +91,12 @@ Deno.serve(async (req) => {
           message: 'Your loan has been placed on hold.',
           description: 'Please contact your loan officer for more information.'
         },
+        'preclosed_review': {
+          subject: 'Loan Status: Preclosed Review',
+          title: 'Preclosed Review',
+          message: 'Your loan is in preclosed review.',
+          description: 'We are reviewing the file before sending the post-appraisal term sheet.'
+        },
         'term_sheet_sent': {
           subject: 'Term Sheet Sent',
           title: 'Term Sheet Available',

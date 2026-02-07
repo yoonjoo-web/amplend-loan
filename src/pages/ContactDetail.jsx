@@ -1200,6 +1200,7 @@ export default function ContactDetail() {
                                   loan.status === 'underwriting' ? 'bg-purple-100 text-purple-800' :
                                   loan.status === 'processing' ? 'bg-indigo-100 text-indigo-800' :
                                   loan.status === 'on_hold' ? 'bg-orange-100 text-orange-800' :
+                                  loan.status === 'preclosed_review' ? 'bg-sky-100 text-sky-800' :
                                   'bg-amber-100 text-amber-800'
                                 }`}>
                                   {loan.status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
