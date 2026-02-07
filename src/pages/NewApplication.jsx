@@ -1373,17 +1373,14 @@ export default function NewApplication() {
             setPendingSubmitType(null);
           }}
           title="Confirm Submission?"
-          description="Select whether to update contacts before submitting this application."
+          description="Select a contact to update before submitting this application (optional)."
           options={[
             { value: "borrower", label: "Update Borrower Contact" },
             { value: "entity", label: "Update Entity Contact" },
-            { value: "both", label: "Update Both Contacts" },
-            { value: "none", label: "Submit Without Updating" },
           ]}
-          defaultOption="none"
           submitLabel="Submit Application"
           onSubmitOption={(option) => {
-            if (option === "none") {
+            if (!option) {
               handleConfirmSubmit();
               return;
             }

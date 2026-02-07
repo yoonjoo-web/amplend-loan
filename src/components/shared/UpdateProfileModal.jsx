@@ -27,13 +27,11 @@ export default function UpdateProfileModal({
   submitLabel = 'Submit',
   defaultOption = null
 }) {
-  const [selectedOption, setSelectedOption] = useState(
-    defaultOption || options?.[0]?.value || ''
-  );
+  const [selectedOption, setSelectedOption] = useState(defaultOption || '');
 
   useEffect(() => {
     if (isOpen && options?.length) {
-      setSelectedOption(defaultOption || options[0]?.value || '');
+      setSelectedOption(defaultOption || '');
     }
   }, [defaultOption, isOpen, options]);
 
@@ -70,7 +68,7 @@ export default function UpdateProfileModal({
           <DialogFooter className="pt-4">
             <Button
               onClick={() => onSubmitOption && onSubmitOption(selectedOption)}
-              disabled={!selectedOption || !onSubmitOption}
+              disabled={!onSubmitOption}
               className="h-10 text-sm font-medium"
             >
               {submitLabel}
