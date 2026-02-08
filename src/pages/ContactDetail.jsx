@@ -50,7 +50,7 @@ import AddFieldModal from "../components/contacts/AddFieldModal";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import PropagateProfileChangesModal from "../components/shared/PropagateProfileChangesModal";
-import { getBorrowerInvitationFields } from "@/components/utils/borrowerInvitationFields";
+import { DEFAULT_INVITE_FIELDS, getBorrowerInvitationFields, resolveBorrowerInviteFields } from "@/components/utils/borrowerInvitationFields";
 import { getLocalBorrowerInvite, setLocalBorrowerInvite } from "@/components/utils/borrowerInvitationStorage";
 
 const InfoItem = ({ icon: Icon, label, value, href, isEmail, isPhone }) => {
@@ -341,10 +341,18 @@ export default function ContactDetail() {
   }, [contactType]);
 
   useEffect(() => {
-    if (contactType === 'borrower') {
-      getBorrowerInvitationFields(base44).then(setInviteFieldKeys);
+    if (contactType !== 'borrower') return;
+
+    const detected = resolveBorrowerInviteFields(contact);
+    if (detected.dateField || detected.statusField) {
+      setInviteFieldKeys(detected);
+      return;
     }
-  }, [contactType]);
+
+    getBorrowerInvitationFields(base44).then((schemaFields) => {
+      setInviteFieldKeys(schemaFields);
+    });
+  }, [contactType, contact]);
 
   useEffect(() => {
     if (contactType === 'borrower' && contact?.id) {
@@ -1099,12 +1107,10 @@ export default function ContactDetail() {
 
   const header = contact ? getContactHeader() : null;
   const Icon = header?.icon;
-  const invitationStatus = contactType === 'borrower' && inviteFieldKeys.statusField
-    ? contact?.[inviteFieldKeys.statusField]
-    : null;
-  const invitationDateValue = contactType === 'borrower' && inviteFieldKeys.dateField
-    ? contact?.[inviteFieldKeys.dateField]
-    : null;
+  const inviteStatusKey = inviteFieldKeys.statusField || DEFAULT_INVITE_FIELDS.statusField;
+  const inviteDateKey = inviteFieldKeys.dateField || DEFAULT_INVITE_FIELDS.dateField;
+  const invitationStatus = contactType === 'borrower' ? contact?.[inviteStatusKey] : null;
+  const invitationDateValue = contactType === 'borrower' ? contact?.[inviteDateKey] : null;
   const localInvitationDateValue = localInviteRecord?.sentAt || null;
   const hasInviteRecord = Boolean(
     invitationStatus === 'invited' ||
@@ -1558,21 +1564,23 @@ export default function ContactDetail() {
                         });
 
                         if (contactType === 'borrower') {
-                          const { dateField, statusField } = await getBorrowerInvitationFields(base44);
-                          const inviteUpdate = {};
+                          const detectedFields = resolveBorrowerInviteFields(contact);
+                          const schemaFields = (!detectedFields.dateField && !detectedFields.statusField)
+                            ? await getBorrowerInvitationFields(base44)
+                            : detectedFields;
+                          const dateField = schemaFields.dateField || DEFAULT_INVITE_FIELDS.dateField;
+                          const statusField = schemaFields.statusField || DEFAULT_INVITE_FIELDS.statusField;
                           const inviteSentAt = new Date().toISOString();
+                          const inviteUpdate = {
+                            [statusField]: 'invited',
+                            [dateField]: inviteSentAt
+                          };
 
-                          if (statusField) {
-                            inviteUpdate[statusField] = 'invited';
-                          }
-                          if (dateField) {
-                            inviteUpdate[dateField] = inviteSentAt;
-                          }
-
-                          if (Object.keys(inviteUpdate).length > 0) {
+                          try {
                             const updatedContact = await base44.entities.Borrower.update(contact.id, inviteUpdate);
                             setContact(updatedContact);
-                          } else {
+                          } catch (updateError) {
+                            console.error('Error updating borrower invitation fields:', updateError);
                             setLocalBorrowerInvite(contact.id, { status: 'invited', sentAt: inviteSentAt });
                             setLocalInviteRecord({ status: 'invited', sentAt: inviteSentAt });
                             toast({

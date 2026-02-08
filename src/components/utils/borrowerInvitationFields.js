@@ -17,6 +17,21 @@ const STATUS_FIELD_CANDIDATES = [
   'invited_status'
 ];
 
+export const DEFAULT_INVITE_FIELDS = {
+  statusField: 'invitation_status',
+  dateField: 'invitation_sent_date'
+};
+
+export const resolveBorrowerInviteFields = (borrower) => {
+  const source = borrower || {};
+  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(source, key);
+
+  const dateField = DATE_FIELD_CANDIDATES.find((key) => hasOwn(key)) || null;
+  const statusField = STATUS_FIELD_CANDIDATES.find((key) => hasOwn(key)) || null;
+
+  return { dateField, statusField };
+};
+
 export const getBorrowerInvitationFields = async (base44) => {
   if (cachedFieldsPromise) {
     return cachedFieldsPromise;

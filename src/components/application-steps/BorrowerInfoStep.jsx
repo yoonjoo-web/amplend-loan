@@ -15,7 +15,7 @@ import { base44 } from "@/api/base44Client";
 import DynamicFormRenderer from '../forms/DynamicFormRenderer';
 import SearchExistingModal from '../shared/SearchExistingModal';
 import { syncEntities } from '@/components/utils/entitySyncHelper';
-import { getBorrowerInvitationFields } from '@/components/utils/borrowerInvitationFields';
+import { DEFAULT_INVITE_FIELDS, getBorrowerInvitationFields, resolveBorrowerInviteFields } from '@/components/utils/borrowerInvitationFields';
 import { setLocalBorrowerInvite } from '@/components/utils/borrowerInvitationStorage';
 
 export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly = false }) {
@@ -134,20 +134,22 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         }
       });
 
-      const { dateField, statusField } = await getBorrowerInvitationFields(base44);
+      const detectedFields = resolveBorrowerInviteFields(selectedBorrowerToLink);
+      const schemaFields = (!detectedFields.dateField && !detectedFields.statusField)
+        ? await getBorrowerInvitationFields(base44)
+        : detectedFields;
+      const dateField = schemaFields.dateField || DEFAULT_INVITE_FIELDS.dateField;
+      const statusField = schemaFields.statusField || DEFAULT_INVITE_FIELDS.statusField;
       const inviteUpdate = {};
       const inviteSentAt = new Date().toISOString();
 
-      if (statusField) {
-        inviteUpdate[statusField] = 'invited';
-      }
-      if (dateField) {
-        inviteUpdate[dateField] = inviteSentAt;
-      }
+      inviteUpdate[statusField] = 'invited';
+      inviteUpdate[dateField] = inviteSentAt;
 
-      if (Object.keys(inviteUpdate).length > 0) {
+      try {
         await base44.entities.Borrower.update(selectedBorrowerToLink.id, inviteUpdate);
-      } else {
+      } catch (updateError) {
+        console.error('Error updating borrower invitation fields:', updateError);
         setLocalBorrowerInvite(selectedBorrowerToLink.id, { status: 'invited', sentAt: inviteSentAt });
       }
 
