@@ -162,6 +162,13 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   };
 
   const buildTeamPayload = () => {
+    const teamFieldKeys = [
+      'borrower_ids',
+      'loan_officer_ids',
+      'guarantor_ids',
+      'referrer_ids',
+      'liaison_ids'
+    ];
     let nextBorrowerIds = [...borrowerIds];
     let nextLoanOfficerIds = [...loanOfficerIds];
     let nextGuarantorIds = [...guarantorIds];
@@ -203,7 +210,10 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       loan_officer_ids: nextLoanOfficerIds,
       guarantor_ids: nextGuarantorIds,
       referrer_ids: nextReferrerIds,
-      liaison_ids: nextLiaisonIds
+      liaison_ids: nextLiaisonIds,
+      overridden_fields: Array.from(
+        new Set([...(loan?.overridden_fields || []), ...teamFieldKeys])
+      )
     };
   };
 

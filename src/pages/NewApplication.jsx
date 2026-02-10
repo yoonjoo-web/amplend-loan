@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { hasBrokerOnApplication } from "@/components/utils/brokerVisibility";
 
 import LoanTypeStep from "../components/application-steps/LoanTypeStep";
 import BorrowerInfoStep from "../components/application-steps/BorrowerInfoStep";
@@ -64,6 +65,7 @@ export default function NewApplication() {
   const [overallReviewComment, setOverallReviewComment] = useState('');
   const [primaryBorrowerUser, setPrimaryBorrowerUser] = useState(null);
   const [showProceedContactSyncModal, setShowProceedContactSyncModal] = useState(false);
+  const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
 
   const { toast } = useToast();
 
@@ -259,6 +261,18 @@ export default function NewApplication() {
         }
       } else {
         setPrimaryBorrowerUser(null);
+      }
+
+      if (permissions.isBorrower) {
+        try {
+          const partners = await base44.entities.LoanPartner.list();
+          setHideLoanOfficerDetails(hasBrokerOnApplication(appData, partners));
+        } catch (error) {
+          console.error('Error checking broker partners:', error);
+          setHideLoanOfficerDetails(false);
+        }
+      } else {
+        setHideLoanOfficerDetails(false);
       }
 
       if (appData.status === 'rejected') {
@@ -722,6 +736,15 @@ export default function NewApplication() {
   const submitApplication = async (submitType) => {
     if (isReadOnly) return;
 
+    if (permissions?.isBroker) {
+      toast({
+        variant: "destructive",
+        title: "Submission Blocked",
+        description: "Brokers cannot sign or submit applications. Please contact the borrower.",
+      });
+      return;
+    }
+
     const isLiaisonBorrower = permissions?.isBorrower && permissions?.borrowerType === 'liaison';
     if (isLiaisonBorrower) {
       toast({
@@ -1170,6 +1193,9 @@ export default function NewApplication() {
                       <p className="text-sm text-blue-700">
                         {formData.assigned_loan_officer_id ? (
                           (() => {
+                            if (hideLoanOfficerDetails) {
+                              return 'Loan Officer';
+                            }
                             const officer = allLoanOfficers.find(u => u.id === formData.assigned_loan_officer_id);
                             if (!officer) {
                               return 'Loading...';

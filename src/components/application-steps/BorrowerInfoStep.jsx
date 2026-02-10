@@ -212,11 +212,14 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     onUpdate(newData);
   };
 
-  const canSearchOrInvite = !isReadOnly && currentUser && (
+  const isStaff = currentUser && (
     currentUser.role === 'admin' ||
     currentUser.app_role === 'Administrator' ||
     currentUser.app_role === 'Loan Officer'
   );
+  const isBroker = currentUser?.app_role === 'Broker';
+  const canSearchExisting = !isReadOnly && isStaff;
+  const canInviteNew = !isReadOnly && (isStaff || isBroker);
 
   if (!currentUser) {
     return <div className="p-8 text-center">Loading...</div>;
@@ -224,26 +227,30 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
 
   return (
     <div className="space-y-4">
-      {canSearchOrInvite && (
+      {(canSearchExisting || canInviteNew) && (
         <div className="flex gap-2 justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSearchDialog(true)}
-            className="text-xs"
-          >
-            <Search className="w-3.5 h-3.5 mr-1.5" />
-            Search Existing
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowInviteDialog(true)}
-            className="text-xs"
-          >
-            <UserPlus className="w-3.5 h-3.5 mr-1.5" />
-            Invite New
-          </Button>
+          {canSearchExisting && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSearchDialog(true)}
+              className="text-xs"
+            >
+              <Search className="w-3.5 h-3.5 mr-1.5" />
+              Search Existing
+            </Button>
+          )}
+          {canInviteNew && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInviteDialog(true)}
+              className="text-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+              Invite New
+            </Button>
+          )}
         </div>
       )}
 

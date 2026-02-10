@@ -22,6 +22,7 @@ export default React.memo(function EntityInformationStep({
   onAddComment,
   fieldComments
 }) {
+  const isBroker = currentUser?.app_role === 'Broker';
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteFirstName, setInviteFirstName] = useState('');
@@ -319,7 +320,7 @@ export default React.memo(function EntityInformationStep({
   return (
     <div className="space-y-8">
       {/* Entity Search Section */}
-      {!isReadOnly && (
+      {!isReadOnly && !isBroker && (
         <div className="flex gap-2 justify-end">
           <Button
             variant="outline"

@@ -28,9 +28,16 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
   const isBorrower = currentUser?.app_role === 'Borrower';
   const canSubmitRequest = isBorrower && loan.borrower_ids?.includes(currentUser.id);
 
+  const coerceNumber = (value) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   const formatCurrency = (value) => {
-    if (value === '' || value === null || Number.isNaN(value)) return '';
-    return `$${Number(value).toLocaleString()}`;
+    const parsed = coerceNumber(value);
+    if (parsed === null) return '';
+    return `$${parsed.toLocaleString()}`;
   };
 
   const parseCurrencyInput = (value) => {

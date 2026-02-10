@@ -141,6 +141,8 @@ export const usePermissions = () => {
           p.canReviewApplication = false;
           p.canManageApplications = false;
           p.canReassignLoanOfficer = false;
+          p.canSignApplication = false;
+          p.canSubmitApplication = false;
         }
 
         if (p.isBorrower) {

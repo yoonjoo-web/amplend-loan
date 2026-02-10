@@ -8,6 +8,7 @@ import { Loader2, UserCircle, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import { hasBrokerOnApplication, hasBrokerOnLoan } from '@/components/utils/brokerVisibility';
 
 export default function Onboarding() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -20,10 +21,38 @@ export default function Onboarding() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [hideBranding, setHideBranding] = useState(false);
 
   useEffect(() => {
     loadUserData();
   }, []);
+
+  const resolveContextIds = (params) => {
+    const directApplicationId = params.get('application_id') || params.get('application');
+    const directLoanId = params.get('loan_id') || params.get('loan');
+    let applicationId = directApplicationId || null;
+    let loanId = directLoanId || null;
+
+    const next = params.get('next');
+    if (next) {
+      try {
+        const nextUrl = new URL(next, window.location.origin);
+        const nextParams = new URLSearchParams(nextUrl.search || '');
+        const nextId = nextParams.get('id');
+        const nextPath = (nextUrl.pathname || '').toLowerCase();
+        if (!applicationId && nextId && nextPath.includes('newapplication')) {
+          applicationId = nextId;
+        }
+        if (!loanId && nextId && nextPath.includes('loandetail')) {
+          loanId = nextId;
+        }
+      } catch (error) {
+        console.error('Error parsing next URL:', error);
+      }
+    }
+
+    return { applicationId, loanId };
+  };
 
   const loadUserData = async () => {
     setIsLoading(true);
@@ -49,6 +78,31 @@ export default function Onboarding() {
       });
       
       setRoleDisplay(roleFromUrl || user.app_role || 'User');
+      const roleCandidate = roleFromUrl || user.app_role || 'User';
+
+      const isBorrowerContext = roleCandidate === 'Borrower';
+      if (isBorrowerContext) {
+        const { applicationId, loanId } = resolveContextIds(params);
+        if (applicationId || loanId) {
+          try {
+            const partners = await base44.entities.LoanPartner.list();
+            if (loanId) {
+              const loan = await base44.entities.Loan.get(loanId);
+              setHideBranding(hasBrokerOnLoan(loan, partners));
+            } else if (applicationId) {
+              const application = await base44.entities.LoanApplication.get(applicationId);
+              setHideBranding(hasBrokerOnApplication(application, partners));
+            }
+          } catch (error) {
+            console.error('Error checking broker visibility for onboarding:', error);
+            setHideBranding(false);
+          }
+        } else {
+          setHideBranding(false);
+        }
+      } else {
+        setHideBranding(false);
+      }
 
       // Only redirect if user already has both names set AND no URL params provided
       if (user.first_name && user.last_name && !requestedFirstName && !requestedLastName && !firstNameFromUrl && !lastNameFromUrl) {
@@ -175,12 +229,16 @@ export default function Onboarding() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-slate-900 to-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UserCircle className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome to Amplend Loan Portal
-          </h1>
+          {!hideBranding && (
+            <>
+              <div className="w-20 h-20 bg-gradient-to-br from-slate-900 to-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UserCircle className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                Welcome to Amplend Loan Portal
+              </h1>
+            </>
+          )}
           <div className="flex items-center justify-center gap-2 text-slate-600">
             <span>You are joining as</span>
             <Badge className="bg-blue-600 text-white">{roleDisplay}</Badge>

@@ -17,16 +17,19 @@ import {
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Mail, LogOut, User, Settings, CheckCircle, ClipboardList } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { hasBrokerOnApplication, hasBrokerOnLoan } from "@/components/utils/brokerVisibility";
 
 export default function UniversalHeader({ currentUser }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [messageCount, setMessageCount] = useState(0);
+  const [hideBranding, setHideBranding] = useState(false);
 
   // Fetch unread messages
   const { data: messages = [] } = useQuery({
@@ -122,6 +125,56 @@ export default function UniversalHeader({ currentUser }) {
     setMessageCount(messages.length);
   }, [messages]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const resolveBrandingVisibility = async () => {
+      if (!currentUser || currentUser.app_role !== 'Borrower') {
+        if (isMounted) setHideBranding(false);
+        return;
+      }
+
+      const pathname = (location.pathname || '').toLowerCase();
+      const isLoanDetail = pathname.includes('loandetail');
+      const isApplication = pathname.includes('newapplication');
+      if (!isLoanDetail && !isApplication) {
+        if (isMounted) setHideBranding(false);
+        return;
+      }
+
+      const params = new URLSearchParams(location.search || '');
+      const id = params.get('id');
+      if (!id) {
+        if (isMounted) setHideBranding(false);
+        return;
+      }
+
+      try {
+        const loanPartners = await base44.entities.LoanPartner.list();
+        if (!isMounted) return;
+
+        if (isLoanDetail) {
+          const loan = await base44.entities.Loan.get(id);
+          if (!isMounted) return;
+          setHideBranding(hasBrokerOnLoan(loan, loanPartners));
+          return;
+        }
+
+        const application = await base44.entities.LoanApplication.get(id);
+        if (!isMounted) return;
+        setHideBranding(hasBrokerOnApplication(application, loanPartners));
+      } catch (error) {
+        console.error('Error resolving branding visibility:', error);
+        if (isMounted) setHideBranding(false);
+      }
+    };
+
+    resolveBrandingVisibility();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, location.pathname, location.search]);
+
   const handleLogout = async () => {
     try {
       await base44.auth.logout();
@@ -191,7 +244,9 @@ export default function UniversalHeader({ currentUser }) {
     <div className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-slate-900">Amplend</h1>
+          {!hideBranding && (
+            <h1 className="text-xl font-bold text-slate-900">Amplend</h1>
+          )}
         </div>
 
         <div className="flex items-center gap-4">

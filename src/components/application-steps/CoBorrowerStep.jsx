@@ -170,6 +170,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
   });
   const coBorrowers = data.co_borrowers || [];
   const { toast } = useToast();
+  const isBroker = currentUser?.app_role === 'Broker';
 
   // Determine if current user is a co-borrower viewing their own form
   const isCurrentUserCoBorrower = currentUser && coBorrowers.some(cb => cb.user_id === currentUser.id);
@@ -456,20 +457,22 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
           </DialogHeader>
 
           <div className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full justify-start h-auto py-4"
-              onClick={() => {
-                setShowSearchModal(true);
-                setShowOptionsModal(false);
-              }}
-            >
-              <Search className="w-5 h-5 mr-3" />
-              <div className="text-left">
-                <p className="font-semibold">Search Existing Borrowers</p>
-                <p className="text-xs text-slate-500">Find and select a registered borrower</p>
-              </div>
-            </Button>
+            {!isBroker && (
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-4"
+                onClick={() => {
+                  setShowSearchModal(true);
+                  setShowOptionsModal(false);
+                }}
+              >
+                <Search className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <p className="font-semibold">Search Existing Borrowers</p>
+                  <p className="text-xs text-slate-500">Find and select a registered borrower</p>
+                </div>
+              </Button>
+            )}
             <Button
               variant="outline"
               className="w-full justify-start h-auto py-4"

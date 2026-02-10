@@ -15,6 +15,7 @@ import LoanContactsSection from "./LoanContactsSection";
 import ClosingScheduleSection from "./ClosingScheduleSection";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import { useToast } from "@/components/ui/use-toast";
+import { hasBrokerOnLoan } from "@/components/utils/brokerVisibility";
 
 const STATUS_DESCRIPTIONS = {
   application_submitted: {
@@ -201,6 +202,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         console.error('LoanSidebar - Error fetching loan partners:', error);
       }
 
+      const hideLoanOfficerDetails = currentUser?.app_role === 'Borrower' && hasBrokerOnLoan(loan, allLoanPartners);
+
       if (!canManage && loan?.id) {
         try {
           const response = await base44.functions.invoke('getLoanOfficerTeam', {
@@ -258,13 +261,15 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         if (alreadyAdded) return;
         team.push({
           id: user.id,
-          email: user.email,
-          phone: user.phone,
+          email: hideLoanOfficerDetails ? null : user.email,
+          phone: hideLoanOfficerDetails ? null : user.phone,
           role: 'Loan Officer',
           messageUserId: user.id,
-          displayName: user.first_name && user.last_name
-            ? `${user.first_name} ${user.last_name}`
-            : user.email || 'Unknown User'
+          displayName: hideLoanOfficerDetails
+            ? 'Loan Officer'
+            : (user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`
+              : user.email || 'Unknown User')
         });
       };
 
@@ -340,7 +345,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             phone: null,
             role: 'Loan Officer',
             messageUserId: fallbackId,
-            displayName: `Loan Officer ${index + 1}`
+            displayName: hideLoanOfficerDetails ? 'Loan Officer' : `Loan Officer ${index + 1}`
           });
         });
       }

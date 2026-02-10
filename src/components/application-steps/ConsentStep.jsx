@@ -206,7 +206,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
       toast({
         variant: "destructive",
         title: "Action Not Allowed",
-        description: "Liaisons cannot sign or submit applications. Please contact the primary borrower.",
+        description: "You do not have permission to sign or submit this application. Please contact the primary borrower.",
       });
       return;
     }
@@ -468,7 +468,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
         <CardContent className="space-y-4">
           {!canSignApplication && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Liaisons cannot sign or submit applications. Please contact the primary borrower.
+              You do not have permission to sign or submit this application. Please contact the primary borrower.
             </div>
           )}
           <div className="space-y-2">
