@@ -289,10 +289,21 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         }
       };
 
-      // Add borrowers (prefer loan.borrower_ids)
+      const liaisonBorrowerIds = new Set(
+        allBorrowers
+          .filter(b => b.borrower_type === 'liaison')
+          .flatMap(b => [b.id, b.user_id].filter(Boolean))
+      );
+
+      // Add borrowers (prefer loan.borrower_ids; liaisons stored here are rendered separately)
       if (loan.borrower_ids && Array.isArray(loan.borrower_ids) && loan.borrower_ids.length > 0) {
         console.log('Processing borrowers:', loan.borrower_ids);
         loan.borrower_ids.forEach(id => {
+          if (liaisonBorrowerIds.has(id)) {
+            const liaisonBorrower = allBorrowers.find(b => b.id === id || b.user_id === id);
+            addLiaisonMember(liaisonBorrower);
+            return;
+          }
           const user = allUsers.find(u => u.id === id);
           if (user) {
             team.push({

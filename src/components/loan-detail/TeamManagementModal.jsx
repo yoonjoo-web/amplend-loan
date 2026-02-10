@@ -35,13 +35,25 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   useEffect(() => {
     if (isOpen) {
       loadUsers();
-      setBorrowerIds(loan?.borrower_ids || []);
-      setLoanOfficerIds(loan?.loan_officer_ids || []);
-      setGuarantorIds(loan?.guarantor_ids || []);
-      setReferrerIds(loan?.referrer_ids || []);
-      setLiaisonIds(loan?.liaison_ids || []);
     }
   }, [isOpen, loan]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const borrowerIdsRaw = loan?.borrower_ids || [];
+    const liaisonBorrowerIds = new Set(
+      (allBorrowers || [])
+        .filter(b => b.borrower_type === 'liaison')
+        .flatMap(b => [b.id, b.user_id].filter(Boolean))
+    );
+    const nextLiaisonIds = borrowerIdsRaw.filter(id => liaisonBorrowerIds.has(id));
+    const nextBorrowerIds = borrowerIdsRaw.filter(id => !liaisonBorrowerIds.has(id));
+    setBorrowerIds(nextBorrowerIds);
+    setLoanOfficerIds(loan?.loan_officer_ids || []);
+    setGuarantorIds(loan?.guarantor_ids || []);
+    setReferrerIds(loan?.referrer_ids || []);
+    setLiaisonIds(nextLiaisonIds.length > 0 ? nextLiaisonIds : (loan?.liaison_ids || []));
+  }, [isOpen, loan, allBorrowers]);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -205,8 +217,12 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       }
     }
 
+    const mergedBorrowerIds = Array.from(
+      new Set([...nextBorrowerIds, ...nextLiaisonIds])
+    );
+
     return {
-      borrower_ids: nextBorrowerIds,
+      borrower_ids: mergedBorrowerIds,
       loan_officer_ids: nextLoanOfficerIds,
       guarantor_ids: nextGuarantorIds,
       referrer_ids: nextReferrerIds,
