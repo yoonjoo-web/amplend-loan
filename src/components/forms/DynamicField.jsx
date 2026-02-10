@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle, AlertTriangle, HelpCircle, Info, Search } from 'lucide-react';
+import { MessageSquare, AlertCircle, AlertTriangle, HelpCircle, Info, Search, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from "date-fns";
 import {
   Tooltip,
@@ -108,6 +108,35 @@ function parseDateValue(value) {
     const parsed = new Date(`${normalized}T00:00:00`);
     return isNaN(parsed.getTime()) ? null : parsed;
   }
+  return null;
+}
+
+function parseDateInput(value) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (digitsOnly.length === 8) {
+    const month = digitsOnly.slice(0, 2);
+    const day = digitsOnly.slice(2, 4);
+    const year = digitsOnly.slice(4, 8);
+    const parsed = new Date(`${year}-${month}-${day}T00:00:00`);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const parsed = new Date(`${trimmed}T00:00:00`);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const usMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (usMatch) {
+    const month = String(usMatch[1]).padStart(2, '0');
+    const day = String(usMatch[2]).padStart(2, '0');
+    const year = usMatch[3];
+    const parsed = new Date(`${year}-${month}-${day}T00:00:00`);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
   return null;
 }
 
@@ -281,6 +310,7 @@ export default function DynamicField({
   const [autoCalculatedValue, setAutoCalculatedValue] = useState(null);
   const [isOverrideMode, setIsOverrideMode] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [dateInput, setDateInput] = useState('');
 
   const comment = fieldComments?.[fieldConfig.field_name];
   const hasComment = !!comment && !!comment.comment;
@@ -405,6 +435,12 @@ export default function DynamicField({
       setDisplayValue(value);
     }
   }, [value, fieldConfig.field_type, fieldConfig.field_name]);
+
+  useEffect(() => {
+    if (fieldConfig.field_type !== 'date') return;
+    const parsed = parseDateValue(value);
+    setDateInput(parsed ? format(parsed, 'MM/dd/yyyy') : (value || ''));
+  }, [fieldConfig.field_type, value]);
 
   const shouldDisplay = () => {
     if (!fieldConfig.display_conditional) return true;
@@ -785,45 +821,105 @@ export default function DynamicField({
         const selectedDate = parseDateValue(value);
         const datePlaceholder = fieldConfig.placeholder || 'MM/DD/YYYY';
         const displayDate = selectedDate ? format(selectedDate, 'MM/dd/yyyy') : '';
+        const inputValue = dateInput || displayDate || '';
 
         return (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={effectiveReadOnly}
-                className={cn(
-                  "h-10 w-full justify-start text-left text-sm font-normal",
-                  !displayDate && "text-muted-foreground"
-                )}
-              >
-                {displayDate || datePlaceholder}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <div className="p-3">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                  initialFocus
-                />
-                {!effectiveReadOnly && displayDate && (
-                  <div className="flex justify-end pt-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onChange('')}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              value={inputValue}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setDateInput(nextValue);
+                const parsed = parseDateInput(nextValue);
+                if (parsed) {
+                  onChange(format(parsed, 'yyyy-MM-dd'));
+                } else if (nextValue === '') {
+                  onChange('');
+                } else if (/^\d{4}$/.test(nextValue)) {
+                  const baseDate = parseDateValue(value) || parseDateInput(dateInput);
+                  const updatedDate = baseDate ? new Date(baseDate) : new Date();
+                  updatedDate.setFullYear(Number(nextValue));
+                  if (!baseDate) {
+                    updatedDate.setMonth(0);
+                    updatedDate.setDate(1);
+                  }
+                  if (!isNaN(updatedDate.getTime())) {
+                    const formatted = format(updatedDate, 'yyyy-MM-dd');
+                    onChange(formatted);
+                    setDateInput(format(updatedDate, 'MM/dd/yyyy'));
+                  }
+                } else if (/^\d{1,2}$/.test(nextValue)) {
+                  const numericValue = Number(nextValue);
+                  if (numericValue >= 1 && numericValue <= 31) {
+                    const baseDate = parseDateValue(value) || parseDateInput(dateInput);
+                    const updatedDate = baseDate ? new Date(baseDate) : new Date();
+                    if (!baseDate) {
+                      updatedDate.setMonth(0);
+                      updatedDate.setDate(1);
+                    }
+                    if (numericValue > 12) {
+                      updatedDate.setDate(numericValue);
+                    } else {
+                      updatedDate.setMonth(numericValue - 1);
+                    }
+                    if (!isNaN(updatedDate.getTime())) {
+                      const formatted = format(updatedDate, 'yyyy-MM-dd');
+                      onChange(formatted);
+                      setDateInput(format(updatedDate, 'MM/dd/yyyy'));
+                    }
+                  }
+                }
+              }}
+              onBlur={() => {
+                const parsed = parseDateInput(dateInput);
+                if (parsed) {
+                  onChange(format(parsed, 'yyyy-MM-dd'));
+                } else if (dateInput.trim() === '') {
+                  onChange('');
+                }
+              }}
+              placeholder={datePlaceholder}
+              disabled={effectiveReadOnly}
+              required={fieldConfig.required}
+              className="h-10 text-sm"
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={effectiveReadOnly}
+                  className="h-10 w-10 p-0"
+                  aria-label="Pick date"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <div className="p-3">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                    initialFocus
+                  />
+                  {!effectiveReadOnly && displayDate && (
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onChange('')}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         );
 
       case 'datetime':
