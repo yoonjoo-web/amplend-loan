@@ -9,6 +9,8 @@ const defaultPermissions = {
   isBorrower: false,
   isBroker: false,
   isLoanPartner: false,
+  borrowerType: null,
+  isBorrowerLiaison: false,
   
   // Application permissions
   canCreateApplication: false,
@@ -17,6 +19,8 @@ const defaultPermissions = {
   canReviewApplication: false,
   canManageApplications: false,
   canReassignLoanOfficer: false,
+  canSignApplication: false,
+  canSubmitApplication: false,
   
   // Loan permissions
   canViewAllLoans: false,
@@ -83,6 +87,29 @@ export const usePermissions = () => {
         p.isBroker = user.app_role === 'Broker';
         p.isLoanPartner = ['Referrer', 'Broker', 'Guarantor', 'Title Company'].includes(user.app_role);
 
+        if (p.isBorrower) {
+          try {
+            let borrowerRecord = null;
+            const borrowersByUserId = await base44.entities.Borrower.filter({ user_id: user.id });
+            if (borrowersByUserId && borrowersByUserId.length > 0) {
+              borrowerRecord = borrowersByUserId[0];
+            } else if (user.email) {
+              const borrowersByEmail = await base44.entities.Borrower.filter({ email: user.email });
+              if (borrowersByEmail && borrowersByEmail.length > 0) {
+                borrowerRecord = borrowersByEmail[0];
+              }
+            }
+
+            if (borrowerRecord) {
+              p.borrowerType = borrowerRecord.borrower_type || null;
+            }
+          } catch (borrowerError) {
+            console.error('Error loading borrower type:', borrowerError);
+          }
+        }
+
+        p.isBorrowerLiaison = p.isBorrower && p.borrowerType === 'liaison';
+
         // --- Rule 1: Administrator = Platform Admin ---
         const isAdmin = p.isPlatformAdmin || p.isAdministrator;
 
@@ -114,6 +141,11 @@ export const usePermissions = () => {
           p.canReviewApplication = false;
           p.canManageApplications = false;
           p.canReassignLoanOfficer = false;
+        }
+
+        if (p.isBorrower) {
+          p.canSignApplication = !p.isBorrowerLiaison;
+          p.canSubmitApplication = !p.isBorrowerLiaison;
         }
 
         // --- Loans (Rule 3 - UPDATED) ---

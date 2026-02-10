@@ -812,10 +812,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         onClose={() => setShowReassignModal(false)}
         loan={loan}
         onUpdate={onUpdate}
-        onRefresh={() => {
-          onRefresh();
-          loadTeamMembers(); // Reload team members after reassign
-        }}
+        onRefresh={onRefresh}
       />
 
       <VersionHistoryModal

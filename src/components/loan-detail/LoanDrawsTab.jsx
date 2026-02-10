@@ -26,7 +26,7 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
     ['Administrator', 'Loan Officer'].includes(currentUser.app_role)
   );
   const isBorrower = currentUser?.app_role === 'Borrower';
-  const canSubmitRequest = (isBorrower && loan.borrower_ids?.includes(currentUser.id)) || canEdit;
+  const canSubmitRequest = isBorrower && loan.borrower_ids?.includes(currentUser.id);
 
   const formatCurrency = (value) => {
     if (value === '' || value === null || Number.isNaN(value)) return '';
@@ -620,7 +620,7 @@ Amplend Team`
             <div>
               <h3 className="text-base font-semibold text-slate-900">Draw Requests</h3>
               <p className="text-sm text-slate-500">
-                Borrowers, loan officers, and admins can submit requests. Loan officers and admins can convert them into draws.
+                Borrowers can submit requests. Loan officers and admins can convert them into draws.
               </p>
             </div>
           </div>

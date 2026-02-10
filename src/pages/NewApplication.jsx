@@ -722,6 +722,16 @@ export default function NewApplication() {
   const submitApplication = async (submitType) => {
     if (isReadOnly) return;
 
+    const isLiaisonBorrower = permissions?.isBorrower && permissions?.borrowerType === 'liaison';
+    if (isLiaisonBorrower) {
+      toast({
+        variant: "destructive",
+        title: "Submission Blocked",
+        description: "Liaisons cannot sign or submit applications. Please contact the primary borrower.",
+      });
+      return;
+    }
+
     // TEMPORARY: Allow staff to bypass co-borrower signature check
     const isStaff = permissions?.isLoanOfficer || permissions?.isAdministrator || permissions?.isPlatformAdmin;
 
@@ -1068,6 +1078,8 @@ export default function NewApplication() {
         props.onSubmit = handleSubmit;
         props.isProcessing = isProcessing;
         props.canManage = canManage;
+        props.canSignApplication = permissions?.canSignApplication ?? true;
+        props.canSubmitApplication = permissions?.canSubmitApplication ?? true;
         
         // For co-borrowers, they sign their own consent
         if (isCoBorrowerViewing) {

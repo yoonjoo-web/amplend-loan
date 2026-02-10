@@ -161,16 +161,57 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     }
   };
 
+  const buildTeamPayload = () => {
+    let nextBorrowerIds = [...borrowerIds];
+    let nextLoanOfficerIds = [...loanOfficerIds];
+    let nextGuarantorIds = [...guarantorIds];
+    let nextReferrerIds = [...referrerIds];
+    let nextLiaisonIds = [...liaisonIds];
+
+    if (newMemberRole && newMemberId) {
+      switch (newMemberRole) {
+        case 'borrower':
+          if (!nextBorrowerIds.includes(newMemberId)) {
+            nextBorrowerIds.push(newMemberId);
+          }
+          break;
+        case 'loan_officer':
+          if (!nextLoanOfficerIds.includes(newMemberId)) {
+            nextLoanOfficerIds.push(newMemberId);
+          }
+          break;
+        case 'guarantor':
+          if (!nextGuarantorIds.includes(newMemberId)) {
+            nextGuarantorIds.push(newMemberId);
+          }
+          break;
+        case 'referrer':
+          if (!nextReferrerIds.includes(newMemberId)) {
+            nextReferrerIds.push(newMemberId);
+          }
+          break;
+        case 'liaison':
+          if (!nextLiaisonIds.includes(newMemberId)) {
+            nextLiaisonIds.push(newMemberId);
+          }
+          break;
+      }
+    }
+
+    return {
+      borrower_ids: nextBorrowerIds,
+      loan_officer_ids: nextLoanOfficerIds,
+      guarantor_ids: nextGuarantorIds,
+      referrer_ids: nextReferrerIds,
+      liaison_ids: nextLiaisonIds
+    };
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onUpdate({
-        borrower_ids: borrowerIds,
-        loan_officer_ids: loanOfficerIds,
-        guarantor_ids: guarantorIds,
-        referrer_ids: referrerIds,
-        liaison_ids: liaisonIds
-      });
+      const teamPayload = buildTeamPayload();
+      await onUpdate(teamPayload);
       
       toast({
         title: "Team Updated",

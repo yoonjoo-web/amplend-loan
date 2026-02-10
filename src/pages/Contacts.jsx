@@ -393,6 +393,12 @@ export default function Contacts() {
                   phone = '';
                 }
 
+                const getBorrowerTypeBadgeClass = () => {
+                  return contact.borrower_type === 'liaison'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-blue-100 text-blue-800';
+                };
+
                 const typeLabelForTab = () => {
                   if (type === 'borrower') return formatBorrowerContactType(contact.borrower_type);
                   if (type === 'entity') return contact.entity_type || 'Entity';
@@ -420,7 +426,7 @@ export default function Contacts() {
                       <TableCell>
                         {type ? (
                           <Badge className={
-                            contactType === 'borrower' ? 'bg-blue-100 text-blue-800' :
+                            contactType === 'borrower' ? getBorrowerTypeBadgeClass() :
                             contactType === 'entity' ? 'bg-indigo-100 text-indigo-800' :
                             'bg-amber-100 text-amber-800'
                           }>

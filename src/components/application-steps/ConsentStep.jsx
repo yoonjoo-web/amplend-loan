@@ -10,7 +10,7 @@ import { FileText, PenTool, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import FieldChangeIndicator from "./FieldChangeIndicator";
 
-export default React.memo(function ConsentStep({ data, onChange, isReadOnly, borrowerData, onSubmit, isProcessing, isCoBorrowerConsent = false, coBorrowerUserId = null, canManage = false }) {
+export default React.memo(function ConsentStep({ data, onChange, isReadOnly, borrowerData, onSubmit, isProcessing, isCoBorrowerConsent = false, coBorrowerUserId = null, canManage = false, canSignApplication = true, canSubmitApplication = true }) {
   const { toast } = useToast();
   const hasInitialized = useRef(false);
 
@@ -162,7 +162,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
   };
 
   const handleEsignatureChange = (e) => {
-    if (isReadOnly && !canManage) return;
+    if ((isReadOnly && !canManage) || !canSignApplication) return;
     const value = e.target.value;
     setEsignature(value);
     setSignatureError('');
@@ -202,6 +202,14 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
 
   const handleSubmit = async () => {
     if (isReadOnly || isProcessing || !data) return;
+    if (!canSubmitApplication || !canSignApplication) {
+      toast({
+        variant: "destructive",
+        title: "Action Not Allowed",
+        description: "Liaisons cannot sign or submit applications. Please contact the primary borrower.",
+      });
+      return;
+    }
 
     const declarationValidationErrors = validateDeclarations();
     const acknowledgementValidation = acknowledgementAgreed ? '' : 'You must agree to the acknowledgement';
@@ -458,6 +466,11 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!canSignApplication && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Liaisons cannot sign or submit applications. Please contact the primary borrower.
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="signature">Your Full Legal Name *</Label>
             <Input
@@ -465,7 +478,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               placeholder="John Smith"
               value={esignature}
               onChange={handleEsignatureChange}
-              disabled={isReadOnly && !canManage}
+              disabled={(isReadOnly && !canManage) || !canSignApplication}
               className="font-serif text-lg" />
 
             {signatureError && <p className="text-red-500 text-sm">{signatureError}</p>}
@@ -493,7 +506,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
           <div className="pt-6 border-t-2 border-slate-200">
               <Button
               onClick={handleSubmit}
-              disabled={isProcessing}
+              disabled={isProcessing || !canSubmitApplication || !canSignApplication}
               className="w-full bg-slate-900 hover:bg-slate-800 text-lg py-6">
 
                 {isProcessing ?
