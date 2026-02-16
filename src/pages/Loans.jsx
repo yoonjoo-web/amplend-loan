@@ -362,9 +362,6 @@ export default function Loans() {
       } else if (permissions.isBorrower) {
         const borrowerIds = loan.borrower_ids || [];
         isMyLoan = borrowerIds.includes(currentUser.id);
-      } else if (currentUser.app_role === 'Guarantor') {
-        const guarantorIds = loan.guarantor_ids || [];
-        isMyLoan = guarantorIds.includes(currentUser.id);
       } else if (currentUser.app_role === 'Referrer') {
         const referrerIds = loan.referrer_ids || [];
         isMyLoan = referrerIds.includes(currentUser.id);
@@ -384,11 +381,6 @@ export default function Loans() {
 
       } else if (permissions.isBorrower) {const borrowerIds = loan.borrower_ids || [];
         if (!borrowerIds.includes(currentUser.id)) {
-          return false;
-        }
-      } else if (currentUser.app_role === 'Guarantor') {
-        const guarantorIds = loan.guarantor_ids || [];
-        if (!guarantorIds.includes(currentUser.id)) {
           return false;
         }
       } else if (currentUser.app_role === 'Referrer') {

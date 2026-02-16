@@ -190,7 +190,6 @@ const ROLE_OPTIONS = [
   { value: 'Borrower', label: 'Borrower' },
   { value: 'Referrer', label: 'Referrer' },
   { value: 'Broker', label: 'Broker' },
-  { value: 'Guarantor', label: 'Guarantor' },
   { value: 'Title Company', label: 'Title Company' }
 ];
 

@@ -24,7 +24,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   // Team member states
   const [borrowerIds, setBorrowerIds] = useState([]);
   const [loanOfficerIds, setLoanOfficerIds] = useState([]);
-  const [guarantorIds, setGuarantorIds] = useState([]);
   const [referrerIds, setReferrerIds] = useState([]);
   const [liaisonIds, setLiaisonIds] = useState([]);
   
@@ -50,7 +49,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     const nextBorrowerIds = borrowerIdsRaw.filter(id => !liaisonBorrowerIds.has(id));
     setBorrowerIds(nextBorrowerIds);
     setLoanOfficerIds(loan?.loan_officer_ids || []);
-    setGuarantorIds(loan?.guarantor_ids || []);
     setReferrerIds(loan?.referrer_ids || []);
     setLiaisonIds(nextLiaisonIds.length > 0 ? nextLiaisonIds : (loan?.liaison_ids || []));
   }, [isOpen, loan, allBorrowers]);
@@ -81,8 +79,8 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   };
 
   const getUserDisplayName = (userId, roleKey) => {
-    // For guarantors and liaisons, look in borrowers
-    if (roleKey === 'guarantor' || roleKey === 'liaison') {
+    // For liaisons, look in borrowers
+    if (roleKey === 'liaison') {
       const borrower = allBorrowers.find(b => b.id === userId);
       if (borrower && borrower.first_name && borrower.last_name) {
         return `${borrower.first_name} ${borrower.last_name}`;
@@ -108,7 +106,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   };
 
   const getUserRole = (userId, roleKey) => {
-    if (roleKey === 'guarantor' || roleKey === 'liaison') {
+    if (roleKey === 'liaison') {
       return 'Borrower';
     }
     if (roleKey === 'referrer') {
@@ -130,11 +128,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'loan_officer':
         if (!loanOfficerIds.includes(newMemberId)) {
           setLoanOfficerIds([...loanOfficerIds, newMemberId]);
-        }
-        break;
-      case 'guarantor':
-        if (!guarantorIds.includes(newMemberId)) {
-          setGuarantorIds([...guarantorIds, newMemberId]);
         }
         break;
       case 'referrer':
@@ -161,9 +154,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'loan_officer':
         setLoanOfficerIds(loanOfficerIds.filter(id => id !== userId));
         break;
-      case 'guarantor':
-        setGuarantorIds(guarantorIds.filter(id => id !== userId));
-        break;
       case 'referrer':
         setReferrerIds(referrerIds.filter(id => id !== userId));
         break;
@@ -177,13 +167,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     const teamFieldKeys = [
       'borrower_ids',
       'loan_officer_ids',
-      'guarantor_ids',
       'referrer_ids',
       'liaison_ids'
     ];
     let nextBorrowerIds = [...borrowerIds];
     let nextLoanOfficerIds = [...loanOfficerIds];
-    let nextGuarantorIds = [...guarantorIds];
     let nextReferrerIds = [...referrerIds];
     let nextLiaisonIds = [...liaisonIds];
 
@@ -197,11 +185,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
         case 'loan_officer':
           if (!nextLoanOfficerIds.includes(newMemberId)) {
             nextLoanOfficerIds.push(newMemberId);
-          }
-          break;
-        case 'guarantor':
-          if (!nextGuarantorIds.includes(newMemberId)) {
-            nextGuarantorIds.push(newMemberId);
           }
           break;
         case 'referrer':
@@ -224,7 +207,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     return {
       borrower_ids: mergedBorrowerIds,
       loan_officer_ids: nextLoanOfficerIds,
-      guarantor_ids: nextGuarantorIds,
       referrer_ids: nextReferrerIds,
       liaison_ids: nextLiaisonIds,
       overridden_fields: Array.from(
@@ -276,9 +258,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
         return allUsers.filter(u => 
           u.app_role === 'Loan Officer' && !existingIds.includes(u.id)
         );
-      case 'guarantor':
-        existingIds = guarantorIds;
-        return allBorrowers.filter(b => !existingIds.includes(b.id));
       case 'referrer':
         existingIds = referrerIds;
         return allReferrerPartners.filter(p => !existingIds.includes(p.id));
@@ -352,7 +331,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="loan_officer">Loan Officer</SelectItem>
-                        <SelectItem value="guarantor">Guarantor</SelectItem>
                         <SelectItem value="liaison">Liaison</SelectItem>
                         <SelectItem value="referrer">Referrer</SelectItem>
                       </SelectContent>
@@ -372,9 +350,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                       <SelectContent>
                         {availableUsers.map(item => {
                           const displayName = 
-                            (newMemberRole === 'guarantor' && item.first_name && item.last_name)
-                              ? `${item.first_name} ${item.last_name}`
-                            : (newMemberRole === 'referrer' && item.name)
+                            (newMemberRole === 'referrer' && item.name)
                               ? item.name
                             : (item.first_name && item.last_name)
                               ? `${item.first_name} ${item.last_name}`
@@ -405,12 +381,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                 <h4 className="text-sm font-semibold text-slate-900">Current Team</h4>
                 {renderTeamSection('Borrowers', borrowerIds, 'borrower')}
                 {renderTeamSection('Loan Officers', loanOfficerIds, 'loan_officer')}
-                {renderTeamSection('Guarantors', guarantorIds, 'guarantor')}
                 {renderTeamSection('Liaisons', liaisonIds, 'liaison')}
                 {renderTeamSection('Referrers', referrerIds, 'referrer')}
                 
                 {borrowerIds.length === 0 && loanOfficerIds.length === 0 && 
-                 guarantorIds.length === 0 && liaisonIds.length === 0 && referrerIds.length === 0 && (
+                 liaisonIds.length === 0 && referrerIds.length === 0 && (
                   <p className="text-sm text-slate-500 text-center py-4">No team members added yet</p>
                 )}
               </div>

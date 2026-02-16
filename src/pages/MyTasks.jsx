@@ -63,13 +63,12 @@ export default function MyTasks() {
       const allLoans = await Loan.list('-created_date');
       console.log('[MyTasks] All loans loaded:', allLoans?.length || 0);
 
-      // Filter loans where user is assigned (loan officer, borrower, guarantor, or referrer)
+      // Filter loans where user is assigned (loan officer, borrower, or referrer)
       const userLoans = (allLoans || []).filter(loan => {
         const isLoanOfficer = loan.loan_officer_ids?.includes(currentUser.id);
         const isBorrower = loan.borrower_ids?.includes(currentUser.id);
-        const isGuarantor = loan.guarantor_ids?.includes(currentUser.id);
         const isReferrer = loan.referrer_ids?.includes(currentUser.id);
-        return isLoanOfficer || isBorrower || isGuarantor || isReferrer;
+        return isLoanOfficer || isBorrower || isReferrer;
       });
       console.log('[MyTasks] User loans:', userLoans.length);
 

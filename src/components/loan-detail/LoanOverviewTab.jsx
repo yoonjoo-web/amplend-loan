@@ -88,7 +88,7 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
         console.log(`Individual ${idx} before:`, individual);
         const clean = { ...individual };
         // Convert empty strings to false for boolean fields
-        const booleanFields = ['guarantor', 'bankruptcy_foreclosure_short_sale_or_deed_in_lieu_in_last_36_months', 'foreign_national', 'mortgage_late_payment_or_delinquencies', 'previous_felony_misdemeanor_convictions_or_other_similar_crimes'];
+        const booleanFields = ['bankruptcy_foreclosure_short_sale_or_deed_in_lieu_in_last_36_months', 'foreign_national', 'mortgage_late_payment_or_delinquencies', 'previous_felony_misdemeanor_convictions_or_other_similar_crimes'];
         booleanFields.forEach(field => {
           if (clean[field] === '' || clean[field] === null || clean[field] === undefined) {
             clean[field] = false;

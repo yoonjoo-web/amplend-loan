@@ -164,8 +164,6 @@ export default function Dashboard() {
         userLoans = loans.filter(l => l.loan_officer_ids?.includes(currentUser.id));
       } else if (permissions.isBorrower) {
         userLoans = loans.filter(l => l.borrower_ids?.includes(currentUser.id));
-      } else if (currentUser.app_role === 'Guarantor') {
-        userLoans = loans.filter(l => l.guarantor_ids?.includes(currentUser.id));
       } else if (currentUser.app_role === 'Referrer') {
         userLoans = loans.filter(l => l.referrer_ids?.includes(currentUser.id));
       }

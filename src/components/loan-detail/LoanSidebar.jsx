@@ -124,7 +124,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     console.log('LoanSidebar - useEffect triggered');
     console.log('loan.borrower_ids:', loan.borrower_ids);
     console.log('loan.loan_officer_ids:', loan.loan_officer_ids);
-    console.log('loan.guarantor_ids:', loan.guarantor_ids);
     console.log('loan.referrer_ids:', loan.referrer_ids);
     console.log('loan.liaison_ids:', loan.liaison_ids);
     loadTeamMembers();
@@ -136,7 +135,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     loan.borrower_entity_id,
     loan.borrower_entity_name,
     loan.loan_officer_ids,
-    loan.guarantor_ids,
     loan.liaison_ids,
     loan.referrer_ids,
     loan.modification_history
@@ -365,26 +363,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         loanOfficerOverrides.forEach(addLoanOfficerMember);
       }
 
-      // Add guarantors (look in borrowers)
-      if (loan.guarantor_ids && Array.isArray(loan.guarantor_ids) && loan.guarantor_ids.length > 0) {
-        console.log('Processing guarantors:', loan.guarantor_ids);
-        loan.guarantor_ids.forEach(id => {
-          const borrower = allBorrowers.find(b => b.id === id);
-          if (borrower) {
-            team.push({
-              id: borrower.id,
-              email: borrower.email,
-              phone: borrower.phone,
-              role: 'Guarantor',
-              messageUserId: borrower.user_id || null,
-              displayName: borrower.first_name && borrower.last_name
-                ? `${borrower.first_name} ${borrower.last_name}`
-                : borrower.email || 'Unknown Contact'
-            });
-          }
-        });
-      }
-
       // Add liaisons (look in borrowers)
       if (loan.liaison_ids && Array.isArray(loan.liaison_ids) && loan.liaison_ids.length > 0) {
         console.log('Processing liaisons:', loan.liaison_ids);
@@ -509,7 +487,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     color: "bg-gray-100 text-gray-800"
   };
 
-  const restrictedMessengerRoles = ['Borrower', 'Referrer', 'Broker', 'Guarantor', 'Title Company'];
+  const restrictedMessengerRoles = ['Borrower', 'Referrer', 'Broker', 'Title Company'];
   const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(currentUser.app_role);
 
   const canMessageMember = (member) => {

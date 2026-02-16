@@ -29,7 +29,6 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
   const [selectedRoles, setSelectedRoles] = useState({
     borrowers: true,
     loan_officers: true,
-    guarantors: true,
     referrers: true
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -153,9 +152,6 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       if (selectedRoles.loan_officers && selectedLoan.loan_officer_ids) {
         participantIds.push(...selectedLoan.loan_officer_ids);
       }
-      if (selectedRoles.guarantors && selectedLoan.guarantor_ids) {
-        participantIds.push(...selectedLoan.guarantor_ids);
-      }
       if (selectedRoles.referrers && selectedLoan.referrer_ids) {
         participantIds.push(...selectedLoan.referrer_ids);
       }
@@ -188,7 +184,6 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       setSelectedRoles({
         borrowers: true,
         loan_officers: true,
-        guarantors: true,
         referrers: true
       });
     } catch (error) {
@@ -208,7 +203,6 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
     const roleMap = {
       borrowers: loan.borrower_ids?.length || 0,
       loan_officers: loan.loan_officer_ids?.length || 0,
-      guarantors: loan.guarantor_ids?.length || 0,
       referrers: loan.referrer_ids?.length || 0
     };
     return roleMap[role] || 0;
@@ -362,19 +356,6 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                         />
                         <label htmlFor="loan_officers" className="text-sm cursor-pointer">
                           Loan Officers ({getRoleCount(selectedLoan, 'loan_officers')})
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="guarantors"
-                          checked={selectedRoles.guarantors}
-                          onCheckedChange={() => toggleRole('guarantors')}
-                        />
-                        <label htmlFor="guarantors" className="text-sm cursor-pointer">
-                          Guarantors ({getRoleCount(selectedLoan, 'guarantors')})
                         </label>
                       </div>
                     </div>

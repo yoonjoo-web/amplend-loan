@@ -85,7 +85,7 @@ export const usePermissions = () => {
         p.isLoanOfficer = user.app_role === 'Loan Officer';
         p.isBorrower = user.app_role === 'Borrower';
         p.isBroker = user.app_role === 'Broker';
-        p.isLoanPartner = ['Referrer', 'Broker', 'Guarantor', 'Title Company'].includes(user.app_role);
+        p.isLoanPartner = ['Referrer', 'Broker', 'Title Company'].includes(user.app_role);
 
         if (p.isBorrower) {
           try {

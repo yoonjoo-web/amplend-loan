@@ -10,7 +10,7 @@ import { User } from '@/entities/all';
 
 const allRoles = [
   "Administrator", "Loan Officer", "Referrer", "Broker", 
-  "Borrower", "Guarantor", "Title Company"
+  "Borrower", "Title Company"
 ];
 
 export default function EditUserModal({ isOpen, onClose, user, onUserUpdate }) {

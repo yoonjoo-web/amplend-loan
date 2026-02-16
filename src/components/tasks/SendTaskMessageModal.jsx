@@ -89,7 +89,6 @@ export default function SendTaskMessageModal({ isOpen, onClose, task, loan, curr
         const memberIds = new Set();
         (loan.loan_officer_ids || []).forEach(id => memberIds.add(id));
         (loan.borrower_ids || []).forEach(id => memberIds.add(id));
-        (loan.guarantor_ids || []).forEach(id => memberIds.add(id));
         (loan.referrer_ids || []).forEach(id => memberIds.add(id));
         
         // Remove current user
@@ -153,7 +152,6 @@ export default function SendTaskMessageModal({ isOpen, onClose, task, loan, curr
           currentUser.id,
           ...(loan.loan_officer_ids || []),
           ...(loan.borrower_ids || []),
-          ...(loan.guarantor_ids || []),
           ...(loan.referrer_ids || [])
         ];
 

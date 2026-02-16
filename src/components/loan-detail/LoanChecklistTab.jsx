@@ -116,7 +116,6 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
       const loanUserIds = new Set([
         ...(loan.borrower_ids || []),
         ...(loan.loan_officer_ids || []),
-        ...(loan.guarantor_ids || []),
         ...(loan.referrer_ids || [])
       ]);
         

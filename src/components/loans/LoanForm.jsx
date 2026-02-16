@@ -14,7 +14,6 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
   const [formData, setFormData] = useState({
     borrower_ids: [],
     loan_officer_ids: [],
-    guarantor_ids: [],
     referrer_ids: [],
     loan_number: '',
     loan_type: 'personal',
@@ -108,16 +107,6 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="guarantors">Guarantors</Label>
-              <MultiSelect
-                options={getUserOptions('Guarantor')}
-                selected={formData.guarantor_ids || []}
-                onChange={(value) => handleInputChange('guarantor_ids', value)}
-                placeholder="Select guarantors..."
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="referrers">Referrers</Label>
               <MultiSelect

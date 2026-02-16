@@ -187,7 +187,7 @@ export default function Onboarding() {
         await base44.entities.LoanPartner.update(partners[0].id, {
           user_id: currentUser.id
         });
-      } else if (['Referrer', 'Broker', 'Guarantor', 'Title Company', 'Servicer', 'Auditor', 'Referral Partner', 'Brokerage', 'Appraisal Firm', 'Legal Counsel', 'Insurance Provider', 'Other'].includes(roleFromUrl)) {
+      } else if (['Referrer', 'Broker', 'Title Company', 'Servicer', 'Auditor', 'Referral Partner', 'Brokerage', 'Appraisal Firm', 'Legal Counsel', 'Insurance Provider', 'Other'].includes(roleFromUrl)) {
         await base44.entities.LoanPartner.create({
           user_id: currentUser.id,
           name: `${formData.first_name.trim()} ${formData.last_name.trim()}`,

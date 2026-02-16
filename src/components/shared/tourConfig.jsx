@@ -145,7 +145,7 @@ const PAGE_TOUR_STEPS = {
       {
         target: '[data-tour="loan-channel-tab"]',
         title: 'Loan Channel',
-        content: 'Use loan channels for group discussions about a specific loan. All stakeholders (borrowers, loan officers, guarantors) can be included.',
+        content: 'Use loan channels for group discussions about a specific loan. All stakeholders (borrowers, loan officers, referrers) can be included.',
         placement: 'bottom',
         type: STEP_TYPE.INFO
       }

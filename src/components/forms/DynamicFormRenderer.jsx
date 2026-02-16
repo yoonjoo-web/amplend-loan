@@ -296,8 +296,7 @@ export default function DynamicFormRenderer({
                              fieldName.includes('bankruptcy') ||
                              fieldName.includes('foreign_national') ||
                              fieldName.includes('mortgage_late') ||
-                             fieldName.includes('felony') ||
-                             fieldName === 'is_guarantor';
+                             fieldName.includes('felony');
 
       if (isBooleanField) {
         // Handle radio button string values and empty states
@@ -350,8 +349,7 @@ export default function DynamicFormRenderer({
                                field.field_name.includes('bankruptcy') ||
                                field.field_name.includes('foreign_national') ||
                                field.field_name.includes('mortgage_late') ||
-                               field.field_name.includes('felony') ||
-                               field.field_name === 'is_guarantor';
+                               field.field_name.includes('felony');
         
         if (isBooleanField) {
           newInstance[field.field_name] = false;

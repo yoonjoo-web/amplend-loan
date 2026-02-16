@@ -66,7 +66,7 @@ export default function LoanDetail() {
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      setIsLoanPartner(['Referrer', 'Broker', 'Guarantor', 'Title Company'].includes(user.app_role));
+      setIsLoanPartner(['Referrer', 'Broker', 'Title Company'].includes(user.app_role));
 
       // Only fetch loan officers if user has permission (admins and loan officers)
       if (user.role === 'admin' || user.app_role === 'Administrator' || user.app_role === 'Loan Officer') {
@@ -113,7 +113,6 @@ export default function LoanDetail() {
         user.app_role === 'Administrator' ||
         user.app_role === 'Loan Officer' ||
         loanData.borrower_ids?.includes(user.id) ||
-        loanData.guarantor_ids?.includes(user.id) ||
         loanData.liaison_ids?.includes(user.id) ||
         loanData.referrer_ids?.includes(user.id);
 
