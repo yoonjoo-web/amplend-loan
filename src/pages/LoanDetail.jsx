@@ -294,7 +294,7 @@ export default function LoanDetail() {
                       </TabsTrigger>
                       <TabsTrigger value="checklist" className="flex items-center gap-2">
                         <CheckSquare className="w-4 h-4" />
-                        Checklist
+                        Document Checklist
                       </TabsTrigger>
                       <TabsTrigger value="draws" className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4" />
