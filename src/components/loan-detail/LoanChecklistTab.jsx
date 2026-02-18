@@ -55,7 +55,9 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
       checklistItemsCount: checklistItems.length 
     });
   }, [showItemModal, selectedItem, checklistItems]);
-  const [activeChecklistType, setActiveChecklistType] = useState("action_item");
+  const [activeChecklistType, setActiveChecklistType] = useState(
+    permissions.canViewActionChecklist ? "action_item" : "document"
+  );
   const [activeCategory, setActiveCategory] = useState("all");
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
