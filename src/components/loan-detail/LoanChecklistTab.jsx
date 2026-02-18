@@ -399,9 +399,23 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
     return 0;
   });
 
-  const categories = [...new Set(checklistItems
+  // Get category order from the configured checklist data (as set in Settings)
+  const templateData = activeChecklistType === 'action_item' ? ACTION_ITEM_CHECKLIST_ITEMS : DOCUMENT_CHECKLIST_ITEMS;
+  const templateCategoryOrder = [...new Set(templateData.map(item => item.category))];
+
+  const rawCategories = [...new Set(checklistItems
     .filter(item => item.checklist_type === activeChecklistType)
     .map(item => item.category))];
+
+  // Sort categories by their order in the template; any not in template go at the end
+  const categories = rawCategories.sort((a, b) => {
+    const aIdx = templateCategoryOrder.indexOf(a);
+    const bIdx = templateCategoryOrder.indexOf(b);
+    if (aIdx === -1 && bIdx === -1) return 0;
+    if (aIdx === -1) return 1;
+    if (bIdx === -1) return -1;
+    return aIdx - bIdx;
+  });
 
   const getStatusColors = (status, type) => {
     return type === "action_item" ? ACTION_STATUS_COLORS[status] : DOCUMENT_STATUS_COLORS[status];
