@@ -477,40 +477,12 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
         <CardTitle>Loan Checklist</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeChecklistType} onValueChange={(value) => {
-          if (value === 'action_item' && !permissions.canViewActionChecklist) {
-            return;
-          }
-          setActiveChecklistType(value);
-        }}>
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger 
-              value="action_item" 
-              disabled={!permissions.canViewActionChecklist}
-              className="relative"
-            >
-              Action Item Checklist
-              {!permissions.canViewActionChecklist && (
-                <Lock className="w-3 h-3 ml-2 text-slate-400" />
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="document">
-              Document Checklist
-            </TabsTrigger>
-          </TabsList>
-
-          {activeChecklistType === 'action_item' && !permissions.canViewActionChecklist && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-              <div className="flex items-start gap-3">
-                <Lock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-900">Restricted Access</p>
-                  <p className="text-sm text-amber-700 mt-1">
-                    You don't have permission to view the Action Item Checklist. Only administrators and loan officers can access this.
-                  </p>
-                </div>
-              </div>
-            </div>
+        <Tabs value={activeChecklistType} onValueChange={setActiveChecklistType}>
+          {permissions.canViewActionChecklist && (
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="action_item">Action Item Checklist</TabsTrigger>
+              <TabsTrigger value="document">Document Checklist</TabsTrigger>
+            </TabsList>
           )}
 
           <TabsContent value={activeChecklistType} className="space-y-4">
