@@ -474,7 +474,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Loan Checklist</CardTitle>
+        <CardTitle>Document Checklist</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeChecklistType} onValueChange={setActiveChecklistType}>
