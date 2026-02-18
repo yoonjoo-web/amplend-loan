@@ -635,17 +635,9 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
               }}>
                 <TabsList className="flex-wrap h-auto">
                   <TabsTrigger value="all">All</TabsTrigger>
-                  {activeChecklistType === 'document' ? (
-                    ['Borrower Document', 'Property Document', 'Closing Document', 'Post-Closing Document']
-                      .filter(cat => categories.includes(cat))
-                      .map(cat => (
-                        <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
-                      ))
-                  ) : (
-                    categories.map(cat => (
-                      <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
-                    ))
-                  )}
+                  {categories.map(cat => (
+                    <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
+                  ))}
                 </TabsList>
               </Tabs>
             )}
