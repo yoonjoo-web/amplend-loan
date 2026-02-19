@@ -150,6 +150,7 @@ export default function Onboarding() {
     try {
       const params = new URLSearchParams(window.location.search);
       const roleFromUrl = params.get('app_role') || params.get('role');
+      const normalizedRole = normalizeAppRole(roleFromUrl);
       
       const updateData = {
         first_name: formData.first_name.trim(),
@@ -158,7 +159,7 @@ export default function Onboarding() {
       };
 
       // Always assign role from URL if provided and user doesn't have one yet
-      if (normalizedRole && !currentUser.app_role) {
+      if (normalizedRole && (!currentUser.app_role || currentUser.app_role === 'User')) {
         updateData.app_role = normalizedRole;
       }
 
