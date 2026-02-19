@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
@@ -66,7 +67,8 @@ export default function LoanDetail() {
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      setIsLoanPartner(['Referrer', 'Broker', 'Title Company'].includes(user.app_role));
+      const normalizedRole = normalizeAppRole(user.app_role);
+      setIsLoanPartner(['Broker', 'Referral Partner', 'Title Company', 'Insurance Company', 'Servicer'].includes(normalizedRole));
 
       // Only fetch loan officers if user has permission (admins and loan officers)
       if (user.role === 'admin' || user.app_role === 'Administrator' || user.app_role === 'Loan Officer') {

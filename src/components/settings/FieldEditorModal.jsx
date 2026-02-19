@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { APP_ROLES } from "@/components/utils/appRoles";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -184,14 +185,7 @@ function FieldSearch({ value, onChange, context, excludeFields = [], showValueIn
   );
 }
 
-const ROLE_OPTIONS = [
-  { value: 'Administrator', label: 'Administrator' },
-  { value: 'Loan Officer', label: 'Loan Officer' },
-  { value: 'Borrower', label: 'Borrower' },
-  { value: 'Referrer', label: 'Referrer' },
-  { value: 'Broker', label: 'Broker' },
-  { value: 'Title Company', label: 'Title Company' }
-];
+const ROLE_OPTIONS = APP_ROLES.map((role) => ({ value: role, label: role }));
 
 export default function FieldEditorModal({ isOpen, onClose, field, category, context, onSave, isSaving }) {
   const [formData, setFormData] = useState({

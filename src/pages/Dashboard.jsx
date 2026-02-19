@@ -22,6 +22,7 @@ import InviteLoanPartnerModal from "../components/dashboard/InviteLoanPartnerMod
 import PrivateTicketsWidget from "../components/dashboard/PrivateTicketsWidget";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 import { base44 } from "@/api/base44Client";
 
 const statusColors = {
@@ -164,7 +165,7 @@ export default function Dashboard() {
         userLoans = loans.filter(l => l.loan_officer_ids?.includes(currentUser.id));
       } else if (permissions.isBorrower) {
         userLoans = loans.filter(l => l.borrower_ids?.includes(currentUser.id));
-      } else if (currentUser.app_role === 'Referrer') {
+      } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
         userLoans = loans.filter(l => l.referrer_ids?.includes(currentUser.id));
       }
 

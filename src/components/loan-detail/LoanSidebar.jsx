@@ -16,6 +16,7 @@ import ClosingScheduleSection from "./ClosingScheduleSection";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import { useToast } from "@/components/ui/use-toast";
 import { hasBrokerOnLoan } from "@/components/utils/brokerVisibility";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const STATUS_DESCRIPTIONS = {
   application_submitted: {
@@ -200,7 +201,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         console.error('LoanSidebar - Error fetching loan partners:', error);
       }
 
-      const hideLoanOfficerDetails = currentUser?.app_role === 'Borrower' && hasBrokerOnLoan(loan, allLoanPartners);
+      const hideLoanOfficerDetails = ['Borrower', 'Liaison'].includes(normalizeAppRole(currentUser?.app_role)) && hasBrokerOnLoan(loan, allLoanPartners);
 
       if (!canManage && loan?.id) {
         try {
@@ -237,19 +238,22 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         });
       };
 
-      const addLiaisonMember = (borrower) => {
-        if (!borrower) return;
-        const alreadyAdded = team.some(member => member.id === borrower.id && member.role === 'Liaison');
+      const addLiaisonMember = (liaison) => {
+        if (!liaison) return;
+        const liaisonId = liaison.id;
+        const alreadyAdded = team.some(member => member.id === liaisonId && member.role === 'Liaison');
         if (alreadyAdded) return;
+        const displayName = liaison.first_name && liaison.last_name
+          ? `${liaison.first_name} ${liaison.last_name}`
+          : liaison.name || liaison.email || 'Unknown Contact';
+        const messageUserId = liaison.user_id || liaison.id || null;
         team.push({
-          id: borrower.id,
-          email: borrower.email,
-          phone: borrower.phone,
+          id: liaisonId,
+          email: liaison.email,
+          phone: liaison.phone,
           role: 'Liaison',
-          messageUserId: borrower.user_id || null,
-          displayName: borrower.first_name && borrower.last_name
-            ? `${borrower.first_name} ${borrower.last_name}`
-            : borrower.email || 'Unknown Contact'
+          messageUserId,
+          displayName
         });
       };
 
@@ -287,9 +291,14 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         }
       };
 
+      const liaisonUserIds = new Set(
+        allUsers
+          .filter(u => normalizeAppRole(u.app_role) === 'Liaison')
+          .map(u => u.id)
+      );
       const liaisonBorrowerIds = new Set(
         allBorrowers
-          .filter(b => b.borrower_type === 'liaison')
+          .filter(b => b.user_id && liaisonUserIds.has(b.user_id))
           .flatMap(b => [b.id, b.user_id].filter(Boolean))
       );
 
@@ -297,9 +306,10 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       if (loan.borrower_ids && Array.isArray(loan.borrower_ids) && loan.borrower_ids.length > 0) {
         console.log('Processing borrowers:', loan.borrower_ids);
         loan.borrower_ids.forEach(id => {
-          if (liaisonBorrowerIds.has(id)) {
+          if (liaisonBorrowerIds.has(id) || liaisonUserIds.has(id)) {
+            const liaisonUser = allUsers.find(u => u.id === id);
             const liaisonBorrower = allBorrowers.find(b => b.id === id || b.user_id === id);
-            addLiaisonMember(liaisonBorrower);
+            addLiaisonMember(liaisonUser || liaisonBorrower);
             return;
           }
           const user = allUsers.find(u => u.id === id);
@@ -367,14 +377,17 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       if (loan.liaison_ids && Array.isArray(loan.liaison_ids) && loan.liaison_ids.length > 0) {
         console.log('Processing liaisons:', loan.liaison_ids);
         loan.liaison_ids.forEach(id => {
-          const borrower = allBorrowers.find(b => b.id === id || b.user_id === id);
-          if (borrower) {
-            addLiaisonMember(borrower);
+          const user = allUsers.find(u => u.id === id);
+          if (user) {
+            addLiaisonMember(user);
+            return;
           }
+          const borrower = allBorrowers.find(b => b.id === id || b.user_id === id);
+          addLiaisonMember(borrower);
         });
       }
 
-      // Add referrers (look in loan partners)
+      // Add loan partners (look in loan partners)
       if (loan.referrer_ids && Array.isArray(loan.referrer_ids) && loan.referrer_ids.length > 0) {
         console.log('Processing referrers:', loan.referrer_ids);
         loan.referrer_ids.forEach(id => {
@@ -384,7 +397,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               id: partner.id,
               email: partner.email,
               phone: partner.phone,
-              role: 'Referrer',
+              role: normalizeAppRole(partner.app_role || partner.type) || 'Loan Partner',
               messageUserId: partner.user_id || null,
               displayName: partner.name || 'Unknown Partner'
             });
@@ -487,8 +500,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     color: "bg-gray-100 text-gray-800"
   };
 
-  const restrictedMessengerRoles = ['Borrower', 'Referrer', 'Broker', 'Title Company'];
-  const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(currentUser.app_role);
+  const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker', 'Title Company', 'Insurance Company', 'Servicer'];
+  const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(normalizeAppRole(currentUser.app_role));
 
   const canMessageMember = (member) => {
     if (!currentUser || !member?.messageUserId) return false;

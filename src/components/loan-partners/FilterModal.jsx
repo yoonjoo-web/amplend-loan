@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { X, Filter } from 'lucide-react';
-
-const typeOptions = ['Servicer', 'Auditor', 'Referral Partner', 'Brokerage', 'Title Company', 'Appraisal Firm', 'Legal Counsel', 'Insurance Provider', 'Other'];
+import { LOAN_PARTNER_ROLES } from '@/components/utils/appRoles';
 
 export default function FilterModal({ isOpen, onClose, currentFilters, onFiltersChange }) {
-  const [filters, setFilters] = useState(currentFilters || { type: 'all' });
+  const [filters, setFilters] = useState(currentFilters || { app_role: 'all' });
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -20,7 +19,7 @@ export default function FilterModal({ isOpen, onClose, currentFilters, onFilters
   };
 
   const handleClear = () => {
-    const clearedFilters = { type: 'all' };
+    const clearedFilters = { app_role: 'all' };
     setFilters(clearedFilters);
     onFiltersChange(clearedFilters);
     onClose();
@@ -54,16 +53,16 @@ export default function FilterModal({ isOpen, onClose, currentFilters, onFilters
 
           <div className="space-y-4 mb-6">
             <div className="space-y-2">
-              <Label htmlFor="type">Partner Type</Label>
-              <Select value={filters.type} onValueChange={(value) => handleFilterChange('type', value)}>
+              <Label htmlFor="app_role">Partner Type</Label>
+              <Select value={filters.app_role} onValueChange={(value) => handleFilterChange('app_role', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  {typeOptions.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+                  {LOAN_PARTNER_ROLES.map(role => (
+                    <SelectItem key={role} value={role}>
+                      {role}
                     </SelectItem>
                   ))}
                 </SelectContent>

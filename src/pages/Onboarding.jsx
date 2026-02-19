@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { hasBrokerOnApplication, hasBrokerOnLoan } from '@/components/utils/brokerVisibility';
+import { LOAN_PARTNER_ROLES, normalizeAppRole } from '@/components/utils/appRoles';
 
 export default function Onboarding() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -67,6 +68,7 @@ export default function Onboarding() {
       const firstNameFromUrl = params.get('first_name');
       const lastNameFromUrl = params.get('last_name');
       const roleFromUrl = params.get('app_role') || params.get('role');
+      const normalizedRole = normalizeAppRole(roleFromUrl);
       
       // Priority: requested_first_name > first_name > user.first_name
       const firstName = requestedFirstName || firstNameFromUrl || user.first_name || '';
@@ -77,10 +79,10 @@ export default function Onboarding() {
         last_name: lastName,
       });
       
-      setRoleDisplay(roleFromUrl || user.app_role || 'User');
-      const roleCandidate = roleFromUrl || user.app_role || 'User';
+      setRoleDisplay(normalizedRole || user.app_role || 'User');
+      const roleCandidate = normalizedRole || user.app_role || 'User';
 
-      const isBorrowerContext = roleCandidate === 'Borrower';
+      const isBorrowerContext = roleCandidate === 'Borrower' || roleCandidate === 'Liaison';
       if (isBorrowerContext) {
         const { applicationId, loanId } = resolveContextIds(params);
         if (applicationId || loanId) {
@@ -156,8 +158,8 @@ export default function Onboarding() {
       };
 
       // Always assign role from URL if provided and user doesn't have one yet
-      if (roleFromUrl && !currentUser.app_role) {
-        updateData.app_role = roleFromUrl;
+      if (normalizedRole && !currentUser.app_role) {
+        updateData.app_role = normalizedRole;
       }
 
       await base44.auth.updateMe(updateData);
@@ -169,16 +171,14 @@ export default function Onboarding() {
         await base44.entities.Borrower.update(borrowers[0].id, {
           user_id: currentUser.id,
           first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim(),
-          borrower_type: borrowers[0].borrower_type || 'individual'
+          last_name: formData.last_name.trim()
         });
-      } else if (roleFromUrl === 'Borrower') {
+      } else if (normalizedRole === 'Borrower' || normalizedRole === 'Liaison') {
         await base44.entities.Borrower.create({
           user_id: currentUser.id,
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim(),
-          email: email,
-          borrower_type: 'individual'
+          email: email
         });
       }
       
@@ -187,12 +187,12 @@ export default function Onboarding() {
         await base44.entities.LoanPartner.update(partners[0].id, {
           user_id: currentUser.id
         });
-      } else if (['Referrer', 'Broker', 'Title Company', 'Servicer', 'Auditor', 'Referral Partner', 'Brokerage', 'Appraisal Firm', 'Legal Counsel', 'Insurance Provider', 'Other'].includes(roleFromUrl)) {
+      } else if (normalizedRole && LOAN_PARTNER_ROLES.includes(normalizedRole)) {
         await base44.entities.LoanPartner.create({
           user_id: currentUser.id,
           name: `${formData.first_name.trim()} ${formData.last_name.trim()}`,
           email: email,
-          type: roleFromUrl
+          app_role: normalizedRole
         });
       }
 

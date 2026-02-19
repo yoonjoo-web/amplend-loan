@@ -745,7 +745,7 @@ export default function NewApplication() {
       return;
     }
 
-    const isLiaisonBorrower = permissions?.isBorrower && permissions?.borrowerType === 'liaison';
+    const isLiaisonBorrower = permissions?.isBorrowerLiaison;
     if (isLiaisonBorrower) {
       toast({
         variant: "destructive",

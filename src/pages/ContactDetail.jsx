@@ -31,6 +31,7 @@ import {
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
+import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 import {
   Dialog,
   DialogContent,
@@ -513,8 +514,8 @@ export default function ContactDetail() {
 
   const handleEditContactInfo = () => {
     const nextData = { ...contact };
-    if (contactType === 'borrower' && !nextData.borrower_type) {
-      nextData.borrower_type = 'individual';
+    if (contactType === 'borrower') {
+      delete nextData.borrower_type;
     }
     setEditedContactData(nextData);
     setIsEditingContactInfo(true);
@@ -548,13 +549,17 @@ export default function ContactDetail() {
       let updatedContact;
       if (contactType === 'borrower') {
         console.log('[ContactDetail] Updating borrower...');
-        updatedContact = await base44.entities.Borrower.update(contact.id, editedContactData);
+        const borrowerPayload = { ...editedContactData };
+        delete borrowerPayload.borrower_type;
+        updatedContact = await base44.entities.Borrower.update(contact.id, borrowerPayload);
       } else if (contactType === 'entity') {
         console.log('[ContactDetail] Updating entity...');
         updatedContact = await base44.entities.BorrowerEntity.update(contact.id, editedContactData);
       } else if (contactType === 'partner') {
         console.log('[ContactDetail] Updating partner...');
-        updatedContact = await base44.entities.LoanPartner.update(contact.id, editedContactData);
+        const partnerPayload = { ...editedContactData };
+        delete partnerPayload.type;
+        updatedContact = await base44.entities.LoanPartner.update(contact.id, partnerPayload);
       }
       
       console.log('[ContactDetail] Contact updated successfully:', updatedContact);
@@ -823,10 +828,6 @@ export default function ContactDetail() {
       setEditedContactData(prev => ({ ...prev, [field]: formatted.replace(/\D/g, '') }));
       return;
     }
-    if (contactType === 'borrower' && field === 'borrower_type') {
-      setEditedContactData(prev => ({ ...prev, borrower_type: value }));
-      return;
-    }
     setEditedContactData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -967,7 +968,7 @@ export default function ContactDetail() {
       case 'borrower':
         return {
           name: `${contact.first_name} ${contact.last_name}`,
-          subtitle: formatBorrowerContactType(contact.borrower_type),
+          subtitle: contactType === 'borrower' ? 'Borrower' : '',
           icon: Users,
           iconColor: 'bg-blue-500'
         };
@@ -981,7 +982,7 @@ export default function ContactDetail() {
       case 'partner':
         return {
           name: contact.name,
-          subtitle: contact.type,
+          subtitle: normalizeAppRole(contact.app_role || contact.type),
           icon: Briefcase,
           iconColor: 'bg-amber-500'
         };
@@ -1011,11 +1012,6 @@ export default function ContactDetail() {
       return specialLabels[fieldKey];
     }
     return fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const formatBorrowerContactType = (value) => {
-    const normalized = value || 'individual';
-    return normalized.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const getFieldValue = (fieldKey) => {
@@ -1554,7 +1550,7 @@ export default function ContactDetail() {
                           data: {
                             first_name: firstName,
                             last_name: lastName,
-                            ...(contactType === 'partner' && { partner_type: contact.type })
+                            ...(contactType === 'partner' && { partner_type: normalizeAppRole(contact.app_role || contact.type) })
                           }
                         });
 
@@ -1725,27 +1721,6 @@ export default function ContactDetail() {
                         )}
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Borrower Type</Label>
-                        {isEditingContactInfo ? (
-                          <Select
-                            value={editedContactData.borrower_type || 'individual'}
-                            onValueChange={(value) => handleContactFieldChange('borrower_type', value)}
-                          >
-                            <SelectTrigger className="h-8 text-sm mt-0.5">
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="individual">Individual</SelectItem>
-                              <SelectItem value="liaison">Liaison</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">
-                            {formatBorrowerContactType(contact.borrower_type)}
-                          </p>
-                        )}
-                      </div>
-                      <div>
                         <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Credit Score</Label>
                         {isEditingContactInfo ? (
                           <Input
@@ -1806,16 +1781,27 @@ export default function ContactDetail() {
                   {contactType === 'partner' && (
                     <>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Partner Type</Label>
+                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Partner Role</Label>
                         {isEditingContactInfo ? (
-                          <Input
-                            type="text"
-                            value={editedContactData.type || ''}
-                            onChange={(e) => handleContactFieldChange('type', e.target.value)}
-                            className="h-8 text-sm mt-0.5"
-                          />
+                          <Select
+                            value={normalizeAppRole(editedContactData.app_role || editedContactData.type || '')}
+                            onValueChange={(value) => handleContactFieldChange('app_role', value)}
+                          >
+                            <SelectTrigger className="h-8 text-sm mt-0.5">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LOAN_PARTNER_ROLES.map((role) => (
+                                <SelectItem key={role} value={role}>
+                                  {role}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.type || 'N/A'}</p>
+                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                            {normalizeAppRole(contact.app_role || contact.type) || 'N/A'}
+                          </p>
                         )}
                       </div>
                       <div>

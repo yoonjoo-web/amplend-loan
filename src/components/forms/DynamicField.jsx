@@ -33,6 +33,7 @@ import { US_STATES } from "../utils/usStates";
 import { US_COUNTIES_BY_STATE } from "../utils/usCountiesData";
 import { evaluateFormula } from "../utils/formulaEvaluator";
 import { LoanPartner } from "@/entities/all";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 import { RotateCcw } from 'lucide-react';
 import FieldChangeIndicator from "../application-steps/FieldChangeIndicator";
 import { cn } from "@/lib/utils";
@@ -212,7 +213,7 @@ function ReferrerDropdown({ value, onChange, isReadOnly }) {
     setIsLoading(true);
     try {
       const allPartners = await LoanPartner.list();
-      const referrers = allPartners.filter(p => p.type === 'Referral Partner');
+      const referrers = allPartners.filter(p => normalizeAppRole(p.app_role || p.type) === 'Referral Partner');
       setLoanPartners(referrers);
     } catch (error) {
       console.error('Error loading referrers:', error);
@@ -252,7 +253,7 @@ function ReferrerDropdown({ value, onChange, isReadOnly }) {
           className="w-full justify-between h-10 text-sm"
           disabled={isReadOnly || isLoading}
         >
-          {selectedPartner ? formatReferrerName(selectedPartner) : (isLoading ? "Loading..." : "Search referrers...")}
+          {selectedPartner ? formatReferrerName(selectedPartner) : (isLoading ? "Loading..." : "Search referral partners...")}
           <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

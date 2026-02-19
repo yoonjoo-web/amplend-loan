@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 import ColumnSettingsModal from "../components/loans/ColumnSettingsModal";
 import FilterModal from "../components/loans/FilterModal";
@@ -362,7 +363,7 @@ export default function Loans() {
       } else if (permissions.isBorrower) {
         const borrowerIds = loan.borrower_ids || [];
         isMyLoan = borrowerIds.includes(currentUser.id);
-      } else if (currentUser.app_role === 'Referrer') {
+      } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
         const referrerIds = loan.referrer_ids || [];
         isMyLoan = referrerIds.includes(currentUser.id);
       }
@@ -383,7 +384,7 @@ export default function Loans() {
         if (!borrowerIds.includes(currentUser.id)) {
           return false;
         }
-      } else if (currentUser.app_role === 'Referrer') {
+      } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
         const referrerIds = loan.referrer_ids || [];
         if (!referrerIds.includes(currentUser.id)) {
           return false;

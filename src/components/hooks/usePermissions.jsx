@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { normalizeAppRole } from '@/components/utils/appRoles';
 
 const defaultPermissions = {
   // Role identification
@@ -81,34 +82,13 @@ export const usePermissions = () => {
 
         // --- Role Identification ---
         p.isPlatformAdmin = user.role === 'admin';
-        p.isAdministrator = user.app_role === 'Administrator';
-        p.isLoanOfficer = user.app_role === 'Loan Officer';
-        p.isBorrower = user.app_role === 'Borrower';
-        p.isBroker = user.app_role === 'Broker';
-        p.isLoanPartner = ['Referrer', 'Broker', 'Title Company'].includes(user.app_role);
-
-        if (p.isBorrower) {
-          try {
-            let borrowerRecord = null;
-            const borrowersByUserId = await base44.entities.Borrower.filter({ user_id: user.id });
-            if (borrowersByUserId && borrowersByUserId.length > 0) {
-              borrowerRecord = borrowersByUserId[0];
-            } else if (user.email) {
-              const borrowersByEmail = await base44.entities.Borrower.filter({ email: user.email });
-              if (borrowersByEmail && borrowersByEmail.length > 0) {
-                borrowerRecord = borrowersByEmail[0];
-              }
-            }
-
-            if (borrowerRecord) {
-              p.borrowerType = borrowerRecord.borrower_type || null;
-            }
-          } catch (borrowerError) {
-            console.error('Error loading borrower type:', borrowerError);
-          }
-        }
-
-        p.isBorrowerLiaison = p.isBorrower && p.borrowerType === 'liaison';
+        const normalizedRole = normalizeAppRole(user.app_role);
+        p.isAdministrator = normalizedRole === 'Administrator';
+        p.isLoanOfficer = normalizedRole === 'Loan Officer';
+        p.isBorrower = normalizedRole === 'Borrower' || normalizedRole === 'Liaison';
+        p.isBroker = normalizedRole === 'Broker';
+        p.isLoanPartner = ['Broker', 'Referral Partner', 'Title Company', 'Insurance Company', 'Servicer'].includes(normalizedRole);
+        p.isBorrowerLiaison = normalizedRole === 'Liaison';
 
         // --- Rule 1: Administrator = Platform Admin ---
         const isAdmin = p.isPlatformAdmin || p.isAdministrator;

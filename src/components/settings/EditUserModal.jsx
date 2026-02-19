@@ -7,11 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { X, Loader2 } from 'lucide-react';
 import { User } from '@/entities/all';
+import { APP_ROLES } from '@/components/utils/appRoles';
 
-const allRoles = [
-  "Administrator", "Loan Officer", "Referrer", "Broker", 
-  "Borrower", "Title Company"
-];
+const allRoles = APP_ROLES;
 
 export default function EditUserModal({ isOpen, onClose, user, onUserUpdate }) {
   const [formData, setFormData] = useState({

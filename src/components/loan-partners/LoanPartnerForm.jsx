@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoanPartner } from "@/entities/all";
 import { US_STATES } from "../utils/usStates"; // New import for US States
 import AddressAutocomplete from "../shared/AddressAutocomplete"; // New import for AddressAutocomplete
+import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 
 // Define the initial state structure for the form data,
 // now including granular address fields and excluding the single 'address' field.
 const initialFormDataState = {
   name: '',
-  type: '',
+  app_role: '',
   email: '',
   phone: '',
   website: '',
@@ -40,6 +41,8 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
       setFormData(prev => ({
         ...initialFormDataState, // Start with a clean slate ensuring all fields are present
         ...partner, // Apply existing partner data
+        app_role: normalizeAppRole(partner.app_role || partner.type || ''),
+        type: undefined,
         // Explicitly set the old 'address' field to undefined
         // to ensure it's not carried over from the 'partner' object
         // if it still contains an older data model.
@@ -129,6 +132,7 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
     
     // Create a copy of formData to clean
     const cleanedData = { ...formData };
+    delete cleanedData.type;
     
     // Convert empty string fields to null for database storage or API submission
     Object.keys(cleanedData).forEach(key => {
@@ -172,24 +176,20 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Partner Type *</Label>
+              <Label htmlFor="app_role">Partner Type *</Label>
               <Select
-                value={formData.type}
-                onValueChange={(value) => handleInputChange('type', value)}
+                value={formData.app_role}
+                onValueChange={(value) => handleInputChange('app_role', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select partner type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Servicer">Servicer</SelectItem>
-                  <SelectItem value="Auditor">Auditor</SelectItem>
-                  <SelectItem value="Referral Partner">Referral Partner</SelectItem>
-                  <SelectItem value="Brokerage">Brokerage</SelectItem>
-                  <SelectItem value="Title Company">Title Company</SelectItem>
-                  <SelectItem value="Appraisal Firm">Appraisal Firm</SelectItem>
-                  <SelectItem value="Legal Counsel">Legal Counsel</SelectItem>
-                  <SelectItem value="Insurance Provider">Insurance Provider</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  {LOAN_PARTNER_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

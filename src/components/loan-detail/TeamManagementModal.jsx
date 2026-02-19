@@ -12,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, UserPlus, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 
 export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, onRefresh }) {
   const { toast } = useToast();
   const [allUsers, setAllUsers] = useState([]);
-  const [allBorrowers, setAllBorrowers] = useState([]);
-  const [allReferrerPartners, setAllReferrerPartners] = useState([]);
+  const [allLoanPartners, setAllLoanPartners] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -40,18 +40,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   useEffect(() => {
     if (!isOpen) return;
     const borrowerIdsRaw = loan?.borrower_ids || [];
-    const liaisonBorrowerIds = new Set(
-      (allBorrowers || [])
-        .filter(b => b.borrower_type === 'liaison')
-        .flatMap(b => [b.id, b.user_id].filter(Boolean))
-    );
-    const nextLiaisonIds = borrowerIdsRaw.filter(id => liaisonBorrowerIds.has(id));
-    const nextBorrowerIds = borrowerIdsRaw.filter(id => !liaisonBorrowerIds.has(id));
-    setBorrowerIds(nextBorrowerIds);
+    setBorrowerIds(borrowerIdsRaw);
     setLoanOfficerIds(loan?.loan_officer_ids || []);
     setReferrerIds(loan?.referrer_ids || []);
-    setLiaisonIds(nextLiaisonIds.length > 0 ? nextLiaisonIds : (loan?.liaison_ids || []));
-  }, [isOpen, loan, allBorrowers]);
+    setLiaisonIds(loan?.liaison_ids || []);
+  }, [isOpen, loan]);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -61,12 +54,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       setAllUsers(allUsers);
       
       // Load borrowers
-      const borrowers = await base44.entities.Borrower.list();
-      setAllBorrowers(borrowers || []);
-      
-      // Load referrer loan partners
-      const loanPartners = await base44.entities.LoanPartner.filter({ type: 'Referral Partner' });
-      setAllReferrerPartners(loanPartners || []);
+      const loanPartners = await base44.entities.LoanPartner.list();
+      const partnerRoles = new Set(LOAN_PARTNER_ROLES.filter(role => role !== 'Liaison'));
+      setAllLoanPartners(
+        (loanPartners || []).filter((partner) => partnerRoles.has(normalizeAppRole(partner.app_role || partner.type)))
+      );
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
@@ -81,16 +73,15 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   const getUserDisplayName = (userId, roleKey) => {
     // For liaisons, look in borrowers
     if (roleKey === 'liaison') {
-      const borrower = allBorrowers.find(b => b.id === userId);
-      if (borrower && borrower.first_name && borrower.last_name) {
-        return `${borrower.first_name} ${borrower.last_name}`;
+      const user = allUsers.find(u => u.id === userId);
+      if (user && user.first_name && user.last_name) {
+        return `${user.first_name} ${user.last_name}`;
       }
-      return 'Unknown Contact';
+      return 'Unknown Liaison';
     }
     
-    // For referrers, look in loan partners
-    if (roleKey === 'referrer') {
-      const partner = allReferrerPartners.find(p => p.id === userId);
+    if (roleKey === 'partner') {
+      const partner = allLoanPartners.find(p => p.id === userId);
       if (partner && partner.name) {
         return partner.name;
       }
@@ -107,37 +98,28 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
 
   const getUserRole = (userId, roleKey) => {
     if (roleKey === 'liaison') {
-      return 'Borrower';
+      return 'Liaison';
     }
-    if (roleKey === 'referrer') {
-      return 'Loan Partner';
+    if (roleKey === 'partner') {
+      const partner = allLoanPartners.find(p => p.id === userId);
+      return normalizeAppRole(partner?.app_role || partner?.type || 'Loan Partner');
     }
     const user = allUsers.find(u => u.id === userId);
-    return user?.app_role || '';
+    return normalizeAppRole(user?.app_role || '');
   };
 
   const handleAddMember = () => {
     if (!newMemberRole || !newMemberId) return;
 
     switch (newMemberRole) {
-      case 'borrower':
-        if (!borrowerIds.includes(newMemberId)) {
-          setBorrowerIds([...borrowerIds, newMemberId]);
-        }
-        break;
-      case 'loan_officer':
-        if (!loanOfficerIds.includes(newMemberId)) {
-          setLoanOfficerIds([...loanOfficerIds, newMemberId]);
-        }
-        break;
-      case 'referrer':
-        if (!referrerIds.includes(newMemberId)) {
-          setReferrerIds([...referrerIds, newMemberId]);
-        }
-        break;
-      case 'liaison':
+      case 'Liaison':
         if (!liaisonIds.includes(newMemberId)) {
           setLiaisonIds([...liaisonIds, newMemberId]);
+        }
+        break;
+      default:
+        if (!referrerIds.includes(newMemberId)) {
+          setReferrerIds([...referrerIds, newMemberId]);
         }
         break;
     }
@@ -154,7 +136,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'loan_officer':
         setLoanOfficerIds(loanOfficerIds.filter(id => id !== userId));
         break;
-      case 'referrer':
+      case 'partner':
         setReferrerIds(referrerIds.filter(id => id !== userId));
         break;
       case 'liaison':
@@ -176,33 +158,16 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     let nextLiaisonIds = [...liaisonIds];
 
     if (newMemberRole && newMemberId) {
-      switch (newMemberRole) {
-        case 'borrower':
-          if (!nextBorrowerIds.includes(newMemberId)) {
-            nextBorrowerIds.push(newMemberId);
-          }
-          break;
-        case 'loan_officer':
-          if (!nextLoanOfficerIds.includes(newMemberId)) {
-            nextLoanOfficerIds.push(newMemberId);
-          }
-          break;
-        case 'referrer':
-          if (!nextReferrerIds.includes(newMemberId)) {
-            nextReferrerIds.push(newMemberId);
-          }
-          break;
-        case 'liaison':
-          if (!nextLiaisonIds.includes(newMemberId)) {
-            nextLiaisonIds.push(newMemberId);
-          }
-          break;
+      if (newMemberRole === 'Liaison') {
+        if (!nextLiaisonIds.includes(newMemberId)) {
+          nextLiaisonIds.push(newMemberId);
+        }
+      } else if (!nextReferrerIds.includes(newMemberId)) {
+        nextReferrerIds.push(newMemberId);
       }
     }
 
-    const mergedBorrowerIds = Array.from(
-      new Set([...nextBorrowerIds, ...nextLiaisonIds])
-    );
+    const mergedBorrowerIds = Array.from(new Set([...nextBorrowerIds]));
 
     return {
       borrower_ids: mergedBorrowerIds,
@@ -247,24 +212,18 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     
     let existingIds = [];
     
-    switch (newMemberRole) {
-      case 'borrower':
-        existingIds = borrowerIds;
-        return allUsers.filter(u => 
-          u.app_role === 'Borrower' && !existingIds.includes(u.id)
-        );
-      case 'loan_officer':
-        existingIds = loanOfficerIds;
-        return allUsers.filter(u => 
-          u.app_role === 'Loan Officer' && !existingIds.includes(u.id)
-        );
-      case 'referrer':
-        existingIds = referrerIds;
-        return allReferrerPartners.filter(p => !existingIds.includes(p.id));
-      case 'liaison':
-        existingIds = liaisonIds;
-        return allBorrowers.filter(b => b.borrower_type === 'liaison' && !existingIds.includes(b.id));
+    if (newMemberRole === 'Liaison') {
+      existingIds = liaisonIds;
+      return allUsers.filter(u =>
+        normalizeAppRole(u.app_role) === 'Liaison' && !existingIds.includes(u.id)
+      );
     }
+
+    existingIds = referrerIds;
+    const normalizedRole = normalizeAppRole(newMemberRole);
+    return allLoanPartners.filter(p =>
+      normalizeAppRole(p.app_role || p.type) === normalizedRole && !existingIds.includes(p.id)
+    );
     
     return [];
   };
@@ -330,9 +289,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="loan_officer">Loan Officer</SelectItem>
-                        <SelectItem value="liaison">Liaison</SelectItem>
-                        <SelectItem value="referrer">Referrer</SelectItem>
+                        {LOAN_PARTNER_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -350,7 +311,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                       <SelectContent>
                         {availableUsers.map(item => {
                           const displayName = 
-                            (newMemberRole === 'referrer' && item.name)
+                            (newMemberRole !== 'Liaison' && item.name)
                               ? item.name
                             : (item.first_name && item.last_name)
                               ? `${item.first_name} ${item.last_name}`
@@ -382,7 +343,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                 {renderTeamSection('Borrowers', borrowerIds, 'borrower')}
                 {renderTeamSection('Loan Officers', loanOfficerIds, 'loan_officer')}
                 {renderTeamSection('Liaisons', liaisonIds, 'liaison')}
-                {renderTeamSection('Referrers', referrerIds, 'referrer')}
+                {renderTeamSection('Loan Partners', referrerIds, 'partner')}
                 
                 {borrowerIds.length === 0 && loanOfficerIds.length === 0 && 
                  liaisonIds.length === 0 && referrerIds.length === 0 && (

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { runRoleMigration } from "@/components/utils/roleMigration";
 
 import UserTable from '../components/settings/UserTable';
 import EditUserModal from '../components/settings/EditUserModal';
@@ -53,6 +54,9 @@ export default function Settings() {
   useEffect(() => {
     if (!permissionsLoading && currentUser) {
       loadData();
+      if (permissions.canManageUsers) {
+        runRoleMigration({ toast });
+      }
       
       // Set default tab based on permissions if not already set
       if (activeTab === null) {

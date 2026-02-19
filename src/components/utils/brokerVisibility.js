@@ -4,7 +4,8 @@ export const normalizePartnerType = (value) => {
 };
 
 export const isBrokerPartner = (partner) => {
-  return normalizePartnerType(partner?.type) === 'broker';
+  const role = normalizePartnerType(partner?.app_role || partner?.type);
+  return role === 'broker';
 };
 
 export const hasBrokerPartnerIds = (partnerIds, loanPartners = []) => {
@@ -42,6 +43,7 @@ export const hasBrokerOnLoan = (loan, loanPartners = []) => {
   return (
     hasBrokerPartnerIds(loan?.referrer_ids, loanPartners) ||
     hasBrokerPartnerName(loan?.referrer_name, loanPartners) ||
+    hasBrokerContact(loan?.loan_contacts?.broker) ||
     hasBrokerContact(loan?.loan_contacts?.referral_broker)
   );
 };
@@ -51,6 +53,7 @@ export const hasBrokerOnApplication = (application, loanPartners = []) => {
     hasBrokerPartnerIds(application?.referrer_ids, loanPartners) ||
     hasBrokerPartnerName(application?.referrer_name, loanPartners) ||
     hasBrokerContact(application?.referral_broker) ||
+    hasBrokerContact(application?.loan_contacts?.broker) ||
     hasBrokerContact(application?.loan_contacts?.referral_broker)
   );
 };

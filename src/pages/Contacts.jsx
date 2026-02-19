@@ -33,6 +33,7 @@ import LoanPartnerForm from "../components/loan-partners/LoanPartnerForm";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import ProductTour from "../components/shared/ProductTour";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 export default function Contacts() {
   const navigate = useNavigate();
@@ -99,23 +100,6 @@ export default function Contacts() {
     }
   }, [permissionsLoading, currentUser]);
 
-  const ensureBorrowerContactTypes = async (borrowersData) => {
-    const missingType = borrowersData.filter(borrower => !borrower.borrower_type);
-    if (missingType.length === 0) {
-      return borrowersData;
-    }
-
-    try {
-      await Promise.all(
-        missingType.map(borrower => Borrower.update(borrower.id, { borrower_type: 'individual' }))
-      );
-      return await Borrower.list('-created_date');
-    } catch (error) {
-      console.error('Error backfilling borrower contact types:', error);
-      return borrowersData;
-    }
-  };
-
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -125,8 +109,7 @@ export default function Contacts() {
         LoanPartner.list('-created_date')
       ]);
 
-      const borrowersWithTypes = await ensureBorrowerContactTypes(borrowersData || []);
-      setBorrowers(borrowersWithTypes);
+      setBorrowers(borrowersData || []);
       setEntities(entitiesData || []);
       setPartners(partnersData || []);
     } catch (error) {
@@ -183,7 +166,7 @@ export default function Contacts() {
           contact.name?.toLowerCase().includes(searchLower) ||
           contact.email?.toLowerCase().includes(searchLower) ||
           contact.phone?.includes(searchTerm) ||
-          contact.type?.toLowerCase().includes(searchLower)
+          normalizeAppRole(contact.app_role || contact.type || '').toLowerCase().includes(searchLower)
         );
       } else {
         matchesSearch = (
@@ -298,11 +281,6 @@ export default function Contacts() {
     }
   };
 
-  const formatBorrowerContactType = (value) => {
-    const normalized = value || 'individual';
-    return normalized.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
   const renderListView = (contacts, type) => {
     if (contacts.length === 0 && !isLoading) {
       return (
@@ -393,16 +371,10 @@ export default function Contacts() {
                   phone = '';
                 }
 
-                const getBorrowerTypeBadgeClass = () => {
-                  return contact.borrower_type === 'liaison'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-blue-100 text-blue-800';
-                };
-
                 const typeLabelForTab = () => {
-                  if (type === 'borrower') return formatBorrowerContactType(contact.borrower_type);
+                  if (type === 'borrower') return 'Borrower';
                   if (type === 'entity') return contact.entity_type || 'Entity';
-                  if (type === 'partner') return contact.type || 'Partner';
+                  if (type === 'partner') return normalizeAppRole(contact.app_role || contact.type) || 'Partner';
                   return null;
                 };
 
@@ -426,7 +398,7 @@ export default function Contacts() {
                       <TableCell>
                         {type ? (
                           <Badge className={
-                            contactType === 'borrower' ? getBorrowerTypeBadgeClass() :
+                            contactType === 'borrower' ? 'bg-blue-100 text-blue-800' :
                             contactType === 'entity' ? 'bg-indigo-100 text-indigo-800' :
                             'bg-amber-100 text-amber-800'
                           }>

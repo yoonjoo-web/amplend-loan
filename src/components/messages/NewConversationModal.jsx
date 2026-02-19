@@ -368,7 +368,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                           onCheckedChange={() => toggleRole('referrers')}
                         />
                         <label htmlFor="referrers" className="text-sm cursor-pointer">
-                          Referrers ({getRoleCount(selectedLoan, 'referrers')})
+                          Referral Partners ({getRoleCount(selectedLoan, 'referrers')})
                         </label>
                       </div>
                     </div>

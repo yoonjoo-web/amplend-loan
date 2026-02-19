@@ -2,27 +2,32 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Mail, Phone, Building2, X } from "lucide-react";
+import { LOAN_PARTNER_ROLES } from "@/components/utils/appRoles";
 
 import AddContactModal from "./AddContactModal";
 
 export default function LoanContactsSection({ loan, onUpdate, readOnly = false }) {
   const [contacts, setContacts] = useState(loan.loan_contacts || {});
   const [showModal, setShowModal] = useState(false);
-  const [selectedContactType, setSelectedContactType] = useState('');
+  const [selectedContactRole, setSelectedContactRole] = useState('');
 
   useEffect(() => {
-    setContacts(loan.loan_contacts || {});
+    const normalized = normalizeLoanContacts(loan.loan_contacts || {});
+    setContacts(normalized.contacts);
+    if (normalized.changed && !readOnly) {
+      onUpdate({ loan_contacts: normalized.contacts });
+    }
   }, [loan.loan_contacts]);
 
-  const handleAddContact = (type) => {
+  const handleAddContact = () => {
     if (readOnly) return;
-    setSelectedContactType(type);
+    setSelectedContactRole('');
     setShowModal(true);
   };
 
-  const handleSaveContact = async (type, data) => {
+  const handleSaveContact = async (roleKey, data) => {
     if (readOnly) return;
-    const updatedContacts = { ...contacts, [type]: data };
+    const updatedContacts = { ...contacts, [roleKey]: data };
     setContacts(updatedContacts);
     await onUpdate({ loan_contacts: updatedContacts });
   };
@@ -45,15 +50,7 @@ export default function LoanContactsSection({ loan, onUpdate, readOnly = false }
           {readOnly ? (
             <p className="text-xs text-slate-500">No contact provided.</p>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAddContact(type)}
-              className="w-full"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Add {label}
-            </Button>
+            <p className="text-xs text-slate-500">No contact provided.</p>
           )}
         </div>
       );
@@ -120,34 +117,28 @@ export default function LoanContactsSection({ loan, onUpdate, readOnly = false }
     <>
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Loan Contacts</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Loan Contacts</CardTitle>
+            {!readOnly && (
+              <Button size="sm" onClick={handleAddContact}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Loan Partner Contact
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <ContactCard
-            type="insurance_agent"
-            label="Insurance Agent"
-            data={contacts.insurance_agent}
-          />
-          <ContactCard
-            type="title_escrow"
-            label="Title/Escrow"
-            data={contacts.title_escrow}
-          />
-          <ContactCard
-            type="buyer_attorney"
-            label="Buyer's Attorney"
-            data={contacts.buyer_attorney}
-          />
-          <ContactCard
-            type="seller_attorney"
-            label="Seller's Attorney"
-            data={contacts.seller_attorney}
-          />
-          <ContactCard
-            type="referral_broker"
-            label="Referral/Broker"
-            data={contacts.referral_broker}
-          />
+          {LOAN_PARTNER_ROLES.map((role) => {
+            const roleKey = toRoleKey(role);
+            return (
+              <ContactCard
+                key={role}
+                type={roleKey}
+                label={role}
+                data={contacts[roleKey]}
+              />
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -155,10 +146,43 @@ export default function LoanContactsSection({ loan, onUpdate, readOnly = false }
         <AddContactModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          contactType={selectedContactType}
+          contactRole={selectedContactRole}
           onSave={handleSaveContact}
         />
       )}
     </>
   );
 }
+
+const toRoleKey = (role) => role.toLowerCase().replace(/\s+/g, '_');
+
+const normalizeLoanContacts = (rawContacts) => {
+  const contacts = { ...(rawContacts || {}) };
+  const nextContacts = {};
+  let changed = false;
+
+  LOAN_PARTNER_ROLES.forEach((role) => {
+    const key = toRoleKey(role);
+    if (contacts[key]) {
+      nextContacts[key] = contacts[key];
+    }
+  });
+
+  if (!nextContacts.insurance_company && contacts.insurance_agent) {
+    nextContacts.insurance_company = contacts.insurance_agent;
+    changed = true;
+  }
+  if (!nextContacts.title_company && contacts.title_escrow) {
+    nextContacts.title_company = contacts.title_escrow;
+    changed = true;
+  }
+  if (!nextContacts.broker && contacts.referral_broker) {
+    nextContacts.broker = contacts.referral_broker;
+    changed = true;
+  }
+  if (!nextContacts.referral_partner && contacts.referral_broker) {
+    nextContacts.referral_partner = nextContacts.referral_partner || contacts.referral_broker;
+  }
+
+  return { contacts: nextContacts, changed };
+};

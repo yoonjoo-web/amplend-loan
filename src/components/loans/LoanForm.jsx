@@ -8,6 +8,7 @@ import { MultiSelect } from "@/components/ui/MultiSelect";
 import { User } from "@/entities/all";
 import { Save, X } from "lucide-react";
 import { format, addMonths } from "date-fns";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
   const [users, setUsers] = useState([]);
@@ -71,7 +72,7 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
 
   const getUserOptions = (role) => {
     return users
-      .filter(u => !role || u.app_role === role)
+      .filter(u => !role || normalizeAppRole(u.app_role) === role)
       .map(u => ({ value: u.id, label: u.full_name || u.email }));
   };
 
@@ -108,12 +109,12 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="referrers">Referrers</Label>
+              <Label htmlFor="referrers">Referral Partners</Label>
               <MultiSelect
-                options={getUserOptions('Referrer')}
+                options={getUserOptions('Referral Partner')}
                 selected={formData.referrer_ids || []}
                 onChange={(value) => handleInputChange('referrer_ids', value)}
-                placeholder="Select referrers..."
+                placeholder="Select referral partners..."
               />
             </div>
           </div>

@@ -13,6 +13,7 @@ import ColumnSettingsModal from "../components/borrowers/ColumnSettingsModal";
 import FilterModal from "../components/borrowers/FilterModal";
 import { format } from "date-fns";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const employmentColors = {
   employed: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -59,23 +60,6 @@ export default function Borrowers() {
     }
   }, [permissionsLoading]);
 
-  const ensureBorrowerContactTypes = async (borrowersData) => {
-    const missingType = borrowersData.filter(borrower => !borrower.borrower_type);
-    if (missingType.length === 0) {
-      return borrowersData;
-    }
-
-    try {
-      await Promise.all(
-        missingType.map(borrower => Borrower.update(borrower.id, { borrower_type: 'individual' }))
-      );
-      return await Borrower.list('-created_date');
-    } catch (error) {
-      console.error('Error backfilling borrower contact types:', error);
-      return borrowersData;
-    }
-  };
-
   const loadData = async () => {
     try {
       const [initialBorrowersData, loansData, usersData] = await Promise.all([
@@ -84,7 +68,7 @@ export default function Borrowers() {
         User.list()
       ]);
       
-      const borrowerUsers = usersData.filter(user => user.app_role === 'Borrower');
+      const borrowerUsers = usersData.filter(user => ['Borrower', 'Liaison'].includes(normalizeAppRole(user.app_role)));
       const existingBorrowerEmails = initialBorrowersData.map(b => b.email);
       
       for (const user of borrowerUsers) {
@@ -94,8 +78,7 @@ export default function Borrowers() {
               user_id: user.id,
               first_name: user.first_name || '',
               last_name: user.last_name || '',
-              email: user.email,
-              borrower_type: 'individual',
+              email: user.email
             });
           } catch (error) {
             console.error(`Error auto-creating borrower for ${user.email}:`, error);
@@ -104,9 +87,7 @@ export default function Borrowers() {
       }
       
       const updatedBorrowersData = await Borrower.list('-created_date');
-      const borrowersWithTypes = await ensureBorrowerContactTypes(updatedBorrowersData);
-      
-      setAllBorrowers(borrowersWithTypes);
+      setAllBorrowers(updatedBorrowersData);
       setAllLoans(loansData);
       setAllUsers(usersData);
     } catch(e) {

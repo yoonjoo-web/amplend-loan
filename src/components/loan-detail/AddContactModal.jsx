@@ -14,6 +14,7 @@ import { LoanPartner } from "@/entities/all";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import AddressAutocomplete from "../shared/AddressAutocomplete";
+import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 import {
   Command,
   CommandEmpty,
@@ -23,7 +24,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
-export default function AddContactModal({ isOpen, onClose, contactType, onSave }) {
+export default function AddContactModal({ isOpen, onClose, contactRole, onSave }) {
   const { toast } = useToast();
   const [view, setView] = useState('options');
   const [partners, setPartners] = useState([]);
@@ -31,15 +32,21 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
   const [manualData, setManualData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [selectedRole, setSelectedRole] = useState(contactRole || '');
 
   useEffect(() => {
     if (isOpen) {
-      loadPartners();
+      setSelectedRole(contactRole || '');
+      if (contactRole) {
+        loadPartners(contactRole);
+        setView('options');
+      } else {
+        setView('role');
+      }
       setManualData({});
-      setView('options');
       setEmailError('');
     }
-  }, [isOpen, contactType]);
+  }, [isOpen, contactRole]);
 
   const formatPhoneNumber = (value) => {
     if (!value) return '';
@@ -76,17 +83,11 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
     }
   };
 
-  const loadPartners = async () => {
+  const loadPartners = async (role) => {
     try {
       const allPartners = await LoanPartner.list();
-      const typeMap = {
-        insurance_agent: 'Insurance Provider',
-        title_escrow: 'Title Company',
-        buyer_attorney: 'Legal Counsel',
-        seller_attorney: 'Legal Counsel',
-        referral_broker: 'Referral Partner'
-      };
-      const filtered = allPartners.filter(p => p.type === typeMap[contactType]);
+      const normalizedRole = normalizeAppRole(role);
+      const filtered = allPartners.filter(p => normalizeAppRole(p.app_role || p.type) === normalizedRole);
       setPartners(filtered);
       setFilteredPartners(filtered);
     } catch (error) {
@@ -95,40 +96,29 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
   };
 
   const handleSelectPartner = (partner) => {
-    const data = {};
-    switch (contactType) {
-      case 'insurance_agent':
-        data.name = partner.contact_person || partner.name;
-        data.email = partner.email;
-        data.phone = partner.phone;
-        data.company = partner.name;
-        break;
-      case 'title_escrow':
-        data.company = partner.name;
-        data.address = `${partner.address_street || ''} ${partner.address_city || ''} ${partner.address_state || ''} ${partner.address_zip || ''}`.trim();
-        data.contact_person = partner.contact_person;
-        data.email = partner.email;
-        data.phone = partner.phone;
-        break;
-      case 'buyer_attorney':
-      case 'seller_attorney':
-        data.name = partner.contact_person || partner.name;
-        data.email = partner.email;
-        data.phone = partner.phone;
-        data.firm = partner.name;
-        break;
-      case 'referral_broker':
-        data.contact = partner.contact_person || partner.name;
-        data.email = partner.email;
-        data.phone = partner.phone;
-        data.company = partner.name;
-        break;
-    }
-    onSave(contactType, data);
+    const data = {
+      contact_person: partner.contact_person || '',
+      name: partner.contact_person || partner.name,
+      company: partner.name,
+      email: partner.email,
+      phone: partner.phone,
+      address: [partner.address_street, partner.address_city, partner.address_state, partner.address_zip]
+        .filter(Boolean)
+        .join(', ')
+    };
+    onSave(toRoleKey(selectedRole), data);
     onClose();
   };
 
   const handleManualSave = async () => {
+    if (!selectedRole) {
+      toast({
+        variant: "destructive",
+        title: "Select a role",
+        description: "Choose a loan partner role before saving."
+      });
+      return;
+    }
     // Validate email if provided
     if (manualData.email && !validateEmail(manualData.email)) {
       toast({
@@ -141,44 +131,16 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
 
     setIsSaving(true);
     try {
-      // Create LoanPartner in the Contacts page
-      const typeMap = {
-        insurance_agent: 'Insurance Provider',
-        title_escrow: 'Title Company',
-        buyer_attorney: 'Legal Counsel',
-        seller_attorney: 'Legal Counsel',
-        referral_broker: 'Referral Partner'
-      };
-
       const partnerData = {
-        type: typeMap[contactType],
+        app_role: selectedRole,
         email: manualData.email,
         phone: manualData.phone
       };
 
-      // Map contact-specific fields to LoanPartner fields
-      switch (contactType) {
-        case 'insurance_agent':
-          partnerData.name = manualData.company || manualData.name;
-          partnerData.contact_person = manualData.name;
-          break;
-        case 'title_escrow':
-          partnerData.name = manualData.company;
-          partnerData.contact_person = manualData.contact_person;
-          // Parse address if provided
-          if (manualData.address) {
-            partnerData.address_street = manualData.address;
-          }
-          break;
-        case 'buyer_attorney':
-        case 'seller_attorney':
-          partnerData.name = manualData.firm || manualData.name;
-          partnerData.contact_person = manualData.name;
-          break;
-        case 'referral_broker':
-          partnerData.name = manualData.company || manualData.contact;
-          partnerData.contact_person = manualData.contact;
-          break;
+      partnerData.name = manualData.company || manualData.name || manualData.contact_person;
+      partnerData.contact_person = manualData.contact_person || manualData.name;
+      if (manualData.address) {
+        partnerData.address_street = manualData.address;
       }
 
       // Create the contact in LoanPartner entity
@@ -189,7 +151,7 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
         description: "Contact has been added successfully and is now available in the Contacts page.",
       });
 
-      onSave(contactType, manualData);
+      onSave(toRoleKey(selectedRole), manualData);
       onClose();
     } catch (error) {
       console.error('Error creating contact:', error);
@@ -202,233 +164,102 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
     setIsSaving(false);
   };
 
-  const renderManualFields = () => {
-    switch (contactType) {
-      case 'insurance_agent':
-        return (
-          <>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Name</Label>
-              <Input
-                value={manualData.name || ''}
-                onChange={(e) => setManualData({...manualData, name: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Contact person name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Company</Label>
-              <Input
-                value={manualData.company || ''}
-                onChange={(e) => setManualData({...manualData, company: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Insurance company name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Email</Label>
-              <Input
-                type="email"
-                value={manualData.email || ''}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                className={`h-9 text-sm ${emailError ? 'border-red-500' : ''}`}
-                placeholder="email@example.com"
-              />
-              {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Phone</Label>
-              <Input
-                type="tel"
-                value={manualData.phone || ''}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                className="h-9 text-sm"
-                placeholder="(000) 000-0000"
-                maxLength={14}
-              />
-            </div>
-          </>
-        );
-      case 'title_escrow':
-        return (
-          <>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label className="text-xs font-medium">Company</Label>
-              <Input
-                value={manualData.company || ''}
-                onChange={(e) => setManualData({...manualData, company: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Title company name"
-              />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <Label className="text-xs font-medium">Address</Label>
-              <AddressAutocomplete
-                id="title_address"
-                value={manualData.address || ''}
-                onChange={(newValue) => setManualData({...manualData, address: newValue})}
-                onAddressSelect={(addressData) => {
-                  const fullAddress = [
-                    addressData.street,
-                    addressData.city,
-                    addressData.state,
-                    addressData.zip
-                  ].filter(Boolean).join(', ');
-                  setManualData({...manualData, address: fullAddress});
-                }}
-                placeholder="Start typing address..."
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Contact Person</Label>
-              <Input
-                value={manualData.contact_person || ''}
-                onChange={(e) => setManualData({...manualData, contact_person: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Contact name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Email</Label>
-              <Input
-                type="email"
-                value={manualData.email || ''}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                className={`h-9 text-sm ${emailError ? 'border-red-500' : ''}`}
-                placeholder="email@example.com"
-              />
-              {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Phone</Label>
-              <Input
-                type="tel"
-                value={manualData.phone || ''}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                className="h-9 text-sm"
-                placeholder="(000) 000-0000"
-                maxLength={14}
-              />
-            </div>
-          </>
-        );
-      case 'buyer_attorney':
-      case 'seller_attorney':
-        return (
-          <>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Name</Label>
-              <Input
-                value={manualData.name || ''}
-                onChange={(e) => setManualData({...manualData, name: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Attorney name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Law Firm</Label>
-              <Input
-                value={manualData.firm || ''}
-                onChange={(e) => setManualData({...manualData, firm: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Law firm name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Email</Label>
-              <Input
-                type="email"
-                value={manualData.email || ''}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                className={`h-9 text-sm ${emailError ? 'border-red-500' : ''}`}
-                placeholder="email@example.com"
-              />
-              {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Phone</Label>
-              <Input
-                type="tel"
-                value={manualData.phone || ''}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                className="h-9 text-sm"
-                placeholder="(000) 000-0000"
-                maxLength={14}
-              />
-            </div>
-          </>
-        );
-      case 'referral_broker':
-        return (
-          <>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Contact Name</Label>
-              <Input
-                value={manualData.contact || ''}
-                onChange={(e) => setManualData({...manualData, contact: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Contact person name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Company</Label>
-              <Input
-                value={manualData.company || ''}
-                onChange={(e) => setManualData({...manualData, company: e.target.value})}
-                className="h-9 text-sm"
-                placeholder="Company name"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Email</Label>
-              <Input
-                type="email"
-                value={manualData.email || ''}
-                onChange={(e) => handleEmailChange(e.target.value)}
-                className={`h-9 text-sm ${emailError ? 'border-red-500' : ''}`}
-                placeholder="email@example.com"
-              />
-              {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Phone</Label>
-              <Input
-                type="tel"
-                value={manualData.phone || ''}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                className="h-9 text-sm"
-                placeholder="(000) 000-0000"
-                maxLength={14}
-              />
-            </div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const getContactLabel = () => {
-    const labels = {
-      insurance_agent: 'Insurance Agent',
-      title_escrow: 'Title/Escrow Company',
-      buyer_attorney: "Buyer's Attorney",
-      seller_attorney: "Seller's Attorney",
-      referral_broker: 'Referral/Broker'
-    };
-    return labels[contactType] || 'Contact';
-  };
+  const renderManualFields = () => (
+    <>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium">Contact Person</Label>
+        <Input
+          value={manualData.contact_person || manualData.name || ''}
+          onChange={(e) => setManualData({ ...manualData, contact_person: e.target.value, name: e.target.value })}
+          className="h-9 text-sm"
+          placeholder="Contact person name"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium">Company</Label>
+        <Input
+          value={manualData.company || ''}
+          onChange={(e) => setManualData({ ...manualData, company: e.target.value })}
+          className="h-9 text-sm"
+          placeholder="Company name"
+        />
+      </div>
+      <div className="space-y-1.5 md:col-span-2">
+        <Label className="text-xs font-medium">Address</Label>
+        <AddressAutocomplete
+          id="partner_address"
+          value={manualData.address || ''}
+          onChange={(newValue) => setManualData({ ...manualData, address: newValue })}
+          onAddressSelect={(addressData) => {
+            const fullAddress = [
+              addressData.street,
+              addressData.city,
+              addressData.state,
+              addressData.zip
+            ].filter(Boolean).join(', ');
+            setManualData({ ...manualData, address: fullAddress });
+          }}
+          placeholder="Start typing address..."
+          className="h-9 text-sm"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium">Email</Label>
+        <Input
+          type="email"
+          value={manualData.email || ''}
+          onChange={(e) => handleEmailChange(e.target.value)}
+          className={`h-9 text-sm ${emailError ? 'border-red-500' : ''}`}
+          placeholder="email@example.com"
+        />
+        {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs font-medium">Phone</Label>
+        <Input
+          type="tel"
+          value={manualData.phone || ''}
+          onChange={(e) => handlePhoneChange(e.target.value)}
+          className="h-9 text-sm"
+          placeholder="(000) 000-0000"
+          maxLength={14}
+        />
+      </div>
+    </>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add {getContactLabel()}</DialogTitle>
+          <DialogTitle>Add Loan Partner Contact</DialogTitle>
           <DialogDescription>
-            Search from existing contacts or add manually
+            {selectedRole ? `Role: ${selectedRole}` : 'Select a loan partner role to continue.'}
           </DialogDescription>
         </DialogHeader>
+
+        {view === 'role' && (
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Loan Partner Role</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {LOAN_PARTNER_ROLES.map((role) => (
+                  <Button
+                    key={role}
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedRole(role);
+                      loadPartners(role);
+                      setView('options');
+                    }}
+                  >
+                    {role}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {view === 'options' && (
           <div className="grid grid-cols-2 gap-4 py-4">
@@ -476,7 +307,7 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
                 </CommandGroup>
               </CommandList>
             </Command>
-            <Button variant="link" onClick={() => setView('options')}>Back</Button>
+            <Button variant="link" onClick={() => setView(selectedRole ? 'options' : 'role')}>Back</Button>
           </div>
         )}
 
@@ -486,7 +317,7 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
               {renderManualFields()}
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setView('options')} disabled={isSaving}>
+              <Button variant="outline" onClick={() => setView(selectedRole ? 'options' : 'role')} disabled={isSaving}>
                 Back
               </Button>
               <Button onClick={handleManualSave} disabled={isSaving} className="bg-slate-700 hover:bg-slate-800">
@@ -506,3 +337,5 @@ export default function AddContactModal({ isOpen, onClose, contactType, onSave }
     </Dialog>
   );
 }
+
+const toRoleKey = (role) => role.toLowerCase().replace(/\s+/g, '_');

@@ -8,18 +8,12 @@ import { X, Loader2, Briefcase } from 'lucide-react';
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { LOAN_PARTNER_ROLES } from "@/components/utils/appRoles";
 
-const LOAN_PARTNER_TYPES = [
-  { value: 'Servicer', label: 'Servicer' },
-  { value: 'Auditor', label: 'Auditor' },
-  { value: 'Referral Partner', label: 'Referral Partner' },
-  { value: 'Brokerage', label: 'Brokerage' },
-  { value: 'Title Company', label: 'Title Company' },
-  { value: 'Appraisal Firm', label: 'Appraisal Firm' },
-  { value: 'Legal Counsel', label: 'Legal Counsel' },
-  { value: 'Insurance Provider', label: 'Insurance Provider' },
-  { value: 'Other', label: 'Other' }
-];
+const LOAN_PARTNER_TYPES = LOAN_PARTNER_ROLES.map((role) => ({
+  value: role,
+  label: role
+}));
 
 export default function InviteLoanPartnerModal({ isOpen, onClose, onInviteSubmitted }) {
   const { toast } = useToast();

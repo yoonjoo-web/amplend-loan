@@ -12,17 +12,15 @@ import LoanPartnerForm from "../components/loan-partners/LoanPartnerForm";
 import ColumnSettingsModal from "../components/loan-partners/ColumnSettingsModal";
 import FilterModal from "../components/loan-partners/FilterModal";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
-const typeColors = {
+const roleColors = {
   "Servicer": "bg-blue-100 text-blue-800",
-  "Auditor": "bg-purple-100 text-purple-800",
   "Referral Partner": "bg-emerald-100 text-emerald-800",
-  "Brokerage": "bg-amber-100 text-amber-800",
+  "Broker": "bg-amber-100 text-amber-800",
   "Title Company": "bg-pink-100 text-pink-800",
-  "Appraisal Firm": "bg-indigo-100 text-indigo-800",
-  "Legal Counsel": "bg-slate-100 text-slate-800",
-  "Insurance Provider": "bg-cyan-100 text-cyan-800",
-  "Other": "bg-gray-100 text-gray-800"
+  "Insurance Company": "bg-cyan-100 text-cyan-800",
+  "Liaison": "bg-indigo-100 text-indigo-800"
 };
 
 export default function LoanPartners() {
@@ -37,9 +35,9 @@ export default function LoanPartners() {
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState([
-    'name', 'type', 'contact_person', 'email', 'phone', 'created_date'
+    'name', 'app_role', 'contact_person', 'email', 'phone', 'created_date'
   ]);
-  const [filters, setFilters] = useState({ type: 'all' });
+  const [filters, setFilters] = useState({ app_role: 'all' });
 
   const [sortField, setSortField] = useState('created_date');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -53,11 +51,12 @@ export default function LoanPartners() {
         try {
           const parsedColumns = JSON.parse(savedColumns);
           if (Array.isArray(parsedColumns)) {
-            setVisibleColumns(parsedColumns);
+            const normalizedColumns = parsedColumns.map((col) => (col === 'type' ? 'app_role' : col));
+            setVisibleColumns(normalizedColumns);
           }
         } catch (e) {
           console.error("Failed to parse saved columns from localStorage:", e);
-          setVisibleColumns(['name', 'type', 'contact_person', 'email', 'phone', 'created_date']);
+          setVisibleColumns(['name', 'app_role', 'contact_person', 'email', 'phone', 'created_date']);
         }
       }
     }
@@ -112,9 +111,11 @@ export default function LoanPartners() {
     const matchesSearch = 
       partner.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       partner.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      partner.contact_person?.toLowerCase().includes(searchTerm.toLowerCase());
+      partner.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      normalizeAppRole(partner.app_role || partner.type || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = filters.type === 'all' || partner.type === filters.type;
+    const partnerRole = normalizeAppRole(partner.app_role || partner.type || '');
+    const matchesType = filters.app_role === 'all' || partnerRole === filters.app_role;
     
     return matchesSearch && matchesType;
   });
@@ -122,6 +123,10 @@ export default function LoanPartners() {
   const sortedPartners = [...filteredPartners].sort((a, b) => {
     let aValue = a[sortField];
     let bValue = b[sortField];
+    if (sortField === 'app_role') {
+      aValue = normalizeAppRole(a.app_role || a.type || '');
+      bValue = normalizeAppRole(b.app_role || b.type || '');
+    }
 
     if (aValue == null && bValue == null) return 0;
     if (aValue == null) return 1;
@@ -140,7 +145,7 @@ export default function LoanPartners() {
 
   const columnConfig = {
     'name': 'Name',
-    'type': 'Type',
+    'app_role': 'Role',
     'contact_person': 'Contact Person',
     'email': 'Email',
     'phone': 'Phone',
@@ -158,12 +163,14 @@ export default function LoanPartners() {
     switch (columnKey) {
       case 'name':
         return partner.name;
-      case 'type':
+      case 'app_role': {
+        const partnerRole = normalizeAppRole(partner.app_role || partner.type || '');
         return (
-          <Badge className={`${typeColors[partner.type] || typeColors['Other']} font-medium`}>
-            {partner.type}
+          <Badge className={`${roleColors[partnerRole] || 'bg-slate-100 text-slate-800'} font-medium`}>
+            {partnerRole || 'Unassigned'}
           </Badge>
         );
+      }
       case 'contact_person':
         return partner.contact_person || '-';
       case 'email':
@@ -383,14 +390,6 @@ export default function LoanPartners() {
         isOpen={showFilterModal}
         onClose={() => setShowFilterModal(false)}
         currentFilters={filters}
-        filterOptions={[
-          {
-            key: 'type',
-            label: 'Type',
-            type: 'select',
-            options: [{ value: 'all', label: 'All Types' }, ...Object.keys(typeColors).map(type => ({ value: type, label: type }))]
-          }
-        ]}
         onFiltersChange={setFilters}
       />
     </div>
