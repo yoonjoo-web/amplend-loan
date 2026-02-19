@@ -146,12 +146,12 @@ export default function Onboarding() {
       return;
     }
 
+    const params = new URLSearchParams(window.location.search);
+    const roleFromUrl = params.get('app_role') || params.get('role');
+    const normalizedRole = normalizeAppRole(roleFromUrl);
+
     setIsProcessing(true);
     try {
-      const params = new URLSearchParams(window.location.search);
-      const roleFromUrl = params.get('app_role') || params.get('role');
-      const normalizedRole = normalizeAppRole(roleFromUrl);
-      
       const updateData = {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
