@@ -28,7 +28,7 @@ const initialFormDataState = {
   address_zip: '',
 };
 
-export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcessing, toast }) {
+export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcessing, toast, fixedRole }) {
   const [formData, setFormData] = useState(initialFormDataState);
   const [errors, setErrors] = useState({});
   const [nameExists, setNameExists] = useState(false);
@@ -49,9 +49,18 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
         address: undefined,
       }));
     } else {
-      setFormData(initialFormDataState); // Reset to initial state for a new form
+      setFormData({
+        ...initialFormDataState,
+        app_role: fixedRole || ''
+      }); // Reset to initial state for a new form
     }
-  }, [partner]); // Rerun this effect whenever the 'partner' prop object changes
+  }, [partner, fixedRole]); // Rerun this effect whenever the 'partner' prop object changes
+
+  useEffect(() => {
+    if (fixedRole && formData.app_role !== fixedRole) {
+      setFormData(prev => ({ ...prev, app_role: fixedRole }));
+    }
+  }, [fixedRole, formData.app_role]);
 
   useEffect(() => {
     // Check if partner name exists (but not for the current partner being edited)
@@ -175,24 +184,26 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="app_role">Partner Type *</Label>
-              <Select
-                value={formData.app_role}
-                onValueChange={(value) => handleInputChange('app_role', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select partner type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOAN_PARTNER_ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!fixedRole && (
+              <div className="space-y-2">
+                <Label htmlFor="app_role">Partner Type *</Label>
+                <Select
+                  value={formData.app_role}
+                  onValueChange={(value) => handleInputChange('app_role', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select partner type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOAN_PARTNER_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

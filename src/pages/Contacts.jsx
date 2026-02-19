@@ -33,7 +33,7 @@ import LoanPartnerForm from "../components/loan-partners/LoanPartnerForm";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import ProductTour from "../components/shared/ProductTour";
-import { normalizeAppRole } from "@/components/utils/appRoles";
+import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 
 export default function Contacts() {
   const navigate = useNavigate();
@@ -80,6 +80,8 @@ export default function Contacts() {
   const [selectedContactType, setSelectedContactType] = useState(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPartnerRoleModal, setShowPartnerRoleModal] = useState(false);
+  const [selectedPartnerRole, setSelectedPartnerRole] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -242,12 +244,24 @@ export default function Contacts() {
   const handleContactTypeSelect = (type) => {
     setSelectedContactType(type);
     setShowAddModal(false);
-    setShowContactForm(true);
+    if (type === 'loan_partner') {
+      setSelectedPartnerRole('');
+      setShowPartnerRoleModal(true);
+    } else {
+      setShowContactForm(true);
+    }
   };
 
   const handleFormCancel = () => {
     setShowContactForm(false);
     setSelectedContactType(null);
+    setSelectedPartnerRole('');
+  };
+
+  const handlePartnerRoleSelect = (role) => {
+    setSelectedPartnerRole(role);
+    setShowPartnerRoleModal(false);
+    setShowContactForm(true);
   };
 
   const handleFormSubmit = async (formData) => {
@@ -615,6 +629,29 @@ export default function Contacts() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showPartnerRoleModal} onOpenChange={setShowPartnerRoleModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Loan Partner Role</DialogTitle>
+            <DialogDescription>
+              Choose the role for this loan partner contact
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-4">
+            {LOAN_PARTNER_ROLES.map((role) => (
+              <Button
+                key={role}
+                variant="outline"
+                className="justify-start"
+                onClick={() => handlePartnerRoleSelect(role)}
+              >
+                {role}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showContactForm} onOpenChange={(open) => {
         if (!open) handleFormCancel();
       }}>
@@ -650,6 +687,7 @@ export default function Contacts() {
                 onCancel={handleFormCancel}
                 isProcessing={isProcessing}
                 toast={toast}
+                fixedRole={selectedPartnerRole}
               />
             )}
           </div>

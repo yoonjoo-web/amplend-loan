@@ -168,21 +168,12 @@ const normalizeLoanContacts = (rawContacts) => {
     }
   });
 
-  if (!nextContacts.insurance_company && contacts.insurance_agent) {
-    nextContacts.insurance_company = contacts.insurance_agent;
-    changed = true;
-  }
-  if (!nextContacts.title_company && contacts.title_escrow) {
-    nextContacts.title_company = contacts.title_escrow;
-    changed = true;
-  }
-  if (!nextContacts.broker && contacts.referral_broker) {
-    nextContacts.broker = contacts.referral_broker;
-    changed = true;
-  }
-  if (!nextContacts.referral_partner && contacts.referral_broker) {
-    nextContacts.referral_partner = nextContacts.referral_partner || contacts.referral_broker;
-  }
+  const allowedKeys = new Set(LOAN_PARTNER_ROLES.map((role) => toRoleKey(role)));
+  Object.keys(contacts).forEach((key) => {
+    if (!allowedKeys.has(key)) {
+      changed = true;
+    }
+  });
 
   return { contacts: nextContacts, changed };
 };
