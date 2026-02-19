@@ -39,7 +39,7 @@ const providerOptions = [
   "Third Party"
 ];
 
-export default function ChecklistItemModal({ isOpen, onClose, item, loanId, loan, assignableUsersList, allUsersList, currentUser, canManage }) {
+export default function ChecklistItemModal({ isOpen, onClose, item, loanId, loan, assignableUsersList, allUsersList, teamDirectory, currentUser, canManage }) {
   console.log('[ChecklistModal] Props received:', {
     isOpen,
     loanId,
@@ -703,6 +703,9 @@ Amplend Team`
   };
 
   const getUserName = (userId) => {
+    if (teamDirectory && userId && teamDirectory[userId]) {
+      return teamDirectory[userId];
+    }
     const user = (allUsersList || []).find(u => u.id === userId);
     if (user) {
       return user.first_name && user.last_name
@@ -710,6 +713,13 @@ Amplend Team`
         : user.full_name || user.email || 'Unknown User';
     }
     return 'Unknown User';
+  };
+
+  const getCommentAuthorName = (note) => {
+    const rawAuthorName = (note?.author_name || '').trim();
+    const isUnknownAuthor = rawAuthorName.length === 0 || rawAuthorName.toLowerCase() === 'unknown user';
+    if (!isUnknownAuthor) return rawAuthorName;
+    return getUserName(note?.author);
   };
 
   const renderCommentText = (text) => {
@@ -1078,7 +1088,7 @@ Amplend Team`
                 formData.notes.map((note) => (
                   <div key={note.id} className="bg-slate-50 p-2 rounded">
                     <div className="flex items-start justify-between mb-1">
-                      <p className="font-semibold text-xs">{note.author_name || getUserName(note.author)}</p>
+                      <p className="font-semibold text-xs">{getCommentAuthorName(note)}</p>
                       <div className="flex items-center gap-2">
                         <p className="text-xs text-slate-500">
                           {format(new Date(note.timestamp), 'MMM d, h:mm a')}

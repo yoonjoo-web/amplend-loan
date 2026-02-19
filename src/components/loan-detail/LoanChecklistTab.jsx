@@ -63,6 +63,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
   const [hasInitialized, setHasInitialized] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [assignableUsers, setAssignableUsers] = useState([]);
+  const [teamDirectory, setTeamDirectory] = useState({});
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
   const [filters, setFilters] = useState({
     assigned: 'all',
@@ -74,7 +75,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
   useEffect(() => {
     loadUsers();
     loadChecklistItems();
-  }, [loan.id]);
+  }, [loan.id, currentUser?.id]);
 
   useEffect(() => {
     if (currentUser && checklistItems.length > 0) {
@@ -107,32 +108,97 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
   }, [openTaskId, checklistItems, onTaskOpened]);
 
   const loadUsers = async () => {
+    let allUsers = [];
+    let allBorrowers = [];
+    let allLoanPartners = [];
     try {
       const response = await base44.functions.invoke('getAllUsers');
-      const allUsers = response.data.users || [];
+      allUsers = response.data.users || [];
       console.log('[LoanChecklistTab] Loaded all users:', allUsers.length, allUsers.slice(0, 3).map(u => ({ id: u.id, name: `${u.first_name} ${u.last_name}`, email: u.email })));
       setAllUsers(allUsers);
-        
-      const loanUserIds = new Set([
-        ...(loan.borrower_ids || []),
-        ...(loan.loan_officer_ids || []),
-        ...(loan.referrer_ids || [])
-      ]);
-        
-      const assignable = allUsers.filter(u => {
-        if (u.role === 'admin') {
-          return false;
-        }
-        return loanUserIds.has(u.id);
-      });
-        
-      setAssignableUsers(assignable);
-      
     } catch (error) {
       console.error('Error loading users:', error);
       setAllUsers([]);
-      setAssignableUsers([]);
     }
+
+    try {
+      allBorrowers = await base44.entities.Borrower.list();
+    } catch (error) {
+      console.error('Error loading borrowers:', error);
+    }
+
+    try {
+      allLoanPartners = await base44.entities.LoanPartner.list();
+    } catch (error) {
+      console.error('Error loading loan partners:', error);
+    }
+
+    const teamIds = new Set([
+      ...(loan.borrower_ids || []),
+      ...(loan.loan_officer_ids || []),
+      ...(loan.referrer_ids || []),
+      ...(loan.liaison_ids || []),
+      ...(loan.broker_ids || []),
+      ...(loan.title_company_ids || []),
+      ...(loan.insurance_company_ids || []),
+      ...(loan.servicer_ids || []),
+      currentUser?.id
+    ].filter(Boolean));
+
+    const directory = new Map();
+    const setIfMissing = (id, name) => {
+      if (!id || !name) return;
+      if (!directory.has(id)) {
+        directory.set(id, name);
+      }
+    };
+
+    allUsers.forEach(user => {
+      if (!teamIds.has(user.id)) return;
+      const name = user.first_name && user.last_name
+        ? `${user.first_name} ${user.last_name}`
+        : user.full_name || user.email || 'Unknown User';
+      setIfMissing(user.id, name);
+    });
+
+    allBorrowers.forEach(borrower => {
+      const shouldInclude = teamIds.has(borrower.id) || (borrower.user_id && teamIds.has(borrower.user_id));
+      if (!shouldInclude) return;
+      const name = borrower.first_name && borrower.last_name
+        ? `${borrower.first_name} ${borrower.last_name}`
+        : borrower.name || borrower.email || 'Unknown Contact';
+      setIfMissing(borrower.id, name);
+      if (borrower.user_id) {
+        setIfMissing(borrower.user_id, name);
+      }
+    });
+
+    allLoanPartners.forEach(partner => {
+      const shouldInclude = teamIds.has(partner.id) || (partner.user_id && teamIds.has(partner.user_id));
+      if (!shouldInclude) return;
+      const name = partner.name || partner.contact_person || partner.email || 'Unknown Partner';
+      setIfMissing(partner.id, name);
+      if (partner.user_id) {
+        setIfMissing(partner.user_id, name);
+      }
+    });
+
+    setTeamDirectory(Object.fromEntries(directory));
+
+    const loanUserIds = new Set([
+      ...(loan.borrower_ids || []),
+      ...(loan.loan_officer_ids || []),
+      ...(loan.referrer_ids || [])
+    ]);
+
+    const assignable = allUsers.filter(u => {
+      if (u.role === 'admin') {
+        return false;
+      }
+      return loanUserIds.has(u.id);
+    });
+
+    setAssignableUsers(assignable);
   };
 
   const ensureChecklistItems = async (existingItems) => {
@@ -712,6 +778,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
           loan={loan}
           assignableUsersList={assignableUsers}
           allUsersList={allUsers}
+          teamDirectory={teamDirectory}
           currentUser={currentUser}
           canManage={permissions.canManageChecklists}
         />

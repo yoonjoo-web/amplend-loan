@@ -17,6 +17,7 @@ import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRole
 export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, onRefresh }) {
   const { toast } = useToast();
   const [allUsers, setAllUsers] = useState([]);
+  const [allBorrowers, setAllBorrowers] = useState([]);
   const [allLoanPartners, setAllLoanPartners] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,6 +53,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       const usersResponse = await base44.functions.invoke('getAllUsers');
       const allUsers = usersResponse.data.users || [];
       setAllUsers(allUsers);
+
+      const borrowers = await base44.entities.Borrower.list();
+      setAllBorrowers(borrowers || []);
       
       // Load borrowers
       const loanPartners = await base44.entities.LoanPartner.list();
@@ -71,6 +75,20 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   };
 
   const getUserDisplayName = (userId, roleKey) => {
+    if (roleKey === 'borrower') {
+      const borrower = allBorrowers.find(b => b.id === userId || b.user_id === userId);
+      if (borrower) {
+        const name = [borrower.first_name, borrower.last_name].filter(Boolean).join(' ').trim();
+        if (name) return name;
+        if (borrower.email) return borrower.email;
+      }
+      const user = allUsers.find(u => u.id === userId);
+      if (user && user.first_name && user.last_name) {
+        return `${user.first_name} ${user.last_name}`;
+      }
+      if (user?.email) return user.email;
+      return 'Unknown Borrower';
+    }
     // For liaisons, look in borrowers
     if (roleKey === 'liaison') {
       const user = allUsers.find(u => u.id === userId);
@@ -97,6 +115,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   };
 
   const getUserRole = (userId, roleKey) => {
+    if (roleKey === 'borrower') {
+      return 'Borrower';
+    }
     if (roleKey === 'liaison') {
       return 'Liaison';
     }
