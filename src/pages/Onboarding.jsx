@@ -152,6 +152,20 @@ export default function Onboarding() {
 
     setIsProcessing(true);
     try {
+      const email = currentUser.email;
+      let linkedRole = '';
+      if (!normalizedRole && (!currentUser.app_role || currentUser.app_role === 'User')) {
+        try {
+          const partners = await base44.entities.LoanPartner.filter({ email });
+          if (partners && partners.length > 0) {
+            linkedRole = normalizeAppRole(partners[0].app_role || partners[0].type || '');
+          }
+        } catch (error) {
+          console.error('Error checking linked loan partner role:', error);
+        }
+      }
+      const fallbackRole = normalizedRole || linkedRole || currentUser?.app_role || 'Borrower';
+
       const updateData = {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
@@ -161,11 +175,12 @@ export default function Onboarding() {
       // Always assign role from URL if provided and user doesn't have one yet
       if (normalizedRole && (!currentUser.app_role || currentUser.app_role === 'User')) {
         updateData.app_role = normalizedRole;
+      } else if (!currentUser.app_role || currentUser.app_role === 'User') {
+        updateData.app_role = fallbackRole;
       }
 
       await base44.auth.updateMe(updateData);
-
-      const email = currentUser.email;
+      const effectiveRole = normalizedRole || currentUser.app_role || updateData.app_role || '';
       
       const borrowers = await base44.entities.Borrower.filter({ email: email });
       if (borrowers && borrowers.length > 0 && !borrowers[0].user_id) {
@@ -174,7 +189,7 @@ export default function Onboarding() {
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim()
         });
-      } else if (normalizedRole === 'Borrower' || normalizedRole === 'Liaison') {
+      } else if (effectiveRole === 'Borrower' || effectiveRole === 'Liaison') {
         await base44.entities.Borrower.create({
           user_id: currentUser.id,
           first_name: formData.first_name.trim(),
@@ -188,12 +203,12 @@ export default function Onboarding() {
         await base44.entities.LoanPartner.update(partners[0].id, {
           user_id: currentUser.id
         });
-      } else if (normalizedRole && LOAN_PARTNER_ROLES.includes(normalizedRole)) {
+      } else if (effectiveRole && LOAN_PARTNER_ROLES.includes(effectiveRole)) {
         await base44.entities.LoanPartner.create({
           user_id: currentUser.id,
           name: `${formData.first_name.trim()} ${formData.last_name.trim()}`,
           email: email,
-          app_role: normalizedRole
+          app_role: effectiveRole
         });
       }
 
