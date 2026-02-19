@@ -99,12 +99,15 @@ export default function DynamicFormRenderer({
       // Filter by role if currentUser is provided
       if (currentUser && currentUser.app_role) {
         configs = configs.filter(config => {
+          const visibleRoles = Array.isArray(config.visible_to_roles)
+            ? config.visible_to_roles.filter(role => role !== 'Guarantor')
+            : [];
           // If visible_to_roles is empty or undefined, field is visible to all
-          if (!config.visible_to_roles || config.visible_to_roles.length === 0) {
+          if (!visibleRoles || visibleRoles.length === 0) {
             return true;
           }
           // Otherwise, check if user's role is in the list
-          return config.visible_to_roles.includes(currentUser.app_role);
+          return visibleRoles.includes(currentUser.app_role);
         });
       }
       

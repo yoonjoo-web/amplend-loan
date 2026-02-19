@@ -231,6 +231,9 @@ Deno.serve(async (req) => {
 
     // Add all fields from customizations first (these are user-configured or already initialized)
     customizations.forEach(config => {
+      if (Array.isArray(config.visible_to_roles)) {
+        config.visible_to_roles = config.visible_to_roles.filter(role => role !== 'Guarantor');
+      }
       fields.push({
         ...config,
         _isFromSchema: false

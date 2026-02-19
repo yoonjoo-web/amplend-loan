@@ -9,6 +9,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { runRoleMigration } from "@/components/utils/roleMigration";
+import { runFieldRoleCleanup } from "@/components/utils/fieldRoleCleanup";
+import { runLoanContactCleanup } from "@/components/utils/loanContactCleanup";
 
 import UserTable from '../components/settings/UserTable';
 import EditUserModal from '../components/settings/EditUserModal';
@@ -56,6 +58,8 @@ export default function Settings() {
       loadData();
       if (permissions.canManageUsers) {
         runRoleMigration({ toast });
+        runFieldRoleCleanup({ toast });
+        runLoanContactCleanup({ toast });
       }
       
       // Set default tab based on permissions if not already set
