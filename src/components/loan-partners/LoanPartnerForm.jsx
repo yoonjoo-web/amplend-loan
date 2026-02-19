@@ -1,19 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, AlertCircle } from "lucide-react";
+import { Save, X, AlertCircle, Search, UserPlus, Link2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LoanPartner } from "@/entities/all";
+import { LoanPartner, User as UserEntity } from "@/entities/all";
 import { US_STATES } from "../utils/usStates"; // New import for US States
 import AddressAutocomplete from "../shared/AddressAutocomplete"; // New import for AddressAutocomplete
 import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
+import { base44 } from "@/api/base44Client";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Define the initial state structure for the form data,
 // now including granular address fields and excluding the single 'address' field.
 const initialFormDataState = {
+  user_id: '',
   name: '',
   app_role: '',
   email: '',
@@ -32,6 +43,9 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
   const [formData, setFormData] = useState(initialFormDataState);
   const [errors, setErrors] = useState({});
   const [nameExists, setNameExists] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  const [linkedUser, setLinkedUser] = useState(null);
 
   // Effect to update formData when the 'partner' prop changes.
   // This ensures the form is correctly populated when editing an existing partner
@@ -55,6 +69,33 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
       }); // Reset to initial state for a new form
     }
   }, [partner, fixedRole]); // Rerun this effect whenever the 'partner' prop object changes
+
+  const loadUsers = useCallback(async () => {
+    try {
+      const users = await UserEntity.list();
+      setAvailableUsers(users);
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  }, []);
+
+  const loadLinkedUser = useCallback(async () => {
+    if (formData.user_id) {
+      try {
+        const user = await UserEntity.get(formData.user_id);
+        setLinkedUser(user);
+      } catch (error) {
+        console.error('Error loading linked user:', error);
+      }
+    }
+  }, [formData.user_id]);
+
+  useEffect(() => {
+    loadUsers();
+    if (formData.user_id) {
+      loadLinkedUser();
+    }
+  }, [formData.user_id, loadUsers, loadLinkedUser]);
 
   useEffect(() => {
     if (fixedRole && formData.app_role !== fixedRole) {
@@ -89,6 +130,46 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
+  const handleLinkToUser = (user) => {
+    setLinkedUser(user);
+    setFormData(prev => ({
+      ...prev,
+      user_id: user.id,
+      contact_person: user.first_name && user.last_name
+        ? `${user.first_name} ${user.last_name}`
+        : (prev.contact_person || ''),
+      email: user.email || prev.email,
+      phone: user.phone || prev.phone
+    }));
+    setShowUserSearch(false);
+  };
+
+  const handleUnlinkUser = () => {
+    setLinkedUser(null);
+    setFormData(prev => ({
+      ...prev,
+      user_id: ''
+    }));
+  };
+
+  const handleInviteToPlatform = async () => {
+    try {
+      const name = formData.contact_person || formData.name || '';
+      await base44.functions.invoke('emailService', {
+        email_type: 'invite_loan_partner',
+        recipient_email: formData.email,
+        recipient_name: name,
+        data: {
+          first_name: name.split(' ')[0] || '',
+          last_name: name.split(' ').slice(1).join(' ') || '',
+          partner_type: formData.app_role || fixedRole || ''
+        }
+      });
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+    }
   };
 
   const handlePhoneInput = (e) => {
@@ -161,6 +242,68 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* User Linking Section */}
+        <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+          <h4 className="font-semibold text-slate-900 mb-3">User Account Linking</h4>
+
+          {formData.user_id && linkedUser ? (
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
+              <div className="flex items-center gap-3">
+                <Link2 className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-900">
+                    Linked to: {linkedUser.first_name} {linkedUser.last_name}
+                  </p>
+                  <p className="text-sm text-blue-700">{linkedUser.email}</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleUnlinkUser}>
+                Unlink
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <Popover open={showUserSearch} onOpenChange={setShowUserSearch}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline">
+                    <Search className="w-4 h-4 mr-2" />
+                    Link to User
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search users by name or email..." />
+                    <CommandList>
+                      <CommandEmpty>No users found.</CommandEmpty>
+                      <CommandGroup>
+                        {availableUsers.map(user => (
+                          <CommandItem
+                            key={user.id}
+                            onSelect={() => handleLinkToUser(user)}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.full_name || 'No Name'}
+                              </span>
+                              <span className="text-sm text-slate-500">{user.email}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Button variant="outline" onClick={handleInviteToPlatform}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Invite to Platform
+              </Button>
+            </div>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
