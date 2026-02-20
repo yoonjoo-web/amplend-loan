@@ -741,7 +741,9 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           <CardContent>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {teamMembers.length > 0 ? (
-                teamMembers.map((member, index) => (
+                teamMembers
+                  .filter(member => !(hideLoanOfficerDetails && member.role === 'Loan Officer'))
+                  .map((member, index) => (
                   <div key={`${member.id}-${member.role}-${index}`} className="text-sm border-b pb-3 last:border-b-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
