@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { normalizeAppRole } from '@/components/utils/appRoles';
+import { getBorrowerAccessIds } from '@/components/utils/borrowerAccess';
 
 const defaultPermissions = {
   // Role identification
@@ -64,6 +65,7 @@ const defaultPermissions = {
   
   // Dashboard
   canViewDashboard: false,
+  borrowerAccessIds: [],
 };
 
 export const usePermissions = () => {
@@ -216,6 +218,12 @@ export const usePermissions = () => {
 
         // --- Dashboard ---
         p.canViewDashboard = true;
+
+        if (p.isBorrower) {
+          p.borrowerAccessIds = await getBorrowerAccessIds(base44, user);
+        } else {
+          p.borrowerAccessIds = [user.id].filter(Boolean);
+        }
 
         setPermissions(p);
       } catch (error) {

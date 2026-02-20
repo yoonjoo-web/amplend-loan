@@ -38,7 +38,22 @@ Deno.serve(async (req) => {
     const isAdmin = user.role === 'admin' || user.app_role === 'Administrator';
     const isLoanOfficer = user.app_role === 'Loan Officer';
     const isAssignedOfficer = application.assigned_loan_officer_id === user.id;
-    const isPrimaryBorrower = application.primary_borrower_id === user.id;
+    let borrowerContactId = null;
+    try {
+      const borrowersByUserId = await base44.asServiceRole.entities.Borrower.filter({ user_id: user.id });
+      if (borrowersByUserId && borrowersByUserId.length > 0) {
+        borrowerContactId = borrowersByUserId[0].id;
+      } else if (user.email) {
+        const borrowersByEmail = await base44.asServiceRole.entities.Borrower.filter({ email: user.email });
+        if (borrowersByEmail && borrowersByEmail.length > 0) {
+          borrowerContactId = borrowersByEmail[0].id;
+        }
+      }
+    } catch (error) {
+      console.error('Error resolving borrower contact id:', error);
+    }
+
+    const isPrimaryBorrower = application.primary_borrower_id === user.id || application.primary_borrower_id === borrowerContactId;
     const createdById = typeof application.created_by === 'object'
       ? application.created_by?.id
       : application.created_by;
@@ -47,7 +62,9 @@ Deno.serve(async (req) => {
     // Check if user is a co-borrower
     let isCoBorrower = false;
     if (application.co_borrowers && Array.isArray(application.co_borrowers)) {
-      isCoBorrower = application.co_borrowers.some(cb => cb.user_id === user.id);
+      isCoBorrower = application.co_borrowers.some(cb =>
+        cb.user_id === user.id || cb.borrower_id === borrowerContactId
+      );
     }
 
     // Grant access if:

@@ -24,7 +24,22 @@ Deno.serve(async (req) => {
     const isAdmin = user.role === 'admin' || user.app_role === 'Administrator';
     const isLoanOfficer = user.app_role === 'Loan Officer';
     const isAssignedOfficer = loan.loan_officer_ids?.includes(user.id);
-    const isBorrower = loan.borrower_ids?.includes(user.id);
+    let borrowerContactId = null;
+    try {
+      const borrowersByUserId = await base44.asServiceRole.entities.Borrower.filter({ user_id: user.id });
+      if (borrowersByUserId && borrowersByUserId.length > 0) {
+        borrowerContactId = borrowersByUserId[0].id;
+      } else if (user.email) {
+        const borrowersByEmail = await base44.asServiceRole.entities.Borrower.filter({ email: user.email });
+        if (borrowersByEmail && borrowersByEmail.length > 0) {
+          borrowerContactId = borrowersByEmail[0].id;
+        }
+      }
+    } catch (error) {
+      console.error('Error resolving borrower contact id:', error);
+    }
+
+    const isBorrower = loan.borrower_ids?.some((id) => id === user.id || id === borrowerContactId);
     const isGuarantor = loan.guarantor_ids?.includes(user.id);
     const isReferrer = loan.referrer_ids?.includes(user.id);
 

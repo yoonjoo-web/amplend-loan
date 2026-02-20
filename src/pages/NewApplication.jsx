@@ -51,6 +51,7 @@ export default function NewApplication() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
+  const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser?.id].filter(Boolean);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -82,8 +83,10 @@ export default function NewApplication() {
   // Determine if current user is a co-borrower on this application
   const userIsCoBorrower = useMemo(() => {
     if (!formData || !currentUser) return false;
-    return formData.co_borrowers?.some(cb => cb.user_id === currentUser.id) || false;
-  }, [formData, currentUser]);
+    return formData.co_borrowers?.some(cb =>
+      borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+    ) || false;
+  }, [formData, currentUser, borrowerAccessIds]);
 
   const visibleSteps = useMemo(() => {
     return getVisibleSteps(formData, userIsCoBorrower);
@@ -155,8 +158,10 @@ export default function NewApplication() {
             return;
           }
           
-          const isPrimaryBorrower = appData.primary_borrower_id === currentUser.id;
-          const isCoBorrower = appData.co_borrowers?.some(cb => cb.user_id === currentUser.id);
+          const isPrimaryBorrower = borrowerAccessIds.includes(appData.primary_borrower_id);
+          const isCoBorrower = appData.co_borrowers?.some(cb =>
+            borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+          );
           const createdById = typeof appData.created_by === 'object' ? appData.created_by?.id : appData.created_by;
           const isCreator = createdById === currentUser.id;
           
@@ -283,8 +288,10 @@ export default function NewApplication() {
         appData.rejection_reason = null;
       }
 
-      const isPrimaryBorrower = appData.primary_borrower_id === currentUser?.id;
-      const isCoBorrower = appData.co_borrowers?.some(cb => cb.user_id === currentUser?.id);
+      const isPrimaryBorrower = borrowerAccessIds.includes(appData.primary_borrower_id);
+      const isCoBorrower = appData.co_borrowers?.some(cb =>
+        borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+      );
       
       console.log('DEBUG - Before readonly logic:', {
         shouldBeReadOnly: shouldBeReadOnly,
@@ -310,7 +317,9 @@ export default function NewApplication() {
       setFormData(appData);
       setOverallReviewComment(appData.overall_review_comment || '');
       
-      const userIsCoBorrowerOnApp = appData.co_borrowers?.some(cb => cb.user_id === currentUser?.id) || false;
+      const userIsCoBorrowerOnApp = appData.co_borrowers?.some(cb =>
+        borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+      ) || false;
       const initialVisibleSteps = getVisibleSteps(appData, userIsCoBorrowerOnApp);
       const loadedStepId = appData.current_step || 1;
       if (initialVisibleSteps.some(step => step.id === loadedStepId)) {
@@ -968,8 +977,10 @@ export default function NewApplication() {
   };
 
   // Determine user role in this application
-  const isPrimaryBorrowerViewing = formData && currentUser && formData.primary_borrower_id === currentUser.id;
-  const isCoBorrowerViewing = formData && currentUser && formData.co_borrowers?.some(cb => cb.user_id === currentUser.id);
+  const isPrimaryBorrowerViewing = formData && currentUser && borrowerAccessIds.includes(formData.primary_borrower_id);
+  const isCoBorrowerViewing = formData && currentUser && formData.co_borrowers?.some(cb =>
+    borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+  );
   const isStaffViewing = canManage || permissions?.canReviewApplication;
 
   // Get read-only status for specific steps based on user role
@@ -1052,7 +1063,9 @@ export default function NewApplication() {
       
       // Co-borrower sees their own editable form
       if (isCoBorrowerViewing) {
-        const currentCoBorrowerIndex = formData.co_borrowers?.findIndex(cb => cb.user_id === currentUser.id);
+        const currentCoBorrowerIndex = formData.co_borrowers?.findIndex(cb =>
+          borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+        );
         const currentCoBorrower = currentCoBorrowerIndex >= 0 ? formData.co_borrowers[currentCoBorrowerIndex] : null;
         
         if (currentCoBorrower) {

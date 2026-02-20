@@ -58,6 +58,7 @@ export default function MyTasks() {
     try {
       console.log('[MyTasks] Starting data load...');
       console.log('[MyTasks] Current user ID:', currentUser.id);
+      const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
       
       // First load all loans
       const allLoans = await Loan.list('-created_date');
@@ -66,7 +67,7 @@ export default function MyTasks() {
       // Filter loans where user is assigned (loan officer, borrower, or referrer)
       const userLoans = (allLoans || []).filter(loan => {
         const isLoanOfficer = loan.loan_officer_ids?.includes(currentUser.id);
-        const isBorrower = loan.borrower_ids?.includes(currentUser.id);
+        const isBorrower = loan.borrower_ids?.some((id) => borrowerAccessIds.includes(id));
         const isReferrer = loan.referrer_ids?.includes(currentUser.id);
         return isLoanOfficer || isBorrower || isReferrer;
       });

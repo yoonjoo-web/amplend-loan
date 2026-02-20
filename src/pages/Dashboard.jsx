@@ -159,12 +159,14 @@ export default function Dashboard() {
       const loans = loansData || [];
       console.log('[Dashboard] All loans loaded:', loans.length);
 
+      const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
+
       // Filter loans based on user role
       let userLoans = loans;
       if (permissions.isLoanOfficer) {
         userLoans = loans.filter(l => l.loan_officer_ids?.includes(currentUser.id));
       } else if (permissions.isBorrower) {
-        userLoans = loans.filter(l => l.borrower_ids?.includes(currentUser.id));
+        userLoans = loans.filter(l => l.borrower_ids?.some((id) => borrowerAccessIds.includes(id)));
       } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
         userLoans = loans.filter(l => l.referrer_ids?.includes(currentUser.id));
       }
@@ -177,10 +179,13 @@ export default function Dashboard() {
       if (permissions.isLoanOfficer) {
         userApps = userApps.filter(a => a.assigned_loan_officer_id === currentUser.id);
       } else if (permissions.isBorrower) {
-        userApps = userApps.filter(a =>
-          a.primary_borrower_id === currentUser.id ||
-          (a.co_borrowers && a.co_borrowers.some(cb => cb.user_id === currentUser.id))
-        );
+        userApps = userApps.filter(a => {
+          const isPrimary = borrowerAccessIds.includes(a.primary_borrower_id);
+          const isCoBorrower = a.co_borrowers && a.co_borrowers.some(cb =>
+            borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+          );
+          return isPrimary || isCoBorrower;
+        });
       }
 
       const userRecentApps = userApps.slice(0, 5);

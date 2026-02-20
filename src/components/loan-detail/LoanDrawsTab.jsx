@@ -9,7 +9,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
+export default function LoanDrawsTab({ loan, onUpdate, currentUser, borrowerAccessIds = [] }) {
   const { toast } = useToast();
   const [draws, setDraws] = useState(loan.draws || []);
   const [draftDraws, setDraftDraws] = useState([]);
@@ -26,7 +26,7 @@ export default function LoanDrawsTab({ loan, onUpdate, currentUser }) {
     ['Administrator', 'Loan Officer'].includes(currentUser.app_role)
   );
   const isBorrower = currentUser?.app_role === 'Borrower';
-  const canSubmitRequest = isBorrower && loan.borrower_ids?.includes(currentUser.id);
+  const canSubmitRequest = isBorrower && loan.borrower_ids?.some((id) => borrowerAccessIds.includes(id));
 
   const coerceNumber = (value) => {
     if (value === '' || value === null || value === undefined) return null;

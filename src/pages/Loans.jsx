@@ -353,6 +353,7 @@ export default function Loans() {
     if (!currentUser) {
       return false;
     }
+    const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
 
     if (showMyLoans) {
       let isMyLoan = false;
@@ -362,7 +363,7 @@ export default function Loans() {
         isMyLoan = loanOfficerIds.includes(currentUser.id);
       } else if (permissions.isBorrower) {
         const borrowerIds = loan.borrower_ids || [];
-        isMyLoan = borrowerIds.includes(currentUser.id);
+        isMyLoan = borrowerIds.some((id) => borrowerAccessIds.includes(id));
       } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
         const referrerIds = loan.referrer_ids || [];
         isMyLoan = referrerIds.includes(currentUser.id);
@@ -380,8 +381,9 @@ export default function Loans() {
     if (!showMyLoans) {
       if (permissions.canViewAllLoans) {
 
-      } else if (permissions.isBorrower) {const borrowerIds = loan.borrower_ids || [];
-        if (!borrowerIds.includes(currentUser.id)) {
+      } else if (permissions.isBorrower) {
+        const borrowerIds = loan.borrower_ids || [];
+        if (!borrowerIds.some((id) => borrowerAccessIds.includes(id))) {
           return false;
         }
       } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {

@@ -121,9 +121,12 @@ export default function Applications() {
 
       let filteredApps = allApps;
       if (permissions.isBorrower) {
+        const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
         filteredApps = allApps.filter((app) =>
-        app.primary_borrower_id === currentUser.id ||
-        app.co_borrowers && app.co_borrowers.some((cb) => cb.user_id === currentUser.id)
+        borrowerAccessIds.includes(app.primary_borrower_id) ||
+        app.co_borrowers && app.co_borrowers.some((cb) =>
+          borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+        )
         );
       }
 
@@ -168,6 +171,7 @@ export default function Applications() {
   filter((app) => {
     // Filter by "My Applications" if enabled
     if (showMyApplications && currentUser) {
+      const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
       if (permissions.isLoanOfficer || permissions.isAdministrator || permissions.isPlatformAdmin) {
         // For staff, check if they're the assigned loan officer
         if (app.assigned_loan_officer_id !== currentUser.id) {
@@ -175,8 +179,10 @@ export default function Applications() {
         }
       } else if (permissions.isBorrower) {
         // For borrowers, check if they're the primary borrower or a co-borrower
-        const isPrimaryBorrower = app.primary_borrower_id === currentUser.id;
-        const isCoBorrower = app.co_borrowers && app.co_borrowers.some((cb) => cb.user_id === currentUser.id);
+        const isPrimaryBorrower = borrowerAccessIds.includes(app.primary_borrower_id);
+        const isCoBorrower = app.co_borrowers && app.co_borrowers.some((cb) =>
+          borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+        );
         if (!isPrimaryBorrower && !isCoBorrower) {
           return false;
         }

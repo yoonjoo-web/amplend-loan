@@ -9,6 +9,7 @@ import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
+import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
@@ -25,6 +26,7 @@ export default function LoanDetail() {
   const [loan, setLoan] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [borrowerAccessIds, setBorrowerAccessIds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -110,11 +112,14 @@ export default function LoanDetail() {
         return;
       }
 
+      const resolvedBorrowerAccessIds = await getBorrowerAccessIds(base44, user);
+      setBorrowerAccessIds(resolvedBorrowerAccessIds);
+
       const canViewLoan = 
         user.role === 'admin' || 
         user.app_role === 'Administrator' ||
         user.app_role === 'Loan Officer' ||
-        loanData.borrower_ids?.includes(user.id) ||
+        loanData.borrower_ids?.some((id) => resolvedBorrowerAccessIds.includes(id)) ||
         loanData.liaison_ids?.includes(user.id) ||
         loanData.referrer_ids?.includes(user.id);
 
@@ -341,6 +346,7 @@ export default function LoanDetail() {
                         loan={loan}
                         onUpdate={handleLoanUpdate}
                         currentUser={currentUser}
+                        borrowerAccessIds={borrowerAccessIds}
                       />
                     </TabsContent>
                     
