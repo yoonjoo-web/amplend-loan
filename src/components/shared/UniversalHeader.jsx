@@ -160,25 +160,19 @@ export default function UniversalHeader({ currentUser }) {
             );
             invitedByBroker = wasInvitedByBroker(coBorrowerEntry);
           }
-          if (!invitedByBroker) {
-            setHideBranding(false);
-            return;
-          }
           const loanPartners = await base44.entities.LoanPartner.list();
           if (!isMounted) return;
-          setHideBranding(hasBrokerOnApplication(application, loanPartners));
+          const hasBroker = hasBrokerOnApplication(application, loanPartners);
+          setHideBranding(invitedByBroker || hasBroker);
           return;
         }
 
         if (id && isLoanDetail) {
-          if (!invitedByBroker) {
-            setHideBranding(false);
-            return;
-          }
           const loanPartners = await base44.entities.LoanPartner.list();
           const loan = await base44.entities.Loan.get(id);
           if (!isMounted) return;
-          setHideBranding(hasBrokerOnLoan(loan, loanPartners));
+          const hasBroker = hasBrokerOnLoan(loan, loanPartners);
+          setHideBranding(invitedByBroker || hasBroker);
           return;
         }
 
@@ -197,16 +191,11 @@ export default function UniversalHeader({ currentUser }) {
           });
         }
 
-        if (!invitedByBroker) {
-          setHideBranding(false);
-          return;
-        }
-
         const loanPartners = await base44.entities.LoanPartner.list();
         if (!isMounted) return;
         const hasBroker = loans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
           || applications.some((app) => hasBrokerOnApplication(app, loanPartners));
-        setHideBranding(hasBroker);
+        setHideBranding(invitedByBroker || hasBroker);
       } catch (error) {
         console.error('Error resolving branding visibility:', error);
         if (isMounted) setHideBranding(false);
