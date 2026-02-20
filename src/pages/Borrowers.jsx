@@ -87,7 +87,8 @@ export default function Borrowers() {
       }
       
       const updatedBorrowersData = await Borrower.list('-created_date');
-      setAllBorrowers(updatedBorrowersData);
+      const visibleBorrowers = (updatedBorrowersData || []).filter(b => !b.is_invite_temp);
+      setAllBorrowers(visibleBorrowers);
       setAllLoans(loansData);
       setAllUsers(usersData);
     } catch(e) {

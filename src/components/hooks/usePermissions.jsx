@@ -225,6 +225,14 @@ export const usePermissions = () => {
           p.borrowerAccessIds = [user.id].filter(Boolean);
         }
 
+        if (normalizedRole === 'Borrower') {
+          try {
+            await base44.functions.invoke('activateBorrowerInvite');
+          } catch (error) {
+            console.error('Error activating borrower invite:', error);
+          }
+        }
+
         setPermissions(p);
       } catch (error) {
         console.error('Error loading user permissions:', error);

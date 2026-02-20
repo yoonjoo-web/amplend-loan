@@ -441,7 +441,8 @@ export default function ContactDetail() {
           
           try {
             const borrowers = await base44.entities.Borrower.list().catch(() => []);
-            setAllBorrowers(borrowers || []);
+            const visibleBorrowers = (borrowers || []).filter(b => !b.is_invite_temp);
+            setAllBorrowers(visibleBorrowers);
             
             const [entityLoans, entityApplications] = await Promise.all([
               base44.entities.Loan.list().catch(() => []),
@@ -1569,7 +1570,9 @@ export default function ContactDetail() {
                           const inviteSentAt = new Date().toISOString();
                           const inviteUpdate = {
                             [statusField]: 'invited',
-                            [dateField]: inviteSentAt
+                            [dateField]: inviteSentAt,
+                            invited_by_user_id: currentUser?.id,
+                            invited_by_role: currentUser?.app_role || currentUser?.role
                           };
 
                           try {

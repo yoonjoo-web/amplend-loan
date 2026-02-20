@@ -8,10 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { User, Loan, Message } from "@/entities/all";
+import { User, Loan, LoanApplication, Borrower, Message } from "@/entities/all";
 import { Loader2, User as UserIcon, Hash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
+import { normalizeAppRole } from "@/components/utils/appRoles";
+import { hasBrokerOnApplication, hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 import {
   Command,
   CommandEmpty,
@@ -33,6 +35,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
   });
   const [isCreating, setIsCreating] = useState(false);
   const [activeTab, setActiveTab] = useState("direct");
+  const [borrowerBrokerRestriction, setBorrowerBrokerRestriction] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,32 +47,21 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
     try {
       let allUsers = [];
       let allLoans = [];
+      let allApplications = [];
+      const normalizedRole = normalizeAppRole(currentUser?.app_role);
+      const isBorrowerRole = ['Borrower', 'Liaison'].includes(normalizedRole);
       
       // Try to load users - may fail for non-admin users
       try {
         allUsers = await User.list();
       } catch (userError) {
-        console.log('Cannot load all users (permission denied), will load loan officers only');
-        // For borrowers/loan partners who can't list all users,
-        // we need to still show loan officers they can message
-        // Try to get loan officers from a different approach
-        allUsers = [];
-      }
-
-      if (permissions.canMessageOnlyLoanOfficers) {
-        const hasLoanOfficer = allUsers.some(u => 
-          u.app_role === 'Loan Officer' || 
-          u.app_role === 'Administrator' ||
-          u.role === 'admin'
-        );
-        if (!hasLoanOfficer) {
-          try {
-            const response = await base44.functions.invoke('getLoanOfficers');
-            allUsers = response?.data?.users || [];
-          } catch (loanOfficerError) {
-            console.log('Cannot load loan officers:', loanOfficerError);
-            allUsers = [];
-          }
+        console.log('Cannot load all users (permission denied), falling back to service function');
+        try {
+          const response = await base44.functions.invoke('getAllUsers');
+          allUsers = response?.data?.users || response?.users || [];
+        } catch (serviceError) {
+          console.log('Cannot load users via service function:', serviceError);
+          allUsers = [];
         }
       }
       
@@ -80,15 +72,59 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
         console.log('Cannot load loans:', loanError);
         allLoans = [];
       }
+
+      if (isBorrowerRole) {
+        try {
+          allApplications = await LoanApplication.list();
+        } catch (appError) {
+          console.log('Cannot load applications:', appError);
+          allApplications = [];
+        }
+      }
+
+      let shouldRestrictToBroker = false;
+      if (isBorrowerRole) {
+        let borrowerRecord = null;
+        try {
+          const borrowersByUserId = await Borrower.filter({ user_id: currentUser.id });
+          borrowerRecord = borrowersByUserId?.[0] || (
+            currentUser.email
+              ? (await Borrower.filter({ email: currentUser.email }))?.[0]
+              : null
+          );
+        } catch (error) {
+          console.log('Cannot resolve borrower record:', error);
+        }
+
+        const invitedByBroker = wasInvitedByBroker(borrowerRecord);
+        let hasBroker = false;
+        try {
+          const loanPartners = await base44.entities.LoanPartner.list();
+          hasBroker = allLoans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
+            || allApplications.some((app) => hasBrokerOnApplication(app, loanPartners));
+        } catch (error) {
+          console.log('Cannot evaluate broker presence:', error);
+        }
+        shouldRestrictToBroker = invitedByBroker || hasBroker;
+        setBorrowerBrokerRestriction(shouldRestrictToBroker);
+      } else {
+        setBorrowerBrokerRestriction(false);
+      }
       
       // Rule 12: Filter users based on permissions
       let filteredUsers = allUsers.filter(u => u.id !== currentUser?.id); // Exclude self
       
       if (permissions.canMessageOnlyLoanOfficers) {
-        // Non-admin/non-LO users can only message loan officers
-        filteredUsers = filteredUsers.filter(u => 
-          u.app_role === 'Loan Officer'
-        );
+        if (isBorrowerRole && shouldRestrictToBroker) {
+          filteredUsers = filteredUsers.filter(u =>
+            normalizeAppRole(u.app_role) === 'Broker'
+          );
+        } else {
+          // Non-admin/non-LO users can only message loan officers
+          filteredUsers = filteredUsers.filter(u =>
+            normalizeAppRole(u.app_role) === 'Loan Officer'
+          );
+        }
       }
       // Otherwise (canMessageAnyUser), show all users except self
       
@@ -214,88 +250,77 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
         <DialogHeader>
           <DialogTitle>Start a Conversation</DialogTitle>
         </DialogHeader>
-
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Direct Message:</strong> Use for private one-on-one conversations with any team member or client.
-            {permissions.canCreateLoanChannel && (
-              <><br /><strong>Loan Channel:</strong> Use for group discussions about a specific loan with all stakeholders.</>
-            )}
-          </p>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className={permissions.canCreateLoanChannel ? "grid w-full grid-cols-2" : "grid w-full grid-cols-1"}>
-            <TabsTrigger value="direct" data-tour="direct-message-tab">
-              <UserIcon className="w-4 h-4 mr-2" />
-              Direct Message
-            </TabsTrigger>
-            {/* Rule 12: Only admins and loan officers can create loan channels */}
-            {permissions.canCreateLoanChannel && (
+        {permissions.canCreateLoanChannel ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="direct" data-tour="direct-message-tab">
+                <UserIcon className="w-4 h-4 mr-2" />
+                Direct Message
+              </TabsTrigger>
               <TabsTrigger value="loan" data-tour="loan-channel-tab">
                 <Hash className="w-4 h-4 mr-2" />
                 Loan Channel
               </TabsTrigger>
-            )}
-          </TabsList>
+            </TabsList>
 
-          <TabsContent value="direct" className="space-y-4">
-            <div className="space-y-2">
-              <Label>
-                {permissions.canMessageOnlyLoanOfficers 
-                  ? 'Select a loan officer to message:' 
-                  : 'Select a person to message:'}
-              </Label>
-              <Command className="border rounded-lg">
-                <CommandInput placeholder="Search users..." />
-                <CommandList>
-                  <CommandEmpty>No users found.</CommandEmpty>
-                  <CommandGroup>
-                    {users.map((user) => (
-                      <CommandItem
-                        key={user.id}
-                        onSelect={() => setSelectedUser(user)}
-                        className={`cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50' : ''}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-semibold text-slate-700">
-                              {user.first_name && user.last_name 
-                                ? `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
-                                : (user.full_name || user.email).substring(0, 2).toUpperCase()}
-                            </span>
+            <TabsContent value="direct" className="space-y-4">
+              <div className="space-y-2">
+                <Label>
+                  {permissions.canMessageOnlyLoanOfficers
+                    ? (borrowerBrokerRestriction
+                      ? 'Select a broker to message:'
+                      : 'Select a loan officer to message:')
+                    : 'Select a person to message:'}
+                </Label>
+                <Command className="border rounded-lg">
+                  <CommandInput placeholder="Search users..." />
+                  <CommandList>
+                    <CommandEmpty>No users found.</CommandEmpty>
+                    <CommandGroup>
+                      {users.map((user) => (
+                        <CommandItem
+                          key={user.id}
+                          onSelect={() => setSelectedUser(user)}
+                          className={`cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50' : ''}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-semibold text-slate-700">
+                                {user.first_name && user.last_name 
+                                  ? `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
+                                  : (user.full_name || user.email).substring(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">
+                                {user.first_name && user.last_name 
+                                  ? `${user.first_name} ${user.last_name}`
+                                  : user.full_name || user.email}
+                              </p>
+                              <p className="text-xs text-slate-500">{user.app_role}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-slate-900">
-                              {user.first_name && user.last_name 
-                                ? `${user.first_name} ${user.last_name}`
-                                : user.full_name || user.email}
-                            </p>
-                            <p className="text-xs text-slate-500">{user.app_role}</p>
-                          </div>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCreateDirect}
-                disabled={!selectedUser || isCreating}
-              >
-                {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Start Conversation
-              </Button>
-            </div>
-          </TabsContent>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateDirect}
+                  disabled={!selectedUser || isCreating}
+                >
+                  {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Start Conversation
+                </Button>
+              </div>
+            </TabsContent>
 
-          {permissions.canCreateLoanChannel && (
             <TabsContent value="loan" className="space-y-4">
               <div className="space-y-2">
                 <Label>Select a loan to create a channel:</Label>
@@ -390,8 +415,66 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                 </Button>
               </div>
             </TabsContent>
-          )}
-        </Tabs>
+          </Tabs>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>
+                {permissions.canMessageOnlyLoanOfficers
+                  ? (borrowerBrokerRestriction
+                    ? 'Select a broker to message:'
+                    : 'Select a loan officer to message:')
+                  : 'Select a person to message:'}
+              </Label>
+              <Command className="border rounded-lg">
+                <CommandInput placeholder="Search users..." />
+                <CommandList>
+                  <CommandEmpty>No users found.</CommandEmpty>
+                  <CommandGroup>
+                    {users.map((user) => (
+                      <CommandItem
+                        key={user.id}
+                        onSelect={() => setSelectedUser(user)}
+                        className={`cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-semibold text-slate-700">
+                              {user.first_name && user.last_name 
+                                ? `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
+                                : (user.full_name || user.email).substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              {user.first_name && user.last_name 
+                                ? `${user.first_name} ${user.last_name}`
+                                : user.full_name || user.email}
+                            </p>
+                            <p className="text-xs text-slate-500">{user.app_role}</p>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateDirect}
+                disabled={!selectedUser || isCreating}
+              >
+                {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Start Conversation
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

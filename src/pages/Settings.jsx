@@ -18,6 +18,7 @@ import FieldsManagementTab from "../components/settings/FieldsManagementTab";
 import ChecklistManagementTab from "../components/settings/ChecklistManagementTab";
 import { createPageUrl } from "@/utils";
 import ProductTour from "../components/shared/ProductTour";
+import BorrowerInviteRequests from "../components/shared/BorrowerInviteRequests";
 
 export default function Settings() {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
@@ -217,6 +218,19 @@ export default function Settings() {
               Notifications
             </button>
           )}
+          {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+            <button
+              onClick={() => setActiveTab('borrower-invites')}
+              className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'borrower-invites'
+                  ? 'text-slate-900 border-b-2 border-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Mail className="w-4 h-4 inline mr-2" />
+              Borrower Invites
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('tour')}
             className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
@@ -323,6 +337,17 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Borrower Invites Tab */}
+        {activeTab === 'borrower-invites' && (permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+          <BorrowerInviteRequests
+            currentUser={currentUser}
+            scope="admin"
+            showReject
+            title="Broker Borrower Invite Requests"
+            description="Review and reject broker-submitted borrower invite requests."
+          />
         )}
 
         {/* Product Tour Tab */}

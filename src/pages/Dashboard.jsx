@@ -19,11 +19,13 @@ import { format, formatDistanceToNow } from "date-fns";
 import InviteBorrowerModal from "../components/dashboard/InviteBorrowerModal";
 import InviteTeamModal from "../components/dashboard/InviteTeamModal";
 import InviteLoanPartnerModal from "../components/dashboard/InviteLoanPartnerModal";
+import BorrowerInviteRequests from "../components/shared/BorrowerInviteRequests";
 import PrivateTicketsWidget from "../components/dashboard/PrivateTicketsWidget";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 import { base44 } from "@/api/base44Client";
+import { isUserOnApplicationTeam, isUserOnLoanTeam } from "@/components/utils/teamAccess";
 
 const statusColors = {
   pending: "bg-amber-100 text-amber-800",
@@ -141,6 +143,7 @@ export default function Dashboard() {
   const isStaffUser = permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer;
   const canShowQuickActions = isStaffUser || permissions.isBroker;
 
+
   useEffect(() => {
     if (!permissionsLoading && currentUser) {
       loadDashboardData();
@@ -167,8 +170,8 @@ export default function Dashboard() {
         userLoans = loans.filter(l => l.loan_officer_ids?.includes(currentUser.id));
       } else if (permissions.isBorrower) {
         userLoans = loans.filter(l => l.borrower_ids?.some((id) => borrowerAccessIds.includes(id)));
-      } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
-        userLoans = loans.filter(l => l.referrer_ids?.includes(currentUser.id));
+      } else if (permissions.isLoanPartner) {
+        userLoans = loans.filter((l) => isUserOnLoanTeam(l, currentUser));
       }
 
       const userRecentLoans = userLoans.slice(0, 5);
@@ -186,6 +189,8 @@ export default function Dashboard() {
           );
           return isPrimary || isCoBorrower;
         });
+      } else if (permissions.isLoanPartner) {
+        userApps = userApps.filter((a) => isUserOnApplicationTeam(a, currentUser));
       }
 
       const userRecentApps = userApps.slice(0, 5);
@@ -383,6 +388,27 @@ export default function Dashboard() {
               </Button>
             )}
           </motion.div>
+        )}
+
+        {/* Borrower Invite Requests */}
+        {permissions.isBroker && (
+          <BorrowerInviteRequests
+            currentUser={currentUser}
+            scope="broker"
+            limit={5}
+            title="Your Borrower Invite Requests"
+            description="Requests you have sent to onboard new borrowers."
+          />
+        )}
+        {(permissions.isLoanOfficer || permissions.isAdministrator || permissions.isPlatformAdmin) && (
+          <BorrowerInviteRequests
+            currentUser={currentUser}
+            scope="admin"
+            limit={5}
+            showReject
+            title="Broker Borrower Invite Requests"
+            description="Review broker-submitted borrower invite requests."
+          />
         )}
 
         {/* Combined Stats */}

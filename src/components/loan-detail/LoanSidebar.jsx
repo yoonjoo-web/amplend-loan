@@ -15,7 +15,7 @@ import LoanContactsSection from "./LoanContactsSection";
 import ClosingScheduleSection from "./ClosingScheduleSection";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import { useToast } from "@/components/ui/use-toast";
-import { hasBrokerOnLoan } from "@/components/utils/brokerVisibility";
+import { hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const STATUS_DESCRIPTIONS = {
@@ -109,6 +109,10 @@ const STATUS_DESCRIPTIONS = {
 export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, onToggleCollapse, onRefresh, allLoanOfficers }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
+  const [loanOfficerNameSet, setLoanOfficerNameSet] = useState(new Set());
+  const [borrowerInvitedByBroker, setBorrowerInvitedByBroker] = useState(false);
+  const [hasBrokerOnThisLoan, setHasBrokerOnThisLoan] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [modificationHistory, setModificationHistory] = useState([]);
@@ -201,7 +205,17 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         console.error('LoanSidebar - Error fetching loan partners:', error);
       }
 
-      const hideLoanOfficerDetails = ['Borrower', 'Liaison'].includes(normalizeAppRole(currentUser?.app_role)) && hasBrokerOnLoan(loan, allLoanPartners);
+      const normalizedCurrentRole = normalizeAppRole(currentUser?.app_role);
+      const isBorrowerRole = ['Borrower', 'Liaison'].includes(normalizedCurrentRole);
+      const currentBorrowerRecord = isBorrowerRole
+        ? allBorrowers.find(b => b.user_id === currentUser?.id || b.id === currentUser?.id || (currentUser?.email && b.email === currentUser.email))
+        : null;
+      const invitedByBroker = isBorrowerRole && wasInvitedByBroker(currentBorrowerRecord);
+      const brokerOnThisLoan = hasBrokerOnLoan(loan, allLoanPartners);
+      const shouldHideLoanOfficerDetails = isBorrowerRole && (invitedByBroker || brokerOnThisLoan);
+      setHideLoanOfficerDetails(shouldHideLoanOfficerDetails);
+      setBorrowerInvitedByBroker(invitedByBroker);
+      setHasBrokerOnThisLoan(brokerOnThisLoan);
 
       if (!canManage && loan?.id) {
         try {
@@ -263,11 +277,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         if (alreadyAdded) return;
         team.push({
           id: user.id,
-          email: hideLoanOfficerDetails ? null : user.email,
-          phone: hideLoanOfficerDetails ? null : user.phone,
+          email: shouldHideLoanOfficerDetails ? null : user.email,
+          phone: shouldHideLoanOfficerDetails ? null : user.phone,
           role: 'Loan Officer',
           messageUserId: user.id,
-          displayName: hideLoanOfficerDetails
+          displayName: shouldHideLoanOfficerDetails
             ? 'Loan Officer'
             : (user.first_name && user.last_name
               ? `${user.first_name} ${user.last_name}`
@@ -344,6 +358,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         matchedBorrowers.forEach(addBorrowerMember);
       }
 
+      const nextLoanOfficerNameSet = new Set();
+
       // Add loan officers (look in users)
       if (loan.loan_officer_ids && Array.isArray(loan.loan_officer_ids) && loan.loan_officer_ids.length > 0) {
         console.log('Processing loan officers:', loan.loan_officer_ids);
@@ -352,6 +368,12 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         );
         loanOfficerUsers.forEach((user, index) => {
           if (user) {
+            const fullName = user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`.trim()
+              : user.full_name;
+            [fullName, user.full_name, user.email].filter(Boolean).forEach((name) => {
+              nextLoanOfficerNameSet.add(String(name).trim().toLowerCase());
+            });
             addLoanOfficerMember(user);
             return;
           }
@@ -364,13 +386,23 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             phone: null,
             role: 'Loan Officer',
             messageUserId: fallbackId,
-            displayName: hideLoanOfficerDetails ? 'Loan Officer' : `Loan Officer ${index + 1}`
+            displayName: shouldHideLoanOfficerDetails ? 'Loan Officer' : `Loan Officer ${index + 1}`
           });
         });
       }
 
       if (!team.some(member => member.role === 'Loan Officer') && loanOfficerOverrides.length > 0) {
-        loanOfficerOverrides.forEach(addLoanOfficerMember);
+        loanOfficerOverrides.forEach((user) => {
+          if (user) {
+            const fullName = user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`.trim()
+              : user.full_name;
+            [fullName, user.full_name, user.email].filter(Boolean).forEach((name) => {
+              nextLoanOfficerNameSet.add(String(name).trim().toLowerCase());
+            });
+          }
+          addLoanOfficerMember(user);
+        });
       }
 
       // Add liaisons (look in borrowers)
@@ -407,9 +439,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
 
       console.log('LoanSidebar - Final team members:', team);
       setTeamMembers(team);
+      setLoanOfficerNameSet(nextLoanOfficerNameSet);
     } catch (error) {
       console.error('LoanSidebar - Error in loadTeamMembers:', error);
       setTeamMembers([]);
+      setLoanOfficerNameSet(new Set());
     }
   };
 
@@ -501,12 +535,21 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   };
 
   const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker', 'Title Company', 'Insurance Company', 'Servicer'];
-  const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(normalizeAppRole(currentUser.app_role));
+  const normalizedRole = normalizeAppRole(currentUser?.app_role);
+  const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(normalizedRole);
+  const isBorrowerMessenger = ['Borrower', 'Liaison'].includes(normalizedRole);
+  const borrowerBrokerRestriction = isBorrowerMessenger && (borrowerInvitedByBroker || hasBrokerOnThisLoan);
 
   const canMessageMember = (member) => {
     if (!currentUser || !member?.messageUserId) return false;
     if (member.messageUserId === currentUser.id) return false;
     if (!isRestrictedMessenger) return true;
+    if (isBorrowerMessenger) {
+      if (borrowerBrokerRestriction) {
+        return member.role === 'Broker';
+      }
+      return member.role === 'Loan Officer';
+    }
     return member.role === 'Loan Officer';
   };
 
@@ -514,8 +557,17 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     if (!currentUser) return "Sign in to message";
     if (!member?.messageUserId) return "No linked user account";
     if (member.messageUserId === currentUser.id) return "You can't message yourself";
-    if (isRestrictedMessenger && member.role !== 'Loan Officer') {
-      return "Borrowers and partners can only message loan officers";
+    if (isRestrictedMessenger) {
+      if (isBorrowerMessenger) {
+        if (borrowerBrokerRestriction && member.role !== 'Broker') {
+          return "Borrowers can only message brokers";
+        }
+        if (!borrowerBrokerRestriction && member.role !== 'Loan Officer') {
+          return "Borrowers can only message loan officers";
+        }
+      } else if (member.role !== 'Loan Officer') {
+        return "Borrowers and partners can only message loan officers";
+      }
     }
     return "Send in-app message";
   };
@@ -696,17 +748,19 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                         <p className="font-semibold text-slate-900">{member.displayName}</p>
                         <Badge className="text-xs mt-1" variant="outline">{member.role}</Badge>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => handleOpenMessage(member)}
-                        disabled={!canMessageMember(member)}
-                        title={getMessageDisabledReason(member)}
-                        aria-label={`Message ${member.displayName}`}
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </Button>
+                      {!(hideLoanOfficerDetails && member.role === 'Loan Officer') && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => handleOpenMessage(member)}
+                          disabled={!canMessageMember(member)}
+                          title={getMessageDisabledReason(member)}
+                          aria-label={`Message ${member.displayName}`}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                     <div className="mt-2 space-y-1">
                       {member.phone && member.role !== 'Loan Officer' && (
@@ -784,7 +838,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
 
                   return (
                     <div key={index} className="text-sm border-l-2 border-blue-500 pl-3 py-2">
-                      <p className="font-semibold text-slate-900">{mod.modified_by_name || 'System'}</p>
+                      <p className="font-semibold text-slate-900">
+                        {hideLoanOfficerDetails && loanOfficerNameSet.has((mod.modified_by_name || '').trim().toLowerCase())
+                          ? 'Loan Officer'
+                          : (mod.modified_by_name || 'System')}
+                      </p>
                       <p className="text-xs text-slate-600 mt-1">
                         Updated {changeCount} field{changeCount !== 1 ? 's' : ''}: {changeSummary}
                       </p>
@@ -826,6 +884,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
         loan={loan}
+        hideLoanOfficerNames={hideLoanOfficerDetails}
+        loanOfficerNameSet={loanOfficerNameSet}
       />
 
       <UpdateProfilesFromLoanModal

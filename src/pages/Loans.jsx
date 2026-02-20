@@ -13,6 +13,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
+import { isUserOnLoanTeam } from "@/components/utils/teamAccess";
 
 import ColumnSettingsModal from "../components/loans/ColumnSettingsModal";
 import FilterModal from "../components/loans/FilterModal";
@@ -117,6 +118,7 @@ export default function Loans() {
   const [isLoading, setIsLoading] = useState(false);
   const [showMyLoans, setShowMyLoans] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState([]);
+
 
   const [filters, setFilters] = useState({
     status: [],
@@ -364,9 +366,8 @@ export default function Loans() {
       } else if (permissions.isBorrower) {
         const borrowerIds = loan.borrower_ids || [];
         isMyLoan = borrowerIds.some((id) => borrowerAccessIds.includes(id));
-      } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
-        const referrerIds = loan.referrer_ids || [];
-        isMyLoan = referrerIds.includes(currentUser.id);
+      } else if (permissions.isLoanPartner) {
+        isMyLoan = isUserOnLoanTeam(loan, currentUser);
       }
 
       if (!isMyLoan) {
@@ -386,9 +387,8 @@ export default function Loans() {
         if (!borrowerIds.some((id) => borrowerAccessIds.includes(id))) {
           return false;
         }
-      } else if (normalizeAppRole(currentUser.app_role) === 'Referral Partner') {
-        const referrerIds = loan.referrer_ids || [];
-        if (!referrerIds.includes(currentUser.id)) {
+      } else if (permissions.isLoanPartner) {
+        if (!isUserOnLoanTeam(loan, currentUser)) {
           return false;
         }
       } else {

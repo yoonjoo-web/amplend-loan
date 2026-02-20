@@ -19,7 +19,7 @@ function formatValue(value) {
   return String(value);
 }
 
-export default function VersionHistoryModal({ isOpen, onClose, loan }) {
+export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOfficerNames = false, loanOfficerNameSet = new Set() }) {
   const [expandedItems, setExpandedItems] = useState(new Set([0]));
   const [fieldConfigMap, setFieldConfigMap] = useState({});
   const [isLoadingConfigs, setIsLoadingConfigs] = useState(true);
@@ -132,7 +132,11 @@ export default function VersionHistoryModal({ isOpen, onClose, loan }) {
                       </div>
                       
                       <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span>{mod.modified_by_name || 'System'}</span>
+                        <span>
+                          {hideLoanOfficerNames && loanOfficerNameSet.has((mod.modified_by_name || '').trim().toLowerCase())
+                            ? 'Loan Officer'
+                            : (mod.modified_by_name || 'System')}
+                        </span>
                         <span>•</span>
                         <span>{format(new Date(mod.timestamp), 'MMM d, yyyy h:mm a')}</span>
                       </div>

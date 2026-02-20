@@ -160,6 +160,7 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
 
   const handleInviteToPlatform = async () => {
     try {
+      const inviter = await base44.auth.me().catch(() => null);
       await base44.asServiceRole.functions.invoke('emailService', {
         email_type: 'invite_borrower',
         recipient_email: formData.email,
@@ -169,6 +170,16 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
           last_name: formData.last_name
         }
       });
+      if (formData.id && inviter) {
+        try {
+          await base44.entities.Borrower.update(formData.id, {
+            invited_by_user_id: inviter.id,
+            invited_by_role: inviter.app_role || inviter.role
+          });
+        } catch (updateError) {
+          console.error('Error updating borrower inviter fields:', updateError);
+        }
+      }
     } catch (error) {
       console.error('Error sending invitation:', error);
     }

@@ -23,6 +23,8 @@ export default function Onboarding() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
   const [hideBranding, setHideBranding] = useState(false);
+  const [isInviteInvalid, setIsInviteInvalid] = useState(false);
+  const [inviteTokenId, setInviteTokenId] = useState(null);
 
   useEffect(() => {
     loadUserData();
@@ -63,6 +65,7 @@ export default function Onboarding() {
       
       // Read URL params before any async operations to ensure they're captured
       const params = new URLSearchParams(window.location.search);
+      const inviteToken = params.get('invite_token');
       const requestedFirstName = params.get('requested_first_name');
       const requestedLastName = params.get('requested_last_name');
       const firstNameFromUrl = params.get('first_name');
@@ -81,6 +84,24 @@ export default function Onboarding() {
       
       setRoleDisplay(normalizedRole || user.app_role || 'User');
       const roleCandidate = normalizedRole || user.app_role || 'User';
+
+      if (inviteToken) {
+        try {
+          const tokens = await base44.entities.BorrowerInviteToken.filter({ token: inviteToken });
+          const tokenRecord = tokens?.[0] || null;
+          if (!tokenRecord || tokenRecord.status !== 'active') {
+            setIsInviteInvalid(true);
+            setIsLoading(false);
+            return;
+          }
+          setInviteTokenId(tokenRecord.id);
+        } catch (error) {
+          console.error('Error validating invite token:', error);
+          setIsInviteInvalid(true);
+          setIsLoading(false);
+          return;
+        }
+      }
 
       const isBorrowerContext = roleCandidate === 'Borrower' || roleCandidate === 'Liaison';
       if (isBorrowerContext) {
@@ -217,6 +238,17 @@ export default function Onboarding() {
         });
       }
 
+      if (inviteTokenId) {
+        try {
+          await base44.entities.BorrowerInviteToken.update(inviteTokenId, {
+            status: 'used',
+            used_at: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('Error marking invite token as used:', error);
+        }
+      }
+
       const nextUrl = params.get('next');
       if (nextUrl) {
         window.location.href = nextUrl;
@@ -241,6 +273,23 @@ export default function Onboarding() {
     );
   }
 
+  if (isInviteInvalid) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
+        <Card className="max-w-md">
+          <CardContent className="p-10 text-center space-y-3">
+            <h2 className="text-2xl font-bold text-slate-900">This Page Is No Longer Available</h2>
+            <p className="text-slate-600">
+              This onboarding link is inactive or has expired. Please contact your broker or the Amplend team for help.
+            </p>
+            <Button onClick={() => window.location.href = createPageUrl('Dashboard')}>
+              Go to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
       <motion.div

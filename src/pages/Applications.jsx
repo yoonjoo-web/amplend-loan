@@ -15,6 +15,7 @@ import ColumnSettingsModal from "../components/applications/ColumnSettingsModal"
 import { getLoanTypeLabel, getStatusLabel, getStatusColor } from "../components/utils/displayHelpers";
 import { useToast } from "@/components/ui/use-toast";
 import ProductTour from "../components/shared/ProductTour";
+import { isUserOnApplicationTeam } from "@/components/utils/teamAccess";
 
 const ITEMS_PER_PAGE = 10;
 const STORAGE_KEY = 'loan_applications_visible_columns';
@@ -87,6 +88,7 @@ export default function Applications() {
   const [error, setError] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState([]);
 
+
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -128,6 +130,8 @@ export default function Applications() {
           borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
         )
         );
+      } else if (permissions.isLoanPartner) {
+        filteredApps = allApps.filter((app) => isUserOnApplicationTeam(app, currentUser));
       }
 
       setApplications(filteredApps);
@@ -149,18 +153,6 @@ export default function Applications() {
       loadApplications();
     }
   }, [permissionsLoading, currentUser]);
-
-  // Loan partners don't have access to applications
-  if (!permissionsLoading && permissions.isLoanPartner) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Access Restricted</h1>
-          <p className="text-slate-600">You don't have access to the applications page.</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleSortChange = (option) => {
     setSortOption(option);
@@ -184,6 +176,10 @@ export default function Applications() {
           borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
         );
         if (!isPrimaryBorrower && !isCoBorrower) {
+          return false;
+        }
+      } else if (permissions.isLoanPartner) {
+        if (!isUserOnApplicationTeam(app, currentUser)) {
           return false;
         }
       }

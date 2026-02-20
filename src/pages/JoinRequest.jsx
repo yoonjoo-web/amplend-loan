@@ -119,7 +119,9 @@ export default function JoinRequest() {
         first_name: currentUser.first_name,
         last_name: currentUser.last_name,
         email: currentUser.email,
-        completion_status: 'pending'
+        completion_status: 'pending',
+        invited_by_user_id: requestData?.inviter?.id || null,
+        invited_by_role: requestData?.inviter?.app_role || requestData?.inviter?.role || null
       };
 
       const updatedCoBorrowers = [...(application.co_borrowers || []), newCoBorrower];

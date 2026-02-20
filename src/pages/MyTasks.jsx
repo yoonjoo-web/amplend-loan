@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { isUserOnLoanTeam } from "@/components/utils/teamAccess";
 
 import SendTaskMessageModal from "../components/tasks/SendTaskMessageModal";
 
@@ -68,8 +69,8 @@ export default function MyTasks() {
       const userLoans = (allLoans || []).filter(loan => {
         const isLoanOfficer = loan.loan_officer_ids?.includes(currentUser.id);
         const isBorrower = loan.borrower_ids?.some((id) => borrowerAccessIds.includes(id));
-        const isReferrer = loan.referrer_ids?.includes(currentUser.id);
-        return isLoanOfficer || isBorrower || isReferrer;
+        const isLoanPartner = permissions.isLoanPartner && isUserOnLoanTeam(loan, currentUser);
+        return isLoanOfficer || isBorrower || isLoanPartner;
       });
       console.log('[MyTasks] User loans:', userLoans.length);
 

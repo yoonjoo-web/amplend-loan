@@ -240,7 +240,9 @@ export default React.memo(function EntityInformationStep({
           first_name: existingUser.first_name || inviteFirstName,
           last_name: existingUser.last_name || inviteLastName,
           email: existingUser.email,
-          completion_status: 'pending'
+          completion_status: 'pending',
+          invited_by_user_id: currentUser?.id,
+          invited_by_role: currentUser?.app_role || currentUser?.role
         };
 
         const updatedCoBorrowers = [...(data.co_borrowers || []), newCoBorrower];
@@ -279,7 +281,9 @@ export default React.memo(function EntityInformationStep({
           first_name: inviteFirstName || firstName,
           last_name: inviteLastName || lastName,
           email: inviteEmail,
-          completion_status: 'pending'
+          completion_status: 'pending',
+          invited_by_user_id: currentUser?.id,
+          invited_by_role: currentUser?.app_role || currentUser?.role
         };
 
         const updatedCoBorrowers = [...(data.co_borrowers || []), newCoBorrower];

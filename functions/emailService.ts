@@ -213,6 +213,12 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    if (email_type === 'invite_borrower' && data?.invite_token) {
+      const tokenParam = `invite_token=${encodeURIComponent(data.invite_token)}`;
+      const hasQuery = template.cta_url.includes('?');
+      template.cta_url = `${template.cta_url}${hasQuery ? '&' : '?'}${tokenParam}`;
+    }
+
     // Build HTML email
     let htmlBody = `
       <!DOCTYPE html>
@@ -376,13 +382,14 @@ Deno.serve(async (req) => {
     }
 
     htmlBody += `
-                <div class="cta-wrapper">
-                  <a href="${template.cta_url}" class="cta-button">
-                    ${template.cta_text}
-                  </a>
-                </div>
-
-                ${template.cta_note ? `<p class="cta-note">${template.cta_note}</p>` : ''}
+                ${template.cta_url && template.cta_text ? `
+                  <div class="cta-wrapper">
+                    <a href="${template.cta_url}" class="cta-button">
+                      ${template.cta_text}
+                    </a>
+                  </div>
+                  ${template.cta_note ? `<p class="cta-note">${template.cta_note}</p>` : ''}
+                ` : ''}
               </div>
               
               <div class="footer">
@@ -413,7 +420,7 @@ ${template.info_box.title}:
 ${template.info_box.items.map(item => `${item.label}: ${item.value}`).join('\n')}
 ` : ''}
 
-${template.cta_text}: ${template.cta_url}
+${template.cta_text && template.cta_url ? `${template.cta_text}: ${template.cta_url}` : ''}
 
 ---
 Amplend Loan Portal

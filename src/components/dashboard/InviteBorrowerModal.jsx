@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { X, Loader2, UserPlus } from 'lucide-react';
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted }) {
   const [formData, setFormData] = useState({
@@ -27,19 +28,114 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
     setIsProcessing(true);
 
     try {
-      await base44.functions.invoke('emailService', {
-        email_type: 'invite_borrower',
-        recipient_email: formData.requested_email,
-        recipient_name: `${formData.requested_first_name} ${formData.requested_last_name}`,
-        data: {
-          first_name: formData.requested_first_name,
-          last_name: formData.requested_last_name
+      const inviter = await base44.auth.me().catch(() => null);
+      const inviterRole = normalizeAppRole(inviter?.app_role || inviter?.role || '');
+      const isBroker = inviterRole === 'Broker';
+      let borrowerRecord = null;
+
+      if (isBroker) {
+        const existingBorrowers = await base44.entities.Borrower.filter({ email: formData.requested_email }).catch(() => []);
+        borrowerRecord = existingBorrowers?.[0] || null;
+
+        if (borrowerRecord) {
+          await base44.entities.Borrower.update(borrowerRecord.id, {
+            invited_by_user_id: inviter?.id || null,
+            invited_by_role: inviterRole,
+            invite_source: 'broker',
+            invite_request_status: 'pending',
+            is_invite_temp: borrowerRecord.is_invite_temp ?? true
+          });
+        } else {
+          borrowerRecord = await base44.entities.Borrower.create({
+            first_name: formData.requested_first_name,
+            last_name: formData.requested_last_name,
+            email: formData.requested_email,
+            invited_by_user_id: inviter?.id || null,
+            invited_by_role: inviterRole,
+            invite_source: 'broker',
+            invite_request_status: 'pending',
+            is_invite_temp: true
+          });
         }
-      });
+
+        const inviteRequest = await base44.entities.BorrowerInviteRequest.create({
+          source: 'broker',
+          status: 'pending',
+          borrower_id: borrowerRecord?.id || null,
+          requested_email: formData.requested_email,
+          requested_first_name: formData.requested_first_name,
+          requested_last_name: formData.requested_last_name,
+          requested_by_user_id: inviter?.id || null,
+          requested_by_role: inviterRole,
+          requested_by_name: inviter?.full_name || inviter?.email || ''
+        });
+        const inviteToken = await base44.entities.BorrowerInviteToken.create({
+          request_id: inviteRequest?.id || null,
+          token: `inv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+          status: 'active',
+          issued_at: new Date().toISOString()
+        });
+
+        if (borrowerRecord?.id && inviteRequest?.id) {
+          try {
+            await base44.entities.Borrower.update(borrowerRecord.id, {
+              invite_request_id: inviteRequest.id,
+              invite_token_id: inviteToken?.id || null
+            });
+          } catch (updateError) {
+            console.error('Error linking invite request to borrower:', updateError);
+          }
+        }
+        if (inviteRequest?.id) {
+          try {
+            await base44.entities.BorrowerInviteRequest.update(inviteRequest.id, {
+              invite_token_id: inviteToken?.id || null,
+              status: 'sent'
+            });
+          } catch (updateError) {
+            console.error('Error linking invite token to request:', updateError);
+          }
+        }
+
+        await base44.functions.invoke('emailService', {
+          email_type: 'invite_borrower',
+          recipient_email: formData.requested_email,
+          recipient_name: `${formData.requested_first_name} ${formData.requested_last_name}`,
+          data: {
+            first_name: formData.requested_first_name,
+            last_name: formData.requested_last_name,
+            invite_token: inviteToken?.token || null
+          }
+        });
+      } else {
+        await base44.functions.invoke('emailService', {
+          email_type: 'invite_borrower',
+          recipient_email: formData.requested_email,
+          recipient_name: `${formData.requested_first_name} ${formData.requested_last_name}`,
+          data: {
+            first_name: formData.requested_first_name,
+            last_name: formData.requested_last_name
+          }
+        });
+
+        await base44.entities.BorrowerInviteRequest.create({
+          source: 'internal',
+          status: 'sent',
+          borrower_id: null,
+          requested_email: formData.requested_email,
+          requested_first_name: formData.requested_first_name,
+          requested_last_name: formData.requested_last_name,
+          requested_by_user_id: inviter?.id || null,
+          requested_by_role: inviterRole,
+          requested_by_name: inviter?.full_name || inviter?.email || ''
+        });
+      }
 
       toast({
         title: "Invitation Sent",
-        description: `Invitation email sent to ${formData.requested_email}`,
+        description: isBroker
+          ? `Invite request created for ${formData.requested_email}`
+          : `Invitation email sent to ${formData.requested_email}`,
       });
       onInviteSubmitted?.();
       onClose();

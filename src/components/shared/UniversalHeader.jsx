@@ -22,7 +22,7 @@ import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { hasBrokerOnApplication, hasBrokerOnLoan } from "@/components/utils/brokerVisibility";
+import { hasBrokerOnApplication, hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 
 export default function UniversalHeader({ currentUser }) {
   const navigate = useNavigate();
@@ -134,35 +134,79 @@ export default function UniversalHeader({ currentUser }) {
         return;
       }
 
-      const pathname = (location.pathname || '').toLowerCase();
-      const isLoanDetail = pathname.includes('loandetail');
-      const isApplication = pathname.includes('newapplication');
-      if (!isLoanDetail && !isApplication) {
-        if (isMounted) setHideBranding(false);
-        return;
-      }
-
-      const params = new URLSearchParams(location.search || '');
-      const id = params.get('id');
-      if (!id) {
-        if (isMounted) setHideBranding(false);
-        return;
-      }
-
       try {
-        const loanPartners = await base44.entities.LoanPartner.list();
-        if (!isMounted) return;
+        const borrowersByUserId = await base44.entities.Borrower.filter({ user_id: currentUser.id });
+        const borrowerRecord = borrowersByUserId?.[0]
+          || (currentUser.email
+            ? (await base44.entities.Borrower.filter({ email: currentUser.email }))?.[0]
+            : null);
+        const borrowerIds = new Set([currentUser.id, borrowerRecord?.id].filter(Boolean));
+        const hasBorrowerRecord = Boolean(borrowerRecord);
 
-        if (isLoanDetail) {
+        let invitedByBroker = wasInvitedByBroker(borrowerRecord);
+
+        const pathname = (location.pathname || '').toLowerCase();
+        const isLoanDetail = pathname.includes('loandetail');
+        const isApplication = pathname.includes('newapplication');
+        const params = new URLSearchParams(location.search || '');
+        const id = params.get('id');
+
+        if (id && isApplication) {
+          const application = await base44.entities.LoanApplication.get(id);
+          if (!isMounted) return;
+          if (!invitedByBroker && !hasBorrowerRecord) {
+            const coBorrowerEntry = application?.co_borrowers?.find(cb =>
+              borrowerIds.has(cb.user_id) || borrowerIds.has(cb.borrower_id)
+            );
+            invitedByBroker = wasInvitedByBroker(coBorrowerEntry);
+          }
+          if (!invitedByBroker) {
+            setHideBranding(false);
+            return;
+          }
+          const loanPartners = await base44.entities.LoanPartner.list();
+          if (!isMounted) return;
+          setHideBranding(hasBrokerOnApplication(application, loanPartners));
+          return;
+        }
+
+        if (id && isLoanDetail) {
+          if (!invitedByBroker) {
+            setHideBranding(false);
+            return;
+          }
+          const loanPartners = await base44.entities.LoanPartner.list();
           const loan = await base44.entities.Loan.get(id);
           if (!isMounted) return;
           setHideBranding(hasBrokerOnLoan(loan, loanPartners));
           return;
         }
 
-        const application = await base44.entities.LoanApplication.get(id);
+        const [loans, applications] = await Promise.all([
+          base44.entities.Loan.list().catch(() => []),
+          base44.entities.LoanApplication.list().catch(() => [])
+        ]);
         if (!isMounted) return;
-        setHideBranding(hasBrokerOnApplication(application, loanPartners));
+
+        if (!invitedByBroker && !hasBorrowerRecord) {
+          invitedByBroker = applications.some((app) => {
+            const coBorrowerEntry = app?.co_borrowers?.find(cb =>
+              borrowerIds.has(cb.user_id) || borrowerIds.has(cb.borrower_id)
+            );
+            return wasInvitedByBroker(coBorrowerEntry);
+          });
+        }
+
+        if (!invitedByBroker) {
+          setHideBranding(false);
+          return;
+        }
+
+        const loanPartners = await base44.entities.LoanPartner.list();
+        if (!isMounted) return;
+        const hasBroker = loans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
+          || applications.some((app) => hasBrokerOnApplication(app, loanPartners));
+        setHideBranding(hasBroker);
       } catch (error) {
         console.error('Error resolving branding visibility:', error);
         if (isMounted) setHideBranding(false);

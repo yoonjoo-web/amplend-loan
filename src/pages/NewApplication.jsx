@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { usePermissions } from "@/components/hooks/usePermissions";
-import { hasBrokerOnApplication } from "@/components/utils/brokerVisibility";
+import { hasBrokerOnApplication, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 
 import LoanTypeStep from "../components/application-steps/LoanTypeStep";
 import BorrowerInfoStep from "../components/application-steps/BorrowerInfoStep";
@@ -271,7 +271,17 @@ export default function NewApplication() {
       if (permissions.isBorrower) {
         try {
           const partners = await base44.entities.LoanPartner.list();
-          setHideLoanOfficerDetails(hasBrokerOnApplication(appData, partners));
+          const borrowersByUserId = await base44.entities.Borrower.filter({ user_id: currentUser.id }).catch(() => []);
+          const borrowerRecord = borrowersByUserId?.[0] || (
+            currentUser.email
+              ? (await base44.entities.Borrower.filter({ email: currentUser.email }).catch(() => []))?.[0]
+              : null
+          );
+          const coBorrowerEntry = appData.co_borrowers?.find(cb =>
+            borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+          );
+          const invitedByBroker = wasInvitedByBroker(borrowerRecord);
+          setHideLoanOfficerDetails(invitedByBroker || hasBrokerOnApplication(appData, partners));
         } catch (error) {
           console.error('Error checking broker partners:', error);
           setHideLoanOfficerDetails(false);

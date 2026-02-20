@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { isUserOnApplicationTeam } from './utils/teamAccess.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -72,7 +73,16 @@ Deno.serve(async (req) => {
     // - User is the assigned loan officer
     // - User is the primary borrower
     // - User is a co-borrower
-    const hasAccess = isAdmin || isAssignedOfficer || isPrimaryBorrower || isCoBorrower || isCreator;
+    const hasAccess =
+      isAdmin ||
+      isAssignedOfficer ||
+      isPrimaryBorrower ||
+      isCoBorrower ||
+      isCreator ||
+      isUserOnApplicationTeam(application as Record<string, unknown>, {
+        id: user.id,
+        email: user.email
+      });
 
     if (!hasAccess) {
       return Response.json({ 

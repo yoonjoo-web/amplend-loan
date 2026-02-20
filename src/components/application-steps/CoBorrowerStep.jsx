@@ -209,7 +209,9 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         id: `temp_${Date.now()}`,
         user_id: borrower.user_id,
         ...mappedData,
-        completion_status: 'pending'
+        completion_status: 'pending',
+        invited_by_user_id: currentUser?.id,
+        invited_by_role: currentUser?.app_role || currentUser?.role
       };
       onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
       
@@ -269,7 +271,9 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         id: `temp_${Date.now()}`,
         borrower_id: selectedBorrowerToLink.id,
         ...mappedData,
-        completion_status: 'pending'
+        completion_status: 'pending',
+        invited_by_user_id: currentUser?.id,
+        invited_by_role: currentUser?.app_role || currentUser?.role
       };
       onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
 
@@ -351,7 +355,9 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         first_name: inviteData.requested_first_name,
         last_name: inviteData.requested_last_name,
         email: inviteData.requested_email,
-        completion_status: 'pending'
+        completion_status: 'pending',
+        invited_by_user_id: currentUser?.id,
+        invited_by_role: currentUser?.app_role || currentUser?.role
       };
       onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
 

@@ -39,6 +39,16 @@ export const hasBrokerContact = (contact) => {
   });
 };
 
+export const wasInvitedByBroker = (source) => {
+  if (!source || typeof source !== 'object') return false;
+  const role = normalizePartnerType(
+    source.invited_by_role ||
+    source.inviter_role ||
+    source.invited_by_app_role
+  );
+  return role === 'broker';
+};
+
 export const hasBrokerOnLoan = (loan, loanPartners = []) => {
   return (
     hasBrokerPartnerIds(loan?.referrer_ids, loanPartners) ||

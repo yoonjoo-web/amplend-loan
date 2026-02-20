@@ -111,7 +111,8 @@ export default function Contacts() {
         LoanPartner.list('-created_date')
       ]);
 
-      setBorrowers(borrowersData || []);
+      const visibleBorrowers = (borrowersData || []).filter(b => !b.is_invite_temp);
+      setBorrowers(visibleBorrowers);
       setEntities(entitiesData || []);
       setPartners(partnersData || []);
     } catch (error) {
