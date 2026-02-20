@@ -9,11 +9,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Allow administrators and loan officers to fetch all users
-    if (user.role !== 'admin' && user.app_role !== 'Administrator' && user.app_role !== 'Loan Officer') {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const users = await base44.asServiceRole.entities.User.list();
 
     return Response.json({ users });
