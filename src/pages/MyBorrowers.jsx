@@ -240,43 +240,106 @@ export default function MyBorrowers() {
           </CardContent>
         </Card>
 
-        {isBroker ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-2xl font-bold text-slate-900">{onboardedBorrowers.length}</p>
-              <p className="text-sm text-slate-600 mt-1">Onboarded</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-2xl font-bold text-slate-900">{invitedRequests.length}</p>
-              <p className="text-sm text-slate-600 mt-1">Invited</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-2xl font-bold text-slate-900">{rejectedRequests.length}</p>
-              <p className="text-sm text-slate-600 mt-1">Rejected</p>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-2xl font-bold text-slate-900">{teamBorrowers.length}</p>
-            <p className="text-sm text-slate-600 mt-1">Borrowers on Your Team</p>
-          </div>
-        )}
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="text-lg font-bold text-slate-900">
+              {isBroker ? "All Borrowers" : "Borrowers on Your Team"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {(() => {
+              if (!isBroker) {
+                const list = filteredOnboardedBorrowers;
+                if (!list.length) {
+                  return <div className="text-sm text-slate-500">No borrowers found.</div>;
+                }
+                return (
+                  <div className="space-y-3">
+                    {list.map((borrower) => {
+                      const lastActivity = getBorrowerLastActivity(borrower);
+                      return (
+                        <div key={borrower.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-base font-semibold text-slate-900">{getBorrowerName(borrower)}</p>
+                              <p className="text-sm text-slate-600">{borrower.email || '-'}</p>
+                              <p className="text-sm text-slate-500">{borrower.phone || '-'}</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 text-xs text-slate-500 space-y-1">
+                            <p>Loans: {getBorrowerLoanCount(borrower)}</p>
+                            <p>
+                              Last activity: {lastActivity ? format(lastActivity, 'MMM d, yyyy') : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
 
-        {isBroker && listFilter !== 'onboarded' && listFilter !== 'rejected' && (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="text-lg font-bold text-slate-900">Invited Borrowers</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {filteredInvitedRequests.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredInvitedRequests.map((req) => {
-                    const status = (req.status || 'pending').toLowerCase();
+              const items = [
+                ...(listFilter === 'all' || listFilter === 'onboarded'
+                  ? filteredOnboardedBorrowers.map((borrower) => ({
+                      key: borrower.id,
+                      type: 'onboarded',
+                      borrower,
+                    }))
+                  : []),
+                ...(listFilter === 'all' || listFilter === 'invited'
+                  ? filteredInvitedRequests.map((req) => ({
+                      key: req.id,
+                      type: 'invited',
+                      request: req,
+                    }))
+                  : []),
+                ...(listFilter === 'all' || listFilter === 'rejected'
+                  ? filteredRejectedRequests.map((req) => ({
+                      key: req.id,
+                      type: 'rejected',
+                      request: req,
+                    }))
+                  : []),
+              ];
+
+              if (!items.length) {
+                return <div className="text-sm text-slate-500">No borrowers found.</div>;
+              }
+
+              return (
+                <div className="space-y-3">
+                  {items.map((item) => {
+                    if (item.type === 'onboarded') {
+                      const borrower = item.borrower;
+                      const lastActivity = getBorrowerLastActivity(borrower);
+                      return (
+                        <div key={item.key} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-base font-semibold text-slate-900">{getBorrowerName(borrower)}</p>
+                              <p className="text-sm text-slate-600">{borrower.email || '-'}</p>
+                              <p className="text-sm text-slate-500">{borrower.phone || '-'}</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 text-xs text-slate-500 space-y-1">
+                            <p>Loans: {getBorrowerLoanCount(borrower)}</p>
+                            <p>
+                              Last activity: {lastActivity ? format(lastActivity, 'MMM d, yyyy') : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const req = item.request;
+                    const status = item.type;
                     const badgeClass = INVITE_STATUS_COLORS[status] || "bg-slate-100 text-slate-700 border-slate-200";
                     const displayName = `${req.requested_first_name || ''} ${req.requested_last_name || ''}`.trim() || req.requested_email || 'Unknown';
+                    const activityDate = status === 'rejected' ? req.rejected_at : req.created_date;
                     return (
-                      <div key={req.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="flex items-start justify-between">
+                      <div key={item.key} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-base font-semibold text-slate-900">{displayName}</p>
                             <p className="text-sm text-slate-600">{req.requested_email || '-'}</p>
@@ -286,93 +349,17 @@ export default function MyBorrowers() {
                         <div className="mt-3 text-xs text-slate-500 space-y-1">
                           <p>Loans: 0</p>
                           <p>
-                            Last activity: {req.created_date ? format(new Date(req.created_date), 'MMM d, yyyy') : 'N/A'}
+                            Last activity: {activityDate ? format(new Date(activityDate), 'MMM d, yyyy') : 'N/A'}
                           </p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              ) : (
-                <div className="text-sm text-slate-500">No pending invites.</div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {isBroker && listFilter !== 'onboarded' && listFilter !== 'invited' && (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="text-lg font-bold text-slate-900">Rejected Invites</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {filteredRejectedRequests.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredRejectedRequests.map((req) => {
-                    const status = (req.status || 'rejected').toLowerCase();
-                    const badgeClass = INVITE_STATUS_COLORS[status] || "bg-slate-100 text-slate-700 border-slate-200";
-                    const displayName = `${req.requested_first_name || ''} ${req.requested_last_name || ''}`.trim() || req.requested_email || 'Unknown';
-                    return (
-                      <div key={req.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-base font-semibold text-slate-900">{displayName}</p>
-                            <p className="text-sm text-slate-600">{req.requested_email || '-'}</p>
-                          </div>
-                          <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
-                        </div>
-                        <div className="mt-3 text-xs text-slate-500 space-y-1">
-                          <p>Loans: 0</p>
-                          <p>
-                            Last activity: {req.rejected_at ? format(new Date(req.rejected_at), 'MMM d, yyyy') : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm text-slate-500">No rejected invites.</div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {listFilter !== 'invited' && listFilter !== 'rejected' && (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                {isBroker ? "Onboarded Borrowers" : "Borrowers on Your Team"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {filteredOnboardedBorrowers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredOnboardedBorrowers.map((borrower) => {
-                    const lastActivity = getBorrowerLastActivity(borrower);
-                    return (
-                      <div key={borrower.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                        <div>
-                          <p className="text-base font-semibold text-slate-900">{getBorrowerName(borrower)}</p>
-                          <p className="text-sm text-slate-600">{borrower.email || '-'}</p>
-                          <p className="text-sm text-slate-500">{borrower.phone || '-'}</p>
-                        </div>
-                        <div className="mt-3 text-xs text-slate-500 space-y-1">
-                          <p>Loans: {getBorrowerLoanCount(borrower)}</p>
-                          <p>
-                            Last activity: {lastActivity ? format(lastActivity, 'MMM d, yyyy') : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm text-slate-500">No borrowers found.</div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+              );
+            })()}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

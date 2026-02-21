@@ -508,20 +508,9 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4">
                 {myBorrowersSummary.role === 'Broker' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="rounded-lg border border-slate-200 bg-white p-4">
-                      <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
-                      <p className="text-sm text-slate-600 mt-1">Onboarded</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-white p-4">
-                      <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.invited}</p>
-                      <p className="text-sm text-slate-600 mt-1">Invited</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-white p-4">
-                      <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.rejected}</p>
-                      <p className="text-sm text-slate-600 mt-1">Rejected</p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-slate-600">
+                    Review onboarded, invited, and rejected borrowers in My Borrowers.
+                  </p>
                 ) : (
                   <div className="rounded-lg border border-slate-200 bg-white p-4">
                     <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
