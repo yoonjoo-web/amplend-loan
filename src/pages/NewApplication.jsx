@@ -1114,6 +1114,7 @@ export default function NewApplication() {
       onChange: handleStepDataChange,
       isReadOnly: stepIsReadOnly,
       currentUser,
+      permissions,
       canManage,
       onAddComment: handleAddComment,
       fieldComments: formData.field_comments || {},
