@@ -1151,6 +1151,13 @@ export default function NewApplication() {
   const totalVisibleSteps = visibleSteps.length;
   const progressPercentage = (currentStepDisplayNumber / totalVisibleSteps) * 100;
   const currentStepObj = visibleSteps.find(s => s.id === currentStep);
+  const brokerDisplayName = formData?.referrer_name
+    || formData?.referral_broker?.name
+    || formData?.loan_contacts?.broker?.name
+    || formData?.referral_broker?.email
+    || '';
+  const showBrokerName = permissions?.isBorrower && hideLoanOfficerDetails;
+  const showAssignmentCard = formData && (canManage || permissions?.isBroker || showBrokerName);
 
   return (
     <>
@@ -1207,32 +1214,38 @@ export default function NewApplication() {
               </Button>
             </div>
 
-            {canManage && formData && (
+            {showAssignmentCard && (
               <Card className="border-blue-200 bg-blue-50 mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-blue-900">Assigned Loan Officer</p>
+                      <p className="text-sm font-semibold text-blue-900">
+                        {showBrokerName ? 'Assigned Broker' : 'Assigned Loan Officer'}
+                      </p>
                       <p className="text-sm text-blue-700">
-                        {formData.assigned_loan_officer_id ? (
-                          (() => {
-                            if (hideLoanOfficerDetails) {
-                              return 'Loan Officer';
-                            }
-                            const officer = allLoanOfficers.find(u => u.id === formData.assigned_loan_officer_id);
-                            if (!officer) {
-                              return 'Loading...';
-                            }
-                            return officer.first_name && officer.last_name 
-                              ? `${officer.first_name} ${officer.last_name}`
-                              : officer.full_name || officer.email || 'Officer';
-                          })()
+                        {showBrokerName ? (
+                          brokerDisplayName || 'Broker'
                         ) : (
-                          'Not assigned'
+                          formData.assigned_loan_officer_id ? (
+                            (() => {
+                              if (hideLoanOfficerDetails) {
+                                return 'Loan Officer';
+                              }
+                              const officer = allLoanOfficers.find(u => u.id === formData.assigned_loan_officer_id);
+                              if (!officer) {
+                                return 'Loading...';
+                              }
+                              return officer.first_name && officer.last_name 
+                                ? `${officer.first_name} ${officer.last_name}`
+                                : officer.full_name || officer.email || 'Officer';
+                            })()
+                          ) : (
+                            'Not assigned'
+                          )
                         )}
                       </p>
                     </div>
-                    {!isReadOnly && permissions.canReassignLoanOfficer && (
+                    {!showBrokerName && !isReadOnly && permissions.canReassignLoanOfficer && (
                       <Button
                         variant="outline"
                         size="sm"

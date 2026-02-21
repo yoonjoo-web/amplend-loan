@@ -17,6 +17,7 @@ import SearchExistingModal from '../shared/SearchExistingModal';
 import { syncEntities } from '@/components/utils/entitySyncHelper';
 import { DEFAULT_INVITE_FIELDS, getBorrowerInvitationFields, resolveBorrowerInviteFields } from '@/components/utils/borrowerInvitationFields';
 import { setLocalBorrowerInvite } from '@/components/utils/borrowerInvitationStorage';
+import { hasBrokerContact } from '@/components/utils/brokerVisibility';
 
 export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly = false }) {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -24,8 +25,11 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showInviteLinkDialog, setShowInviteLinkDialog] = useState(false);
+  const [showBrokerSearchDialog, setShowBrokerSearchDialog] = useState(false);
   const [selectedBorrowerToLink, setSelectedBorrowerToLink] = useState(null);
   const [allBorrowers, setAllBorrowers] = useState([]);
+  const [brokerBorrowers, setBrokerBorrowers] = useState([]);
+  const [isBrokerBorrowersLoading, setIsBrokerBorrowersLoading] = useState(false);
   const [inviteForm, setInviteForm] = useState({
     first_name: '',
     last_name: '',
@@ -50,6 +54,21 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
           b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
         );
         setAllBorrowers(filteredBorrowers);
+
+        if (user?.app_role === 'Broker') {
+          setIsBrokerBorrowersLoading(true);
+          const brokerBorrowersList = borrowers.filter((borrower) => {
+            if (borrower.invited_by_user_id !== user.id) return false;
+            if (borrower.invite_request_status === 'rejected') return false;
+            if (borrower.is_invite_temp === true) return false;
+            return Boolean(borrower.user_id);
+          });
+          const filteredBrokerBorrowers = brokerBorrowersList.filter(
+            b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
+          );
+          setBrokerBorrowers(filteredBrokerBorrowers);
+          setIsBrokerBorrowersLoading(false);
+        }
         
         // Auto-populate borrower information for borrowers while completing the application.
         if (!isReadOnly && user.app_role === 'Borrower') {
@@ -80,12 +99,38 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         setIsInitialized(true);
       } catch (error) {
         console.error('Error fetching user data:', error);
+        setIsBrokerBorrowersLoading(false);
         setIsInitialized(true);
       }
     };
 
     initializeBorrowerData();
   }, [isInitialized, applicationData, onUpdate]);
+
+  const getBrokerName = (user) => {
+    if (!user) return 'Broker';
+    const name = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
+    return name || user.full_name || user.email || 'Broker';
+  };
+
+  const buildBrokerReferralUpdate = (currentData) => {
+    if (!currentUser || currentUser.app_role !== 'Broker') return {};
+    const brokerName = getBrokerName(currentUser);
+    const hasReferral = hasBrokerContact(currentData?.referral_broker);
+    const update = {};
+    if (!hasReferral) {
+      update.referral_broker = {
+        name: brokerName,
+        email: currentUser.email || null,
+        phone: currentUser.phone || null,
+        user_id: currentUser.id || null
+      };
+    }
+    if (!currentData?.referrer_name) {
+      update.referrer_name = brokerName;
+    }
+    return update;
+  };
 
   const handleSelectBorrower = (borrower) => {
     // When selecting from Borrower Info step, always set as primary borrower
@@ -117,10 +162,74 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     }
   };
 
+  const handleSelectBrokerBorrower = async (borrower) => {
+    if (!borrower?.user_id) {
+      toast({
+        variant: "destructive",
+        title: "Borrower Not Linked",
+        description: "This borrower is not linked to a user account yet."
+      });
+      return;
+    }
+
+    const brokerReferralUpdate = buildBrokerReferralUpdate(applicationData);
+    onUpdate({
+      ...applicationData,
+      primary_borrower_id: borrower.user_id,
+      ...brokerReferralUpdate
+    });
+
+    const brokerName = getBrokerName(currentUser);
+    try {
+      await base44.functions.invoke('emailService', {
+        email_type: 'invite_borrower',
+        recipient_email: borrower.email,
+        recipient_name: `${borrower.first_name} ${borrower.last_name}`,
+        data: {
+          first_name: borrower.first_name,
+          last_name: borrower.last_name,
+          application_number: applicationData.application_number,
+          application_id: applicationData.id,
+          role: 'Borrower',
+          inviter_name: brokerName
+        }
+      });
+    } catch (emailError) {
+      console.error('Error sending broker invite email:', emailError);
+    }
+
+    try {
+      await base44.entities.Notification.create({
+        user_id: borrower.user_id,
+        message: `You have been invited to join application #${applicationData.application_number} by ${brokerName}.`,
+        type: 'other',
+        entity_type: 'LoanApplication',
+        entity_id: applicationData.id,
+        link_url: `/new-application?id=${applicationData.id}`,
+        priority: 'high'
+      });
+    } catch (notifError) {
+      console.error('Error creating broker invite notification:', notifError);
+    }
+
+    toast({
+      title: "Invitation Sent",
+      description: `${borrower.first_name} ${borrower.last_name} has been invited to join this application.`
+    });
+    setShowBrokerSearchDialog(false);
+  };
+
   const handleSendLinkInvitation = async () => {
     if (!selectedBorrowerToLink) return;
 
     try {
+      if (currentUser?.app_role === 'Broker') {
+        const brokerReferralUpdate = buildBrokerReferralUpdate(applicationData);
+        if (Object.keys(brokerReferralUpdate).length > 0) {
+          onUpdate({ ...applicationData, ...brokerReferralUpdate });
+        }
+      }
+
       await base44.functions.invoke('emailService', {
         email_type: 'invite_borrower',
         recipient_email: selectedBorrowerToLink.email,
@@ -181,6 +290,13 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     }
 
     try {
+      if (currentUser?.app_role === 'Broker') {
+        const brokerReferralUpdate = buildBrokerReferralUpdate(applicationData);
+        if (Object.keys(brokerReferralUpdate).length > 0) {
+          onUpdate({ ...applicationData, ...brokerReferralUpdate });
+        }
+      }
+
       await base44.functions.invoke('emailService', {
         email_type: 'invite_borrower',
         recipient_email: inviteForm.email,
@@ -219,6 +335,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
   );
   const isBroker = currentUser?.app_role === 'Broker';
   const canSearchExisting = !isReadOnly && isStaff;
+  const canSearchBrokerExisting = !isReadOnly && isBroker;
   const canInviteNew = !isReadOnly && (isStaff || isBroker);
 
   if (!currentUser) {
@@ -227,7 +344,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
 
   return (
     <div className="space-y-4">
-      {(canSearchExisting || canInviteNew) && (
+      {(canSearchExisting || canSearchBrokerExisting || canInviteNew) && (
         <div className="flex gap-2 justify-end mb-4">
           {canSearchExisting && (
             <Button
@@ -238,6 +355,17 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
             >
               <Search className="w-3.5 h-3.5 mr-1.5" />
               Search Existing
+            </Button>
+          )}
+          {canSearchBrokerExisting && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBrokerSearchDialog(true)}
+              className="text-xs"
+            >
+              <Search className="w-3.5 h-3.5 mr-1.5" />
+              Searching Existing
             </Button>
           )}
           {canInviteNew && (
@@ -288,6 +416,27 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
             {!borrower.user_id && (
               <span className="text-xs text-amber-600 mt-0.5">Not linked to user account</span>
             )}
+          </div>
+        )}
+      />
+
+      <SearchExistingModal
+        isOpen={showBrokerSearchDialog}
+        onClose={() => setShowBrokerSearchDialog(false)}
+        onSelect={handleSelectBrokerBorrower}
+        items={brokerBorrowers}
+        isLoading={isBrokerBorrowersLoading}
+        title="Search Existing Borrowers"
+        description="Search borrowers you've invited and onboarded"
+        placeholder="Enter name or email..."
+        emptyMessage="No onboarded borrowers found."
+        searchFields={['first_name', 'last_name', 'email']}
+        renderItem={(borrower) => (
+          <div className="flex flex-col items-start gap-0.5">
+            <span className="font-medium text-sm text-slate-900">
+              {borrower.first_name} {borrower.last_name}
+            </span>
+            <span className="text-xs text-slate-500">{borrower.email}</span>
           </div>
         )}
       />

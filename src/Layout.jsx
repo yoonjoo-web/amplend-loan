@@ -125,6 +125,12 @@ export default function Layout({ children, currentPageName }) {
       show: true, // Everyone can see loans (filtered by permissions)
     },
     {
+      title: "My Partners",
+      url: createPageUrl("MyPartners"),
+      icon: Users,
+      show: permissions.isBorrower,
+    },
+    {
       title: "My Borrowers",
       url: createPageUrl("MyBorrowers"),
       icon: UserCheck,

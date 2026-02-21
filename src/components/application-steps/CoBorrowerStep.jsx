@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import DynamicField from "../forms/DynamicField";
 import { syncEntities } from "@/components/utils/entitySyncHelper";
+import { hasBrokerContact } from "@/components/utils/brokerVisibility";
 
 
 const CoBorrowerForm = ({ coBorrower, index, onUpdate, onRemove, isReadOnly, canManage, currentUser }) => {
@@ -159,10 +160,13 @@ const CoBorrowerForm = ({ coBorrower, index, onUpdate, onRemove, isReadOnly, can
 export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, currentUser, canManage, onAddComment, fieldComments, singleCoBorrowerMode = false, coBorrowerIndex = -1 }) {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showBrokerSearchModal, setShowBrokerSearchModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showInviteLinkDialog, setShowInviteLinkDialog] = useState(false);
   const [selectedBorrowerToLink, setSelectedBorrowerToLink] = useState(null);
   const [allBorrowers, setAllBorrowers] = useState([]);
+  const [brokerBorrowers, setBrokerBorrowers] = useState([]);
+  const [isBrokerBorrowersLoading, setIsBrokerBorrowersLoading] = useState(false);
   const [inviteData, setInviteData] = useState({
     requested_email: '',
     requested_first_name: '',
@@ -195,12 +199,53 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
           b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
         );
         setAllBorrowers(filtered);
+
+        if (isBroker) {
+          setIsBrokerBorrowersLoading(true);
+          const brokerBorrowersList = borrowers.filter((borrower) => {
+            if (borrower.invited_by_user_id !== currentUser?.id) return false;
+            if (borrower.invite_request_status === 'rejected') return false;
+            if (borrower.is_invite_temp === true) return false;
+            return Boolean(borrower.user_id);
+          });
+          const filteredBrokerBorrowers = brokerBorrowersList.filter(
+            b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
+          );
+          setBrokerBorrowers(filteredBrokerBorrowers);
+          setIsBrokerBorrowersLoading(false);
+        }
       } catch (error) {
         console.error('Error loading borrowers:', error);
+        setIsBrokerBorrowersLoading(false);
       }
     };
     loadBorrowers();
-  }, [data.primary_borrower_id, coBorrowers]);
+  }, [data.primary_borrower_id, coBorrowers, currentUser?.id, isBroker]);
+
+  const getBrokerName = (user) => {
+    if (!user) return 'Broker';
+    const name = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
+    return name || user.full_name || user.email || 'Broker';
+  };
+
+  const buildBrokerReferralUpdate = () => {
+    if (!currentUser || currentUser.app_role !== 'Broker') return {};
+    const brokerName = getBrokerName(currentUser);
+    const hasReferral = hasBrokerContact(data?.referral_broker);
+    const update = {};
+    if (!hasReferral) {
+      update.referral_broker = {
+        name: brokerName,
+        email: currentUser.email || null,
+        phone: currentUser.phone || null,
+        user_id: currentUser.id || null
+      };
+    }
+    if (!data?.referrer_name) {
+      update.referrer_name = brokerName;
+    }
+    return update;
+  };
 
   const handleSelectBorrower = async (borrower) => {
     if (borrower.user_id) {
@@ -261,10 +306,73 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
     }
   };
 
+  const handleSelectBrokerBorrower = async (borrower) => {
+    if (!borrower?.user_id) {
+      toast({
+        variant: "destructive",
+        title: "Borrower Not Linked",
+        description: "This borrower is not linked to a user account yet."
+      });
+      return;
+    }
+
+    const brokerReferralUpdate = buildBrokerReferralUpdate();
+    const newCoBorrower = {
+      id: `temp_${Date.now()}`,
+      borrower_id: borrower.id,
+      user_id: borrower.user_id,
+      completion_status: 'pending',
+      invited_by_user_id: currentUser?.id,
+      invited_by_role: currentUser?.app_role || currentUser?.role
+    };
+    onChange({ co_borrowers: [...coBorrowers, newCoBorrower], ...brokerReferralUpdate });
+
+    const brokerName = getBrokerName(currentUser);
+    try {
+      await base44.functions.invoke('emailService', {
+        email_type: 'invite_co_borrower',
+        recipient_email: borrower.email,
+        recipient_name: `${borrower.first_name} ${borrower.last_name}`,
+        data: {
+          first_name: borrower.first_name,
+          last_name: borrower.last_name,
+          inviter_name: brokerName,
+          application_number: data.application_number,
+          application_id: data.id,
+          role: 'Co-Borrower'
+        }
+      });
+    } catch (emailError) {
+      console.error('Error sending broker co-borrower invite email:', emailError);
+    }
+
+    try {
+      await base44.entities.Notification.create({
+        user_id: borrower.user_id,
+        message: `You have been invited to join application #${data.application_number} as a co-borrower by ${brokerName}.`,
+        type: 'other',
+        entity_type: 'LoanApplication',
+        entity_id: data.id,
+        link_url: `/new-application?id=${data.id}`,
+        priority: 'high'
+      });
+    } catch (notifError) {
+      console.error('Error creating broker co-borrower notification:', notifError);
+    }
+
+    toast({
+      title: "Co-Borrower Invited",
+      description: `${borrower.first_name} ${borrower.last_name} has been invited.`
+    });
+    setShowBrokerSearchModal(false);
+  };
+
   const handleSendLinkInvitation = async () => {
     if (!selectedBorrowerToLink) return;
 
     try {
+      const brokerReferralUpdate = buildBrokerReferralUpdate();
+
       // Add the borrower to the application
       const mappedData = syncEntities('Borrower', 'LoanApplication', selectedBorrowerToLink);
       const newCoBorrower = {
@@ -275,7 +383,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         invited_by_user_id: currentUser?.id,
         invited_by_role: currentUser?.app_role || currentUser?.role
       };
-      onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
+      onChange({ co_borrowers: [...coBorrowers, newCoBorrower], ...brokerReferralUpdate });
 
       // TEMPORARILY DISABLED: Email invitation
       // await base44.functions.invoke('emailService', {
@@ -312,6 +420,8 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
     e.preventDefault();
 
     try {
+      const brokerReferralUpdate = buildBrokerReferralUpdate();
+
       // TEMPORARILY DISABLED: Email and notification sending
       // const borrowerName = `${currentUser.first_name} ${currentUser.last_name}`;
 
@@ -359,7 +469,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         invited_by_user_id: currentUser?.id,
         invited_by_role: currentUser?.app_role || currentUser?.role
       };
-      onChange({ co_borrowers: [...coBorrowers, newCoBorrower] });
+      onChange({ co_borrowers: [...coBorrowers, newCoBorrower], ...brokerReferralUpdate });
 
       toast({
         title: "Co-Borrower Added",
@@ -479,6 +589,22 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
                 </div>
               </Button>
             )}
+            {isBroker && (
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-4"
+                onClick={() => {
+                  setShowBrokerSearchModal(true);
+                  setShowOptionsModal(false);
+                }}
+              >
+                <Search className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <p className="font-semibold">Searching Existing Borrowers</p>
+                  <p className="text-xs text-slate-500">Pick from borrowers you invited</p>
+                </div>
+              </Button>
+            )}
             <Button
               variant="outline"
               className="w-full justify-start h-auto py-4"
@@ -515,6 +641,26 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
             {!borrower.user_id && (
               <span className="text-xs text-amber-600 mt-0.5">Not linked to user account</span>
             )}
+          </div>
+        )}
+      />
+
+      <SearchExistingModal
+        isOpen={showBrokerSearchModal}
+        onClose={() => setShowBrokerSearchModal(false)}
+        onSelect={handleSelectBrokerBorrower}
+        items={brokerBorrowers}
+        isLoading={isBrokerBorrowersLoading}
+        title="Search Existing Borrowers"
+        placeholder="Search by name or email..."
+        emptyMessage="No onboarded borrowers found."
+        searchFields={['first_name', 'last_name', 'email']}
+        renderItem={(borrower) => (
+          <div className="flex flex-col items-start gap-0.5">
+            <span className="font-medium text-sm text-slate-900">
+              {borrower.first_name} {borrower.last_name}
+            </span>
+            <span className="text-xs text-slate-500">{borrower.email}</span>
           </div>
         )}
       />

@@ -60,6 +60,7 @@ import LoanPartners from './pages/LoanPartners';
 import Loans from './pages/Loans';
 import Messages from './pages/Messages';
 import MyBorrowers from './pages/MyBorrowers';
+import MyPartners from './pages/MyPartners';
 import MyProfile from './pages/MyProfile';
 import MyTasks from './pages/MyTasks';
 import NewApplication from './pages/NewApplication';
@@ -82,6 +83,7 @@ export const PAGES = {
     "Loans": Loans,
     "Messages": Messages,
     "MyBorrowers": MyBorrowers,
+    "MyPartners": MyPartners,
     "MyProfile": MyProfile,
     "MyTasks": MyTasks,
     "NewApplication": NewApplication,
