@@ -140,6 +140,7 @@ export default function Dashboard() {
   const [showInviteBorrowerModal, setShowInviteBorrowerModal] = useState(false);
   const [showInviteTeamModal, setShowInviteTeamModal] = useState(false);
   const [showInviteLoanPartnerModal, setShowInviteLoanPartnerModal] = useState(false);
+  const [myBorrowersSummary, setMyBorrowersSummary] = useState(null);
   const isStaffUser = permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer;
   const canShowQuickActions = isStaffUser || permissions.isBroker;
 
@@ -234,6 +235,79 @@ export default function Dashboard() {
       }).slice(0, 10);
       
       setMyTasks(enrichedTasks);
+
+      // My Borrowers summary for broker/referral partner/liaison
+      const normalizedRole = normalizeAppRole(currentUser?.app_role || currentUser?.role || '');
+      const canViewMyBorrowers = ['Broker', 'Referral Partner', 'Liaison'].includes(normalizedRole);
+      if (canViewMyBorrowers) {
+        const [borrowersData, inviteRequestsData] = await Promise.all([
+          base44.entities.Borrower.list().catch(() => []),
+          normalizedRole === 'Broker'
+            ? base44.entities.BorrowerInviteRequest.list('-created_date').catch(() => [])
+            : Promise.resolve([])
+        ]);
+
+        const loansOnTeam = loans.filter((loan) => isUserOnLoanTeam(loan, currentUser));
+        const borrowerIdSet = new Set();
+        loansOnTeam.forEach((loan) => {
+          (loan.borrower_ids || []).forEach((id) => borrowerIdSet.add(id));
+        });
+
+        const borrowerMap = new Map();
+        borrowersData.forEach((borrower) => {
+          if (borrower?.id) borrowerMap.set(borrower.id, borrower);
+          if (borrower?.user_id) borrowerMap.set(borrower.user_id, borrower);
+        });
+
+        const teamBorrowers = Array.from(borrowerIdSet)
+          .map((id) => borrowerMap.get(id))
+          .filter(Boolean)
+          .filter((borrower, index, arr) => arr.findIndex((b) => b.id === borrower.id) === index);
+
+        if (normalizedRole === 'Broker') {
+          const brokerRequests = (inviteRequestsData || []).filter(
+            (req) => req.source === 'broker' && req.requested_by_user_id === currentUser?.id
+          );
+
+          const invitedOnboarded = (borrowersData || []).filter((borrower) => {
+            if (borrower.invited_by_user_id !== currentUser?.id) return false;
+            if (borrower.invite_request_status === 'rejected') return false;
+            return borrower.is_invite_temp !== true;
+          });
+
+          const onboardedMap = new Map();
+          [...teamBorrowers, ...invitedOnboarded].forEach((borrower) => {
+            if (borrower?.id) onboardedMap.set(borrower.id, borrower);
+          });
+          const onboardedBorrowers = Array.from(onboardedMap.values());
+          const onboardedIds = new Set(onboardedBorrowers.map((b) => b.id));
+
+          const invitedRequests = brokerRequests.filter((req) => {
+            const status = (req.status || 'pending').toLowerCase();
+            if (status === 'rejected') return false;
+            if (req.borrower_id && onboardedIds.has(req.borrower_id)) return false;
+            return true;
+          });
+
+          const rejectedRequests = brokerRequests.filter(
+            (req) => (req.status || '').toLowerCase() === 'rejected'
+          );
+
+          setMyBorrowersSummary({
+            role: normalizedRole,
+            total: onboardedBorrowers.length,
+            invited: invitedRequests.length,
+            rejected: rejectedRequests.length,
+          });
+        } else {
+          setMyBorrowersSummary({
+            role: normalizedRole,
+            total: teamBorrowers.length,
+          });
+        }
+      } else {
+        setMyBorrowersSummary(null);
+      }
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -409,6 +483,54 @@ export default function Dashboard() {
             title="Broker Borrower Invite Requests"
             description="Review broker-submitted borrower invite requests."
           />
+        )}
+
+        {/* My Borrowers Summary */}
+        {myBorrowersSummary && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+          >
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardHeader className="border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold text-slate-900">
+                    My Borrowers
+                  </CardTitle>
+                  <Link to={createPageUrl("MyBorrowers")}>
+                    <Button variant="ghost" size="sm">
+                      View All
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                {myBorrowersSummary.role === 'Broker' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                      <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
+                      <p className="text-sm text-slate-600 mt-1">Onboarded</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                      <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.invited}</p>
+                      <p className="text-sm text-slate-600 mt-1">Invited</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                      <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.rejected}</p>
+                      <p className="text-sm text-slate-600 mt-1">Rejected</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
+                    <p className="text-sm text-slate-600 mt-1">Borrowers on Your Team</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
         {/* Combined Stats */}

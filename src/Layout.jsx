@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Briefcase,
   MessageSquare,
-  UserCircle
+  UserCircle,
+  UserCheck
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -122,6 +123,12 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Loans"),
       icon: FileText,
       show: true, // Everyone can see loans (filtered by permissions)
+    },
+    {
+      title: "My Borrowers",
+      url: createPageUrl("MyBorrowers"),
+      icon: UserCheck,
+      show: permissions.canViewMyBorrowers,
     },
     {
       title: "Messages",
