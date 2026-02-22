@@ -11,6 +11,7 @@ import { isUserOnLoanTeam } from "@/components/utils/teamAccess";
 import { Button } from "@/components/ui/button";
 import InviteBorrowerModal from "@/components/dashboard/InviteBorrowerModal";
 import { Users } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function MyBorrowers() {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
