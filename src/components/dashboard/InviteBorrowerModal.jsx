@@ -69,9 +69,10 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           requested_by_role: inviterRole,
           requested_by_name: inviter?.full_name || inviter?.email || ''
         });
+        const tokenValue = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
         const inviteToken = await base44.entities.BorrowerInviteToken.create({
           request_id: inviteRequest?.id || null,
-          token: `inv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+          token: tokenValue,
           status: 'active',
           issued_at: new Date().toISOString()
         });
@@ -104,7 +105,7 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           data: {
             first_name: formData.requested_first_name,
             last_name: formData.requested_last_name,
-            invite_token: inviteToken?.token || null
+            invite_token: inviteToken?.token || tokenValue
           }
         });
       } else {
