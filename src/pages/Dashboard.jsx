@@ -479,15 +479,6 @@ export default function Dashboard() {
         )}
 
         {/* Borrower Invite Requests */}
-        {permissions.isBroker && (
-          <BorrowerInviteRequests
-            currentUser={currentUser}
-            scope="broker"
-            limit={5}
-            title="Your Borrower Invite Requests"
-            description="Requests you have sent to onboard new borrowers."
-          />
-        )}
         {(permissions.isLoanOfficer || permissions.isAdministrator || permissions.isPlatformAdmin) && (
           <BorrowerInviteRequests
             currentUser={currentUser}
