@@ -98,6 +98,10 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           }
         }
 
+        console.log('[InviteBorrowerModal] Sending broker invite', {
+          requested_email: formData.requested_email,
+          invite_token: inviteToken?.token || tokenValue
+        });
         await base44.functions.invoke('emailService', {
           email_type: 'invite_borrower',
           recipient_email: formData.requested_email,
