@@ -491,7 +491,7 @@ export default function Dashboard() {
         )}
 
         {/* My Borrowers Summary */}
-        {myBorrowersSummary && (
+        {myBorrowersSummary && myBorrowersSummary.role !== 'Broker' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -512,16 +512,10 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                {myBorrowersSummary.role === 'Broker' ? (
-                  <p className="text-sm text-slate-600">
-                    Review onboarded, invited, and rejected borrowers in My Borrowers.
-                  </p>
-                ) : (
-                  <div className="rounded-lg border border-slate-200 bg-white p-4">
-                    <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
-                    <p className="text-sm text-slate-600 mt-1">Borrowers on Your Team</p>
-                  </div>
-                )}
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
+                  <p className="text-sm text-slate-600 mt-1">Borrowers on Your Team</p>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
