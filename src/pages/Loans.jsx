@@ -364,10 +364,14 @@ export default function Loans() {
         const loanOfficerIds = loan.loan_officer_ids || [];
         isMyLoan = loanOfficerIds.includes(currentUser.id);
       } else if (permissions.isBorrower) {
-        const borrowerIds = loan.borrower_ids || [];
-        isMyLoan = borrowerIds.some((id) => borrowerAccessIds.includes(id));
+        if (permissions.isBorrowerLiaison) {
+          isMyLoan = isUserOnLoanTeam(loan, currentUser, permissions);
+        } else {
+          const borrowerIds = loan.borrower_ids || [];
+          isMyLoan = borrowerIds.some((id) => borrowerAccessIds.includes(id));
+        }
       } else if (permissions.isLoanPartner) {
-        isMyLoan = isUserOnLoanTeam(loan, currentUser);
+        isMyLoan = isUserOnLoanTeam(loan, currentUser, permissions);
       }
 
       if (!isMyLoan) {
@@ -383,12 +387,18 @@ export default function Loans() {
       if (permissions.canViewAllLoans) {
 
       } else if (permissions.isBorrower) {
-        const borrowerIds = loan.borrower_ids || [];
-        if (!borrowerIds.some((id) => borrowerAccessIds.includes(id))) {
-          return false;
+        if (permissions.isBorrowerLiaison) {
+          if (!isUserOnLoanTeam(loan, currentUser, permissions)) {
+            return false;
+          }
+        } else {
+          const borrowerIds = loan.borrower_ids || [];
+          if (!borrowerIds.some((id) => borrowerAccessIds.includes(id))) {
+            return false;
+          }
         }
       } else if (permissions.isLoanPartner) {
-        if (!isUserOnLoanTeam(loan, currentUser)) {
+        if (!isUserOnLoanTeam(loan, currentUser, permissions)) {
           return false;
         }
       } else {

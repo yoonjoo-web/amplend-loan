@@ -69,7 +69,7 @@ export default function MyTasks() {
       const userLoans = (allLoans || []).filter(loan => {
         const isLoanOfficer = loan.loan_officer_ids?.includes(currentUser.id);
         const isBorrower = loan.borrower_ids?.some((id) => borrowerAccessIds.includes(id));
-        const isLoanPartner = permissions.isLoanPartner && isUserOnLoanTeam(loan, currentUser);
+        const isLoanPartner = permissions.isLoanPartner && isUserOnLoanTeam(loan, currentUser, permissions);
         return isLoanOfficer || isBorrower || isLoanPartner;
       });
       console.log('[MyTasks] User loans:', userLoans.length);

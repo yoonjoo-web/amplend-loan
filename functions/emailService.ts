@@ -62,6 +62,44 @@ Deno.serve(async (req) => {
           ? `You are being invited as ${data.role || 'Borrower'} for Application #${data.application_number}. Click the button above to sign in or create your account.`
           : 'Click the button above to sign in or create your account.'
       },
+      'invite_borrower_broker': {
+        subject: `${data.broker_name || 'Your broker'} invited you to your loan portal`,
+        title: 'You have been invited to your loan portal',
+        subtitle: 'Manage your loan details, documents, and updates in one secure place.',
+        greeting: `Hello ${data.first_name} ${data.last_name},`,
+        message: `<strong>${data.broker_name || 'Your broker'}</strong> has invited you to set up your loan portal account. Once your account is created, you will be able to:`,
+        features: [
+          'View key loan details and payment terms at a glance',
+          'Upload and review required documents securely',
+          'Stay informed with real-time status updates on your loan'
+        ],
+        cta_text: 'Complete Your Account Setup',
+        cta_url: data.application_number 
+          ? `${appUrl}/Onboarding?app_role=${encodeURIComponent(data.role || 'Borrower')}&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}${data.application_id ? `&next=${encodeURIComponent(`${appUrl}/NewApplication?id=${data.application_id}&action=view`)}` : ''}`
+          : `${appUrl}/Onboarding?app_role=${encodeURIComponent(data.role || 'Borrower')}&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}`,
+        cta_note: data.application_number 
+          ? `You are being invited as ${data.role || 'Borrower'} for Application #${data.application_number}. Click the button above to sign in or create your account.`
+          : 'Click the button above to sign in or create your account.',
+        show_header: false,
+        show_logo: false,
+        show_footer: false
+      },
+      'broker_started_application': {
+        subject: `${data.broker_name || 'Your broker'} started a new application for you`,
+        title: 'A new application has been started',
+        subtitle: 'Your broker kicked off a new application and needs your help to complete it.',
+        greeting: `Hello ${data.first_name} ${data.last_name},`,
+        message: `<strong>${data.broker_name || 'Your broker'}</strong> started a new loan application for you. Please review it and complete your section.`,
+        info_box: {
+          title: 'Application Details',
+          items: [
+            { label: 'Application Number', value: `#${data.application_number}` }
+          ]
+        },
+        cta_text: 'Review Application',
+        cta_url: `${appUrl}/NewApplication?id=${data.application_id}&action=view`,
+        cta_note: 'Click the button above to open your application.'
+      },
       'invite_co_borrower': {
         subject: `${data.inviter_name} Invited You to Join Their Loan Application`,
         title: 'Welcome to Amplend Loan Portal',
@@ -212,7 +250,7 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    if (email_type === 'invite_borrower' && data?.invite_token) {
+    if ((email_type === 'invite_borrower' || email_type === 'invite_borrower_broker') && data?.invite_token) {
       const tokenParam = `invite_token=${encodeURIComponent(data.invite_token)}`;
       const hasQuery = template.cta_url.includes('?');
       template.cta_url = `${template.cta_url}${hasQuery ? '&' : '?'}${tokenParam}`;
@@ -310,9 +348,11 @@ Deno.serve(async (req) => {
         <body>
           <div class="email-wrapper">
             <div class="container">
-              <div class="header">
-                <img src="${logoUrl}" alt="Amplend Logo" class="logo" />
-              </div>
+              ${template.show_header === false ? '' : `
+                <div class="header">
+                  ${template.show_logo === false ? '' : `<img src="${logoUrl}" alt="Amplend Logo" class="logo" />`}
+                </div>
+              `}
               
               <div class="content">
                 <h1>${template.title}</h1>
@@ -391,11 +431,13 @@ Deno.serve(async (req) => {
                 ` : ''}
               </div>
               
-              <div class="footer">
-                <p><strong>Amplend Loan Portal</strong></p>
-                <p>This is an automated message. Please do not reply to this email.</p>
-                ${template.footer_extra || ''}
-              </div>
+              ${template.show_footer === false ? '' : `
+                <div class="footer">
+                  <p><strong>Amplend Loan Portal</strong></p>
+                  <p>This is an automated message. Please do not reply to this email.</p>
+                  ${template.footer_extra || ''}
+                </div>
+              `}
             </div>
           </div>
         </body>
@@ -421,9 +463,11 @@ ${template.info_box.items.map(item => `${item.label}: ${item.value}`).join('\n')
 
 ${template.cta_text && template.cta_url ? `${template.cta_text}: ${template.cta_url}` : ''}
 
+${template.show_footer === false ? '' : `
 ---
 Amplend Loan Portal
 This is an automated message.
+`}
     `.trim();
 
     // Send email via Resend

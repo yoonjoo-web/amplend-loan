@@ -103,13 +103,14 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           invite_token: inviteToken?.token || tokenValue
         });
         await base44.functions.invoke('emailService', {
-          email_type: 'invite_borrower',
+          email_type: 'invite_borrower_broker',
           recipient_email: formData.requested_email,
           recipient_name: `${formData.requested_first_name} ${formData.requested_last_name}`,
           data: {
             first_name: formData.requested_first_name,
             last_name: formData.requested_last_name,
-            invite_token: inviteToken?.token || tokenValue
+            invite_token: inviteToken?.token || tokenValue,
+            broker_name: inviter?.full_name || inviter?.email || 'Your broker'
           }
         });
       } else {

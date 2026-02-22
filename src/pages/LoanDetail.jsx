@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
+import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
@@ -113,6 +114,7 @@ export default function LoanDetail() {
       }
 
       const resolvedBorrowerAccessIds = await getBorrowerAccessIds(base44, user);
+      const resolvedLoanPartnerAccessIds = await getLoanPartnerAccessIds(base44, user);
       setBorrowerAccessIds(resolvedBorrowerAccessIds);
 
       const canViewLoan = 
@@ -120,8 +122,9 @@ export default function LoanDetail() {
         user.app_role === 'Administrator' ||
         user.app_role === 'Loan Officer' ||
         loanData.borrower_ids?.some((id) => resolvedBorrowerAccessIds.includes(id)) ||
-        loanData.liaison_ids?.includes(user.id) ||
-        loanData.referrer_ids?.includes(user.id);
+        loanData.liaison_ids?.some((id) => id === user.id || resolvedLoanPartnerAccessIds.includes(id)) ||
+        loanData.referrer_ids?.some((id) => id === user.id || resolvedLoanPartnerAccessIds.includes(id)) ||
+        loanData.broker_ids?.some((id) => id === user.id || resolvedLoanPartnerAccessIds.includes(id));
 
       if (!canViewLoan) {
         toast({

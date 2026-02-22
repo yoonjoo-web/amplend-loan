@@ -170,9 +170,13 @@ export default function Dashboard() {
       if (permissions.isLoanOfficer) {
         userLoans = loans.filter(l => l.loan_officer_ids?.includes(currentUser.id));
       } else if (permissions.isBorrower) {
-        userLoans = loans.filter(l => l.borrower_ids?.some((id) => borrowerAccessIds.includes(id)));
+        if (permissions.isBorrowerLiaison) {
+          userLoans = loans.filter((l) => isUserOnLoanTeam(l, currentUser, permissions));
+        } else {
+          userLoans = loans.filter(l => l.borrower_ids?.some((id) => borrowerAccessIds.includes(id)));
+        }
       } else if (permissions.isLoanPartner) {
-        userLoans = loans.filter((l) => isUserOnLoanTeam(l, currentUser));
+        userLoans = loans.filter((l) => isUserOnLoanTeam(l, currentUser, permissions));
       }
 
       const userRecentLoans = userLoans.slice(0, 5);
@@ -183,15 +187,19 @@ export default function Dashboard() {
       if (permissions.isLoanOfficer) {
         userApps = userApps.filter(a => a.assigned_loan_officer_id === currentUser.id);
       } else if (permissions.isBorrower) {
-        userApps = userApps.filter(a => {
-          const isPrimary = borrowerAccessIds.includes(a.primary_borrower_id);
-          const isCoBorrower = a.co_borrowers && a.co_borrowers.some(cb =>
-            borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
-          );
-          return isPrimary || isCoBorrower;
-        });
+        if (permissions.isBorrowerLiaison) {
+          userApps = userApps.filter((a) => isUserOnApplicationTeam(a, currentUser, permissions));
+        } else {
+          userApps = userApps.filter(a => {
+            const isPrimary = borrowerAccessIds.includes(a.primary_borrower_id);
+            const isCoBorrower = a.co_borrowers && a.co_borrowers.some(cb =>
+              borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+            );
+            return isPrimary || isCoBorrower;
+          });
+        }
       } else if (permissions.isLoanPartner) {
-        userApps = userApps.filter((a) => isUserOnApplicationTeam(a, currentUser));
+        userApps = userApps.filter((a) => isUserOnApplicationTeam(a, currentUser, permissions));
       }
 
       const userRecentApps = userApps.slice(0, 5);
@@ -236,10 +244,10 @@ export default function Dashboard() {
       
       setMyTasks(enrichedTasks);
 
-      // My Borrowers summary for broker/referral partner/liaison
+      // My Borrowers summary for broker/referral partner (exclude liaison)
       const normalizedRole = normalizeAppRole(currentUser?.app_role || currentUser?.role || '');
-      const canViewMyBorrowers = ['Broker', 'Referral Partner', 'Liaison'].includes(normalizedRole);
-      if (canViewMyBorrowers) {
+      const canViewMyBorrowersSummary = ['Broker', 'Referral Partner'].includes(normalizedRole);
+      if (canViewMyBorrowersSummary) {
         const [borrowersData, inviteRequestsData] = await Promise.all([
           base44.entities.Borrower.list().catch(() => []),
           normalizedRole === 'Broker'
@@ -247,7 +255,7 @@ export default function Dashboard() {
             : Promise.resolve([])
         ]);
 
-        const loansOnTeam = loans.filter((loan) => isUserOnLoanTeam(loan, currentUser));
+        const loansOnTeam = loans.filter((loan) => isUserOnLoanTeam(loan, currentUser, permissions));
         const borrowerIdSet = new Set();
         loansOnTeam.forEach((loan) => {
           (loan.borrower_ids || []).forEach((id) => borrowerIdSet.add(id));
@@ -385,7 +393,13 @@ export default function Dashboard() {
         applicationData.primary_borrower_id = currentUser.id;
       }
 
-      const newApp = await base44.entities.LoanApplication.create(applicationData);
+      const response = await base44.functions.invoke('createLoanApplication', {
+        application_data: applicationData
+      });
+      const newApp = response?.data?.application || response?.application;
+      if (!newApp?.id) {
+        throw new Error('Failed to create application.');
+      }
       navigate(createPageUrl("NewApplication") + `?id=${newApp.id}`);
     } catch (error) {
       console.error('Error creating application:', error);
@@ -480,7 +494,7 @@ export default function Dashboard() {
             scope="admin"
             limit={5}
             showReject
-            title="Broker Borrower Invite Requests"
+            title="Broker Invites"
             description="Review broker-submitted borrower invite requests."
           />
         )}

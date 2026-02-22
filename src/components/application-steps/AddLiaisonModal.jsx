@@ -76,6 +76,10 @@ export default function AddLiaisonModal({
     phone: ''
   });
 
+  const canUseGlobalLiaisonList = Boolean(
+    permissions?.isPlatformAdmin || permissions?.isAdministrator || permissions?.isLoanOfficer
+  );
+
   const existingLiaisonIds = useMemo(() => {
     return Array.isArray(applicationData?.liaison_ids) ? applicationData.liaison_ids : [];
   }, [applicationData?.liaison_ids]);
@@ -96,57 +100,72 @@ export default function AddLiaisonModal({
   const loadLiaisons = async () => {
     setIsLoading(true);
     try {
-      const borrowerAccessIds = resolveBorrowerAccessIds(applicationData, permissions);
+      if (canUseGlobalLiaisonList) {
+        const loanPartnersData = await LoanPartner.list('-created_date').catch(() => []);
+        const results = (loanPartnersData || [])
+          .filter((partner) => resolvePartnerRole(partner) === 'Liaison')
+          .map((partner) => ({
+            id: partner?.id,
+            partner,
+            name: resolvePartnerName(partner, partner?.id),
+            role: 'Liaison',
+            email: partner?.email || null,
+            phone: partner?.phone || null,
+          }));
+        setPartners(results);
+      } else {
+        const borrowerAccessIds = resolveBorrowerAccessIds(applicationData, permissions);
 
-      const [loanPartnersData, loansData, applicationsData] = await Promise.all([
-        LoanPartner.list('-created_date').catch(() => []),
-        Loan.list('-created_date').catch(() => []),
-        LoanApplication.list('-created_date').catch(() => [])
-      ]);
+        const [loanPartnersData, loansData, applicationsData] = await Promise.all([
+          LoanPartner.list('-created_date').catch(() => []),
+          Loan.list('-created_date').catch(() => []),
+          LoanApplication.list('-created_date').catch(() => [])
+        ]);
 
-      const relevantLoans = (loansData || []).filter((loan) =>
-        (loan.borrower_ids || []).some((id) => borrowerAccessIds.includes(id))
-      );
-      const relevantApplications = (applicationsData || []).filter((app) =>
-        borrowerAccessIds.includes(app.primary_borrower_id) || coBorrowerMatches(app.co_borrowers, borrowerAccessIds)
-      );
+        const relevantLoans = (loansData || []).filter((loan) =>
+          (loan.borrower_ids || []).some((id) => borrowerAccessIds.includes(id))
+        );
+        const relevantApplications = (applicationsData || []).filter((app) =>
+          borrowerAccessIds.includes(app.primary_borrower_id) || coBorrowerMatches(app.co_borrowers, borrowerAccessIds)
+        );
 
-      const partnerById = new Map();
-      (loanPartnersData || []).forEach((partner) => {
-        if (partner?.id) partnerById.set(partner.id, partner);
-        if (partner?.user_id) partnerById.set(partner.user_id, partner);
-      });
+        const partnerById = new Map();
+        (loanPartnersData || []).forEach((partner) => {
+          if (partner?.id) partnerById.set(partner.id, partner);
+          if (partner?.user_id) partnerById.set(partner.user_id, partner);
+        });
 
-      const statsMap = new Map();
+        const statsMap = new Map();
 
-      const registerPartner = (partnerId) => {
-        if (!partnerId) return;
-        const partner = partnerById.get(partnerId);
-        const key = partner?.id || partnerId;
-        const existing = statsMap.get(key) || {
-          id: key,
-          partner,
-          name: resolvePartnerName(partner, partnerId),
-          role: resolvePartnerRole(partner),
-          email: partner?.email || null,
-          phone: partner?.phone || null,
+        const registerPartner = (partnerId) => {
+          if (!partnerId) return;
+          const partner = partnerById.get(partnerId);
+          const key = partner?.id || partnerId;
+          const existing = statsMap.get(key) || {
+            id: key,
+            partner,
+            name: resolvePartnerName(partner, partnerId),
+            role: resolvePartnerRole(partner),
+            email: partner?.email || null,
+            phone: partner?.phone || null,
+          };
+          statsMap.set(key, existing);
         };
-        statsMap.set(key, existing);
-      };
 
-      relevantLoans.forEach((loan) => {
-        const ids = Array.from(new Set(loan.referrer_ids || []));
-        ids.forEach((id) => registerPartner(id));
-      });
+        relevantLoans.forEach((loan) => {
+          const ids = Array.from(new Set(loan.referrer_ids || []));
+          ids.forEach((id) => registerPartner(id));
+        });
 
-      relevantApplications.forEach((app) => {
-        const ids = Array.from(new Set(app.referrer_ids || []));
-        ids.forEach((id) => registerPartner(id));
-      });
+        relevantApplications.forEach((app) => {
+          const ids = Array.from(new Set(app.referrer_ids || []));
+          ids.forEach((id) => registerPartner(id));
+        });
 
-      const results = Array.from(statsMap.values())
-        .filter((partner) => partner.role === 'Liaison');
-      setPartners(results);
+        const results = Array.from(statsMap.values())
+          .filter((partner) => partner.role === 'Liaison');
+        setPartners(results);
+      }
     } catch (error) {
       console.error('Error loading liaisons:', error);
       setPartners([]);
@@ -253,7 +272,9 @@ export default function AddLiaisonModal({
         <DialogHeader>
           <DialogTitle>Add Liaison</DialogTitle>
           <DialogDescription>
-            Invite a new liaison or select an existing one from My Partners.
+            {canUseGlobalLiaisonList
+              ? 'Invite a new liaison or select an existing one.'
+              : 'Invite a new liaison or select an existing one from My Partners.'}
           </DialogDescription>
         </DialogHeader>
 

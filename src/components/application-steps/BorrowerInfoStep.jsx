@@ -182,7 +182,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     const brokerName = getBrokerName(currentUser);
     try {
       await base44.functions.invoke('emailService', {
-        email_type: 'invite_borrower',
+        email_type: 'broker_started_application',
         recipient_email: borrower.email,
         recipient_name: `${borrower.first_name} ${borrower.last_name}`,
         data: {
@@ -190,8 +190,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
           last_name: borrower.last_name,
           application_number: applicationData.application_number,
           application_id: applicationData.id,
-          role: 'Borrower',
-          inviter_name: brokerName
+          broker_name: brokerName
         }
       });
     } catch (emailError) {
@@ -201,7 +200,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     try {
       await base44.entities.Notification.create({
         user_id: borrower.user_id,
-        message: `You have been invited to join application #${applicationData.application_number} by ${brokerName}.`,
+        message: `${brokerName} started a new application #${applicationData.application_number} for you. Please review and complete it together.`,
         type: 'other',
         entity_type: 'LoanApplication',
         entity_id: applicationData.id,
@@ -230,8 +229,9 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         }
       }
 
+      const isBroker = currentUser?.app_role === 'Broker';
       await base44.functions.invoke('emailService', {
-        email_type: 'invite_borrower',
+        email_type: isBroker ? 'invite_borrower_broker' : 'invite_borrower',
         recipient_email: selectedBorrowerToLink.email,
         recipient_name: `${selectedBorrowerToLink.first_name} ${selectedBorrowerToLink.last_name}`,
         data: {
@@ -239,7 +239,8 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
           last_name: selectedBorrowerToLink.last_name,
           application_number: applicationData.application_number,
           application_id: applicationData.id,
-          role: 'Borrower'
+          role: 'Borrower',
+          ...(isBroker ? { broker_name: getBrokerName(currentUser) } : {})
         }
       });
 
@@ -297,13 +298,15 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         }
       }
 
+      const isBroker = currentUser?.app_role === 'Broker';
       await base44.functions.invoke('emailService', {
-        email_type: 'invite_borrower',
+        email_type: isBroker ? 'invite_borrower_broker' : 'invite_borrower',
         recipient_email: inviteForm.email,
         recipient_name: `${inviteForm.first_name} ${inviteForm.last_name}`,
         data: {
           first_name: inviteForm.first_name,
-          last_name: inviteForm.last_name
+          last_name: inviteForm.last_name,
+          ...(isBroker ? { broker_name: currentUser?.full_name || `${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'Your broker' } : {})
         }
       });
 

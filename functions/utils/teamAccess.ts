@@ -1,10 +1,11 @@
 export const isUserOnApplicationTeam = (
   application: Record<string, unknown>,
-  user: { id?: string; email?: string }
+  user: { id?: string; email?: string; partnerIds?: string[] }
 ) => {
   if (!application || !user) return false;
   const userId = user.id;
   if (!userId) return false;
+  const partnerIds = Array.isArray(user.partnerIds) ? user.partnerIds : [];
 
   const referrerIds = Array.isArray(application.referrer_ids)
     ? (application.referrer_ids as string[])
@@ -16,9 +17,9 @@ export const isUserOnApplicationTeam = (
     ? (application.broker_ids as string[])
     : [];
 
-  if (referrerIds.includes(userId)) return true;
-  if (liaisonIds.includes(userId)) return true;
-  if (brokerIds.includes(userId)) return true;
+  if (referrerIds.includes(userId) || partnerIds.some((id) => referrerIds.includes(id))) return true;
+  if (liaisonIds.includes(userId) || partnerIds.some((id) => liaisonIds.includes(id))) return true;
+  if (brokerIds.includes(userId) || partnerIds.some((id) => brokerIds.includes(id))) return true;
 
   const matchesContact = (contact?: Record<string, unknown>) => {
     if (!contact || typeof contact !== 'object') return false;
@@ -26,7 +27,7 @@ export const isUserOnApplicationTeam = (
     const contactId = (contact as { id?: string }).id;
     const contactEmail = (contact as { email?: string }).email;
     if (contactUserId && contactUserId === userId) return true;
-    if (contactId && contactId === userId) return true;
+    if (contactId && (contactId === userId || partnerIds.includes(contactId))) return true;
     if (contactEmail && user.email) {
       return contactEmail.toLowerCase() === user.email.toLowerCase();
     }

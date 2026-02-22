@@ -134,13 +134,15 @@ const AddCoOwnerModal = ({ isOpen, onClose, onSave, allBorrowers, toast }) => {
 
     setIsProcessingInvite(true);
     try {
+      const isBroker = currentUser?.app_role === 'Broker';
       await base44.functions.invoke('emailService', {
-        email_type: 'invite_borrower',
+        email_type: isBroker ? 'invite_borrower_broker' : 'invite_borrower',
         recipient_email: inviteData.email,
         recipient_name: `${inviteData.first_name} ${inviteData.last_name}`,
         data: {
           first_name: inviteData.first_name,
-          last_name: inviteData.last_name
+          last_name: inviteData.last_name,
+          ...(isBroker ? { broker_name: currentUser?.full_name || `${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'Your broker' } : {})
         }
       });
 
@@ -461,6 +463,48 @@ export default function ContactDetail() {
           } catch (err) {
             console.error('Error loading partner:', err);
             throw new Error('Failed to load partner data');
+          }
+          
+          try {
+            const [allLoans, allApplications] = await Promise.all([
+              base44.entities.Loan.list().catch(() => []),
+              base44.entities.LoanApplication.list().catch(() => [])
+            ]);
+            
+            const partnerIds = new Set([contactData.id, contactData.user_id].filter(Boolean));
+            const partnerEmail = contactData.email ? contactData.email.toLowerCase() : null;
+            
+            const matchesPartnerIds = (ids) => {
+              if (!Array.isArray(ids) || ids.length === 0) return false;
+              return ids.some((value) => partnerIds.has(value));
+            };
+            
+            const matchesPartnerContact = (contact) => {
+              if (!contact || typeof contact !== 'object') return false;
+              if (contact.id && partnerIds.has(contact.id)) return true;
+              if (contact.user_id && partnerIds.has(contact.user_id)) return true;
+              if (partnerEmail && contact.email) {
+                return contact.email.toLowerCase() === partnerEmail;
+              }
+              return false;
+            };
+            
+            contactRelatedLoans = (allLoans || []).filter((loan) =>
+              matchesPartnerIds(loan.referrer_ids) ||
+              matchesPartnerIds(loan.liaison_ids) ||
+              matchesPartnerIds(loan.broker_ids) ||
+              matchesPartnerContact(loan.loan_contacts?.broker)
+            );
+            
+            contactRelatedApplications = (allApplications || []).filter((app) =>
+              matchesPartnerIds(app.referrer_ids) ||
+              matchesPartnerIds(app.liaison_ids) ||
+              matchesPartnerIds(app.broker_ids) ||
+              matchesPartnerContact(app.referral_broker) ||
+              matchesPartnerContact(app.loan_contacts?.broker)
+            );
+          } catch (err) {
+            console.error('Error loading related data for partner:', err);
           }
           break;
           
@@ -1216,7 +1260,7 @@ export default function ContactDetail() {
                 <CardContent className="p-0">
                   <Tabs defaultValue="loans" className="w-full">
                     <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
-                      {(contactType === 'borrower' || contactType === 'entity') && (
+                      {(contactType === 'borrower' || contactType === 'entity' || contactType === 'partner') && (
                         <TabsTrigger 
                           value="loans" 
                           className="rounded-none border-b-2 border-transparent data-[state=active]:border-slate-500 data-[state=active]:bg-transparent"
@@ -1224,7 +1268,7 @@ export default function ContactDetail() {
                           Related Loans ({relatedLoans.length})
                         </TabsTrigger>
                       )}
-                      {(contactType === 'borrower' || contactType === 'entity') && (
+                      {(contactType === 'borrower' || contactType === 'entity' || contactType === 'partner') && (
                         <TabsTrigger 
                           value="applications"
                           className="rounded-none border-b-2 border-transparent data-[state=active]:border-slate-500 data-[state=active]:bg-transparent"
@@ -1240,7 +1284,7 @@ export default function ContactDetail() {
                       </TabsTrigger>
                     </TabsList>
 
-                    {(contactType === 'borrower' || contactType === 'entity') && (
+                    {(contactType === 'borrower' || contactType === 'entity' || contactType === 'partner') && (
                       <TabsContent value="loans" className="p-4">
                         {relatedLoans.length > 0 ? (
                           <div className="space-y-1.5">
@@ -1277,7 +1321,7 @@ export default function ContactDetail() {
                       </TabsContent>
                     )}
 
-                    {(contactType === 'borrower' || contactType === 'entity') && (
+                    {(contactType === 'borrower' || contactType === 'entity' || contactType === 'partner') && (
                       <TabsContent value="applications" className="p-4">
                         {relatedApplications.length > 0 ? (
                           <div className="space-y-1.5">
@@ -1544,14 +1588,20 @@ export default function ContactDetail() {
                           return;
                         }
 
+                        const isBroker = currentUser?.app_role === 'Broker';
                         await base44.functions.invoke('emailService', {
-                          email_type: contactType === 'partner' ? 'invite_loan_partner' : 'invite_borrower',
+                          email_type: contactType === 'partner'
+                            ? 'invite_loan_partner'
+                            : (isBroker ? 'invite_borrower_broker' : 'invite_borrower'),
                           recipient_email: contact.email,
                           recipient_name: `${firstName} ${lastName}`,
                           data: {
                             first_name: firstName,
                             last_name: lastName,
-                            ...(contactType === 'partner' && { partner_type: normalizeAppRole(contact.app_role || contact.type) })
+                            ...(contactType === 'partner' && { partner_type: normalizeAppRole(contact.app_role || contact.type) }),
+                            ...(contactType !== 'partner' && isBroker
+                              ? { broker_name: currentUser?.full_name || `${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'Your broker' }
+                              : {})
                           }
                         });
 

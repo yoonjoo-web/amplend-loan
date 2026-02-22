@@ -54,6 +54,21 @@ Deno.serve(async (req) => {
       console.error('Error resolving borrower contact id:', error);
     }
 
+    let loanPartnerIds: string[] = [];
+    try {
+      const partnersByUserId = await base44.asServiceRole.entities.LoanPartner.filter({ user_id: user.id });
+      if (partnersByUserId && partnersByUserId.length > 0) {
+        loanPartnerIds = partnersByUserId.map((partner) => partner?.id).filter(Boolean);
+      } else if (user.email) {
+        const partnersByEmail = await base44.asServiceRole.entities.LoanPartner.filter({ email: user.email });
+        if (partnersByEmail && partnersByEmail.length > 0) {
+          loanPartnerIds = partnersByEmail.map((partner) => partner?.id).filter(Boolean);
+        }
+      }
+    } catch (error) {
+      console.error('Error resolving loan partner ids:', error);
+    }
+
     const isPrimaryBorrower = application.primary_borrower_id === user.id || application.primary_borrower_id === borrowerContactId;
     const createdById = typeof application.created_by === 'object'
       ? application.created_by?.id
@@ -81,7 +96,8 @@ Deno.serve(async (req) => {
       isCreator ||
       isUserOnApplicationTeam(application as Record<string, unknown>, {
         id: user.id,
-        email: user.email
+        email: user.email,
+        partnerIds: loanPartnerIds
       });
 
     if (!hasAccess) {

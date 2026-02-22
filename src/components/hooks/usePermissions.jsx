@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { normalizeAppRole } from '@/components/utils/appRoles';
 import { getBorrowerAccessIds } from '@/components/utils/borrowerAccess';
+import { getLoanPartnerAccessIds } from '@/components/utils/loanPartnerAccess';
 
 const defaultPermissions = {
   // Role identification
@@ -67,6 +68,7 @@ const defaultPermissions = {
   canViewDashboard: false,
   canViewMyBorrowers: false,
   borrowerAccessIds: [],
+  loanPartnerAccessIds: [],
 };
 
 export const usePermissions = () => {
@@ -226,6 +228,8 @@ export const usePermissions = () => {
         } else {
           p.borrowerAccessIds = [user.id].filter(Boolean);
         }
+
+        p.loanPartnerAccessIds = await getLoanPartnerAccessIds(base44, user);
 
         if (normalizedRole === 'Borrower') {
           try {

@@ -280,7 +280,7 @@ export default function Onboarding() {
           <CardContent className="p-10 text-center space-y-3">
             <h2 className="text-2xl font-bold text-slate-900">This Page Is No Longer Available</h2>
             <p className="text-slate-600">
-              This onboarding link is inactive or has expired. Please contact your broker or the Amplend team for help.
+              This onboarding link is inactive or has expired.
             </p>
             <Button onClick={() => window.location.href = createPageUrl('Dashboard')}>
               Go to Dashboard

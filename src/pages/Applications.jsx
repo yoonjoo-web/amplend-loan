@@ -124,14 +124,18 @@ export default function Applications() {
       let filteredApps = allApps;
       if (permissions.isBorrower) {
         const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
-        filteredApps = allApps.filter((app) =>
-        borrowerAccessIds.includes(app.primary_borrower_id) ||
-        app.co_borrowers && app.co_borrowers.some((cb) =>
-          borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
-        )
-        );
+        if (permissions.isBorrowerLiaison) {
+          filteredApps = allApps.filter((app) => isUserOnApplicationTeam(app, currentUser, permissions));
+        } else {
+          filteredApps = allApps.filter((app) =>
+            borrowerAccessIds.includes(app.primary_borrower_id) ||
+            app.co_borrowers && app.co_borrowers.some((cb) =>
+              borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+            )
+          );
+        }
       } else if (permissions.isLoanPartner) {
-        filteredApps = allApps.filter((app) => isUserOnApplicationTeam(app, currentUser));
+        filteredApps = allApps.filter((app) => isUserOnApplicationTeam(app, currentUser, permissions));
       }
 
       setApplications(filteredApps);
@@ -171,15 +175,21 @@ export default function Applications() {
         }
       } else if (permissions.isBorrower) {
         // For borrowers, check if they're the primary borrower or a co-borrower
-        const isPrimaryBorrower = borrowerAccessIds.includes(app.primary_borrower_id);
-        const isCoBorrower = app.co_borrowers && app.co_borrowers.some((cb) =>
-          borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
-        );
-        if (!isPrimaryBorrower && !isCoBorrower) {
-          return false;
+        if (permissions.isBorrowerLiaison) {
+          if (!isUserOnApplicationTeam(app, currentUser, permissions)) {
+            return false;
+          }
+        } else {
+          const isPrimaryBorrower = borrowerAccessIds.includes(app.primary_borrower_id);
+          const isCoBorrower = app.co_borrowers && app.co_borrowers.some((cb) =>
+            borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+          );
+          if (!isPrimaryBorrower && !isCoBorrower) {
+            return false;
+          }
         }
       } else if (permissions.isLoanPartner) {
-        if (!isUserOnApplicationTeam(app, currentUser)) {
+        if (!isUserOnApplicationTeam(app, currentUser, permissions)) {
           return false;
         }
       }
@@ -238,7 +248,13 @@ export default function Applications() {
         applicationData.primary_borrower_id = currentUser.id;
       }
 
-      const newApp = await base44.entities.LoanApplication.create(applicationData);
+      const response = await base44.functions.invoke('createLoanApplication', {
+        application_data: applicationData
+      });
+      const newApp = response?.data?.application || response?.application;
+      if (!newApp?.id) {
+        throw new Error('Failed to create application.');
+      }
       navigate(createPageUrl("NewApplication") + `?id=${newApp.id}`);
     } catch (error) {
       console.error('Error creating application:', error);
