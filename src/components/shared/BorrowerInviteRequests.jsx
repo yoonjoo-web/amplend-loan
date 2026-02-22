@@ -55,6 +55,8 @@ export default function BorrowerInviteRequests({
     return requests.slice(0, limit);
   }, [requests, limit]);
 
+  const REJECTABLE_STATUSES = new Set(["pending", "sent"]);
+
   const handleReject = async (request) => {
     if (!request?.id || isRejecting) return;
     setIsRejecting(request.id);
@@ -107,6 +109,7 @@ export default function BorrowerInviteRequests({
               const status = (req.status || "pending").toLowerCase();
               const badgeClass = STATUS_COLORS[status] || "bg-slate-100 text-slate-700 border-slate-200";
               const displayName = `${req.requested_first_name || ""} ${req.requested_last_name || ""}`.trim() || req.requested_email;
+              const canReject = showReject && REJECTABLE_STATUSES.has(status);
               return (
                 <div key={req.id} className="border rounded-lg p-3 flex items-center justify-between">
                   <div>
@@ -118,7 +121,7 @@ export default function BorrowerInviteRequests({
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
-                    {showReject && status === "pending" && (
+                    {canReject && (
                       <Button
                         variant="outline"
                         size="sm"
