@@ -1593,6 +1593,7 @@ export default function ContactDetail() {
                           email_type: contactType === 'partner'
                             ? 'invite_loan_partner'
                             : (isBroker ? 'invite_borrower_broker' : 'invite_borrower'),
+                          skip_invite_log: true,
                           recipient_email: contact.email,
                           recipient_name: `${firstName} ${lastName}`,
                           data: {
@@ -1609,6 +1610,28 @@ export default function ContactDetail() {
                           title: "Invitation Sent",
                           description: `An invitation email has been sent to ${contact.email}`,
                         });
+
+                        try {
+                          await base44.entities.BorrowerInviteRequest.create({
+                            source: 'log',
+                            status: 'sent',
+                            invite_type: contactType === 'partner'
+                              ? 'invite_loan_partner'
+                              : (isBroker ? 'invite_borrower_broker' : 'invite_borrower'),
+                            recipient_role: contactType === 'partner'
+                              ? normalizeAppRole(contact.app_role || contact.type) || ''
+                              : 'Borrower',
+                            requested_email: contact.email,
+                            requested_first_name: firstName,
+                            requested_last_name: lastName,
+                            requested_by_user_id: currentUser?.id || null,
+                            requested_by_role: currentUser?.app_role || currentUser?.role || 'Unknown',
+                            requested_by_name: currentUser?.full_name || currentUser?.email || '',
+                            sent_at: new Date().toISOString()
+                          });
+                        } catch (logError) {
+                          console.error('Error logging invitation:', logError);
+                        }
 
                         if (contactType === 'borrower') {
                           const detectedFields = resolveBorrowerInviteFields(contact);
