@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+
 const resolveBorrowerAccessIds = async (base44, user) => {
   if (!user) return [];
   let borrowerId = null;
