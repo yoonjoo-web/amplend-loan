@@ -103,7 +103,6 @@ const InviteTable = ({ rows, emptyLabel }) => {
             <TableHead>Email</TableHead>
             <TableHead>Sent By</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Type</TableHead>
             <TableHead>Sent On</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
@@ -121,7 +120,6 @@ const InviteTable = ({ rows, emptyLabel }) => {
                 <TableCell className="text-slate-600">{request.requested_email || "No email"}</TableCell>
                 <TableCell className="text-slate-600">{getRequesterName(request)}</TableCell>
                 <TableCell className="text-slate-600">{getRequesterRole(request)}</TableCell>
-                <TableCell className="text-slate-500">{getInviteTypeLabel(request)}</TableCell>
                 <TableCell className="text-slate-500">{getSentAtLabel(request.created_date)}</TableCell>
                 <TableCell>
                   <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
