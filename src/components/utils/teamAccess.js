@@ -30,6 +30,10 @@ export const isUserOnApplicationTeam = (application, user, access = {}) => {
   if (!application || !user) return false;
   const userId = user.id;
   if (!userId) return false;
+  const createdById = typeof application.created_by === 'object'
+    ? application.created_by?.id
+    : application.created_by;
+  if (createdById && createdById === userId) return true;
   const partnerIds = Array.isArray(access.loanPartnerAccessIds) ? access.loanPartnerAccessIds : [];
 
   const matchesIdList = (ids) => {

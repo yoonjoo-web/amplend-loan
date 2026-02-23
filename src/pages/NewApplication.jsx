@@ -932,11 +932,14 @@ export default function NewApplication() {
   };
 
   const handleBackNavigation = () => {
-    if (hasUnsavedChanges && !isReadOnly) {
-      setSaveExitDialogOpen(true);
-    } else {
+    if (isReadOnly) {
       navigate(createPageUrl("Applications"));
+      return;
     }
+    (async () => {
+      await saveProgress();
+      navigate(createPageUrl("Applications"));
+    })();
   };
 
   const handleSaveAndExit = async () => {
