@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-
 const resolveBorrowerAccessIds = async (base44, user) => {
   if (!user) return [];
   let borrowerId = null;
@@ -26,15 +25,11 @@ const resolveLoanPartnerAccessIds = async (base44, user) => {
   try {
     const byUserId = await base44.asServiceRole.entities.LoanPartner.filter({ user_id: user.id });
     if (byUserId && byUserId.length > 0) {
-      partnerIds = byUserId
-        .flatMap((partner) => [partner.id, partner.user_id])
-        .filter(Boolean);
+      partnerIds = byUserId.map((partner) => partner.id).filter(Boolean);
     } else if (user.email) {
       const byEmail = await base44.asServiceRole.entities.LoanPartner.filter({ email: user.email });
       if (byEmail && byEmail.length > 0) {
-        partnerIds = byEmail
-          .flatMap((partner) => [partner.id, partner.user_id])
-          .filter(Boolean);
+        partnerIds = byEmail.map((partner) => partner.id).filter(Boolean);
       }
     }
   } catch (error) {
