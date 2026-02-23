@@ -148,14 +148,17 @@ export default function Layout({ children, currentPageName }) {
         {
           title: "Borrowers",
           url: createPageUrl("Contacts") + "?tab=borrowers",
+          icon: UserRound,
         },
         {
           title: "Loan Partners",
           url: createPageUrl("Contacts") + "?tab=partners",
+          icon: Handshake,
         },
         {
           title: "Entities",
           url: createPageUrl("Contacts") + "?tab=entities",
+          icon: Building2,
         }
       ]
     },
