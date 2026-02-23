@@ -68,11 +68,14 @@ Deno.serve(async (req) => {
     const filtered = (applications || []).filter((app) => {
       if (!app) return false;
       const createdById = typeof app.created_by === 'object' ? app.created_by?.id : app.created_by;
-      if (createdById && createdById === userId) return true;
-      if (borrowerAccessIds.includes(app.primary_borrower_id)) return true;
-      if (Array.isArray(app.co_borrowers) && app.co_borrowers.some((cb) =>
-        borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
-      )) return true;
+      const isCreator = Boolean(createdById && createdById === userId);
+      const isPrimaryBorrower = Boolean(borrowerAccessIds.includes(app.primary_borrower_id));
+      const isCoBorrower = Boolean(
+        Array.isArray(app.co_borrowers) && app.co_borrowers.some((cb) =>
+          borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
+        )
+      );
+      if (isCreator || isPrimaryBorrower || isCoBorrower) return true;
 
       const matchesIdList = (ids) => {
         if (!Array.isArray(ids)) return false;
@@ -80,15 +83,43 @@ Deno.serve(async (req) => {
         return loanPartnerAccessIds.some((partnerId) => ids.includes(partnerId));
       };
 
-      if (matchesIdList(app.referrer_ids)) return true;
-      if (matchesIdList(app.liaison_ids)) return true;
-      if (matchesIdList(app.broker_ids)) return true;
+      const matchesReferrerIds = matchesIdList(app.referrer_ids);
+      const matchesLiaisonIds = matchesIdList(app.liaison_ids);
+      const matchesBrokerIds = matchesIdList(app.broker_ids);
+      if (matchesReferrerIds || matchesLiaisonIds || matchesBrokerIds) return true;
 
-      if (matchesContact(app.referral_broker, user, loanPartnerAccessIds)) return true;
-      if (matchesContact(app.loan_contacts?.broker, user, loanPartnerAccessIds)) return true;
+      const matchesReferralBroker = matchesContact(app.referral_broker, user, loanPartnerAccessIds);
+      const matchesLoanBroker = matchesContact(app.loan_contacts?.broker, user, loanPartnerAccessIds);
+      if (matchesReferralBroker || matchesLoanBroker) return true;
 
       return false;
     });
+
+    try {
+      const sampleApps = (applications || []).slice(0, 5).map((app) => ({
+        id: app?.id,
+        application_number: app?.application_number,
+        created_by: app?.created_by,
+        primary_borrower_id: app?.primary_borrower_id,
+        co_borrowers: app?.co_borrowers,
+        broker_ids: app?.broker_ids,
+        referrer_ids: app?.referrer_ids,
+        liaison_ids: app?.liaison_ids,
+        referral_broker: app?.referral_broker,
+        loan_contacts: app?.loan_contacts
+      }));
+      console.log('[getMyApplications] user:', {
+        id: userId,
+        email: user.email,
+        borrowerAccessIds,
+        loanPartnerAccessIds
+      });
+      console.log('[getMyApplications] total apps:', applications?.length || 0);
+      console.log('[getMyApplications] filtered apps:', filtered.length);
+      console.log('[getMyApplications] sample apps:', sampleApps);
+    } catch (logError) {
+      console.error('[getMyApplications] log error:', logError);
+    }
 
     return Response.json({ applications: filtered });
   } catch (error) {
