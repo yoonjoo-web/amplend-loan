@@ -226,97 +226,116 @@ export default function Layout({ children, currentPageName }) {
                 </Button>
               </div>
 
-              <div className={`flex-1 overflow-y-auto ${sidebarCollapsed ? 'py-2' : 'p-2'}`}>
-                <div className={`space-y-1 ${sidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
+              <div className={`flex-1 overflow-y-auto ${sidebarCollapsed ? 'py-2' : 'p-2'} relative`}>
+                {/* Top-level nav */}
+                <div
+                  className={`space-y-1 ${sidebarCollapsed ? 'flex flex-col items-center' : ''} transition-transform duration-300 ${activeSubmenu && !sidebarCollapsed ? '-translate-x-full absolute inset-0 p-2' : 'translate-x-0'}`}
+                >
                   {filteredNavItems.map((item) => (
                     <React.Fragment key={item.title}>
                       {item.submenu ? (
-                        <div
-                          onMouseEnter={() => !sidebarCollapsed && setHoveredMenu(item.title)}
-                          onMouseLeave={() => setHoveredMenu(null)}
-                        >
-                          {sidebarCollapsed ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <a
-                                  href={item.url + "?tab=all"}
-                                  className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                                >
-                                  <item.icon className="w-5 h-5" />
-                                </a>
-                              </TooltipTrigger>
-                              <TooltipContent side="right">
-                                <p>{item.title}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <>
+                        sidebarCollapsed ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <a
                                 href={item.url + "?tab=all"}
-                                className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                                className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
                               >
-                                <div className="flex items-center gap-3">
-                                  <item.icon className="w-5 h-5" />
-                                  <span>{item.title}</span>
-                                </div>
-                                <ChevronRight className={`w-4 h-4 transition-transform ${hoveredMenu === item.title ? 'rotate-90' : ''}`} />
+                                <item.icon className="w-5 h-5" />
                               </a>
-                              {hoveredMenu === item.title && (
-                                <div className="ml-6 mt-1 space-y-1">
-                                  {item.submenu.map((subitem) => (
-                                    <a
-                                      key={subitem.title}
-                                      href={subitem.url}
-                                      className={`block px-4 py-2 rounded-xl text-sm hover:bg-slate-100 transition-colors ${
-                                        location.pathname === new URL(subitem.url, window.location.origin).pathname && location.search === new URL(subitem.url, window.location.origin).search
-                                          ? 'bg-slate-100 text-slate-900'
-                                          : 'text-slate-600 hover:text-slate-900'
-                                      }`}
-                                    >
-                                      {subitem.title}
-                                    </a>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <button
+                            onClick={() => setActiveSubmenu(item)}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon className="w-5 h-5" />
+                              <span>{item.title}</span>
+                            </div>
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        )
                       ) : (
                         sidebarCollapsed ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <a
-                                    href={item.url}
-                                    className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
-                                      location.pathname === new URL(item.url, window.location.origin).pathname
-                                        ? 'bg-slate-700 text-white shadow-lg'
-                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                                    }`}
-                                  >
-                                    <item.icon className="w-5 h-5" />
-                                  </a>
-                                </TooltipTrigger>
-                                <TooltipContent side="right">
-                                  <p>{item.title}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <a
                                 href={item.url}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${
+                                className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
                                   location.pathname === new URL(item.url, window.location.origin).pathname
                                     ? 'bg-slate-700 text-white shadow-lg'
                                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                 }`}
                               >
                                 <item.icon className="w-5 h-5" />
-                                <span>{item.title}</span>
                               </a>
-                            )
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <a
+                            href={item.url}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${
+                              location.pathname === new URL(item.url, window.location.origin).pathname
+                                ? 'bg-slate-700 text-white shadow-lg'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                          >
+                            <item.icon className="w-5 h-5" />
+                            <span>{item.title}</span>
+                          </a>
+                        )
                       )}
                     </React.Fragment>
                   ))}
                 </div>
+
+                {/* Drill-down submenu panel */}
+                {!sidebarCollapsed && (
+                  <div
+                    className={`transition-transform duration-300 ${activeSubmenu ? 'translate-x-0' : 'translate-x-full absolute inset-0 p-2'} p-2 space-y-1`}
+                  >
+                    {/* Back button */}
+                    <button
+                      onClick={() => setActiveSubmenu(null)}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm font-medium mb-2"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span>Back</span>
+                    </button>
+
+                    {/* Section title */}
+                    {activeSubmenu && (
+                      <>
+                        <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                          {activeSubmenu.icon && <activeSubmenu.icon className="w-4 h-4" />}
+                          <span>{activeSubmenu.title}</span>
+                        </div>
+                        <div className="h-px bg-slate-100 mb-1" />
+                        {activeSubmenu.submenu.map((subitem) => (
+                          <a
+                            key={subitem.title}
+                            href={subitem.url}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors font-medium ${
+                              location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?',''))
+                                ? 'bg-slate-700 text-white shadow-lg'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                          >
+                            {subitem.title}
+                          </a>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
