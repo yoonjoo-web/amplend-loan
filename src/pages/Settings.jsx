@@ -16,9 +16,9 @@ import UserTable from '../components/settings/UserTable';
 import EditUserModal from '../components/settings/EditUserModal';
 import FieldsManagementTab from "../components/settings/FieldsManagementTab";
 import ChecklistManagementTab from "../components/settings/ChecklistManagementTab";
+import ManageInvitesTab from "../components/settings/ManageInvitesTab";
 import { createPageUrl } from "@/utils";
 import ProductTour from "../components/shared/ProductTour";
-import BorrowerInviteRequests from "../components/shared/BorrowerInviteRequests";
 
 export default function Settings() {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
@@ -218,6 +218,19 @@ export default function Settings() {
               Notifications
             </button>
           )}
+          {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+            <button
+              onClick={() => setActiveTab('invites')}
+              className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'invites'
+                  ? 'text-slate-900 border-b-2 border-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Mail className="w-4 h-4 inline mr-2" />
+              Manage Invites
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('tour')}
             className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
@@ -324,6 +337,11 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Manage Invites Tab */}
+        {activeTab === 'invites' && (permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+          <ManageInvitesTab currentUser={currentUser} />
         )}
 
         {/* Product Tour Tab */}

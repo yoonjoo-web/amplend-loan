@@ -33,7 +33,6 @@ import LoanPartnerForm from "../components/loan-partners/LoanPartnerForm";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import ProductTour from "../components/shared/ProductTour";
-import BorrowerInviteRequests from "@/components/shared/BorrowerInviteRequests";
 import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 
 export default function Contacts() {
@@ -83,8 +82,6 @@ export default function Contacts() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPartnerRoleModal, setShowPartnerRoleModal] = useState(false);
   const [selectedPartnerRole, setSelectedPartnerRole] = useState('');
-  const showBorrowerInvitesTab = permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer;
-  const [showBorrowerInvitesModal, setShowBorrowerInvitesModal] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -544,14 +541,6 @@ export default function Contacts() {
               >
                 <Columns3 className="w-4 h-4" />
               </Button>
-              {showBorrowerInvitesTab && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBorrowerInvitesModal(true)}
-                >
-                  Borrower Invites
-                </Button>
-              )}
               {permissions.canManageContacts && (
                 <Button data-tour="add-contact" onClick={handleAddNew} className="bg-slate-900 hover:bg-slate-800 text-white shadow-lg">
                   <Plus className="w-4 h-4 mr-2" />
@@ -706,23 +695,6 @@ export default function Contacts() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showBorrowerInvitesModal} onOpenChange={setShowBorrowerInvitesModal}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Broker Borrower Invite Requests</DialogTitle>
-            <DialogDescription>
-              Review and reject broker-submitted borrower invite requests.
-            </DialogDescription>
-          </DialogHeader>
-          <BorrowerInviteRequests
-            currentUser={currentUser}
-            scope="admin"
-            showReject
-            title="Broker Borrower Invite Requests"
-            description="Review and reject broker-submitted borrower invite requests."
-          />
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
