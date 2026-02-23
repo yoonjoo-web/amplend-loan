@@ -84,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
     const saved = localStorage.getItem('sidebar_collapsed');
     return saved === 'true';
   });
-  const [hoveredMenu, setHoveredMenu] = useState(null);
+  const [activeSubmenu, setActiveSubmenu] = useState(null); // holds the nav item with submenu
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
   useEffect(() => {
