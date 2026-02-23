@@ -232,10 +232,10 @@ export default function Layout({ children, currentPageName }) {
                 </Button>
               </div>
 
-              <div className={`flex-1 overflow-y-auto ${sidebarCollapsed ? 'py-2' : 'p-2'} relative`}>
+              <div className={`flex-1 overflow-hidden ${sidebarCollapsed ? 'py-2' : ''} relative`}>
                 {/* Top-level nav */}
                 <div
-                  className={`space-y-1 ${sidebarCollapsed ? 'flex flex-col items-center' : ''} transition-transform duration-300 ${activeSubmenu && !sidebarCollapsed ? '-translate-x-full absolute inset-0 p-2' : 'translate-x-0'}`}
+                  className={`space-y-1 p-2 ${sidebarCollapsed ? 'flex flex-col items-center' : ''} transition-transform duration-300 absolute inset-0 overflow-y-auto ${activeSubmenu && !sidebarCollapsed ? '-translate-x-full pointer-events-none' : 'translate-x-0'}`}
                 >
                   {filteredNavItems.map((item) => (
                     <React.Fragment key={item.title}>
