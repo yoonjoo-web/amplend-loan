@@ -327,15 +327,16 @@ export default function Layout({ children, currentPageName }) {
                         <div className="h-px bg-slate-100 mb-1" />
                         {activeSubmenu.submenu.map((subitem) => (
                           <a
-                            key={subitem.title}
-                            href={subitem.url}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors font-medium ${
-                              location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?',''))
-                                ? 'bg-slate-700 text-white shadow-lg'
-                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                            }`}
+                           key={subitem.title}
+                           href={subitem.url}
+                           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors font-medium ${
+                             location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?',''))
+                               ? 'bg-slate-700 text-white shadow-lg'
+                               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                           }`}
                           >
-                            {subitem.title}
+                           {subitem.icon && <subitem.icon className="w-4 h-4 flex-shrink-0" />}
+                           {subitem.title}
                           </a>
                         ))}
                       </>
