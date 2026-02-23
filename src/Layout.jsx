@@ -306,7 +306,7 @@ export default function Layout({ children, currentPageName }) {
                 {/* Drill-down submenu panel */}
                 {!sidebarCollapsed && (
                   <div
-                    className={`transition-transform duration-300 ${activeSubmenu ? 'translate-x-0' : 'translate-x-full absolute inset-0 p-2'} p-2 space-y-1`}
+                    className={`transition-transform duration-300 absolute inset-0 p-2 space-y-1 overflow-y-auto ${activeSubmenu ? 'translate-x-0' : 'translate-x-full pointer-events-none'}`}
                   >
                     {/* Back button */}
                     <button
