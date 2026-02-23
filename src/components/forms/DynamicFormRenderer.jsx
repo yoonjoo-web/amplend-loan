@@ -25,7 +25,8 @@ export default function DynamicFormRenderer({
   showTabs = true,
   currentUser = null,
   profileType = null,
-  profileId = null
+  profileId = null,
+  enableProfileOverrides = true
 }) {
   const [fieldConfigs, setFieldConfigs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -180,7 +181,9 @@ export default function DynamicFormRenderer({
     const isBorrowerEditingOwnApp = currentUser && currentUser.app_role === 'Borrower';
     
     // Check if this is an inherited field from a profile
-    const inheritedFields = profileType && profileId ? getInheritedFieldsForProfile(profileType) : [];
+    const inheritedFields = enableProfileOverrides && profileType && profileId
+      ? getInheritedFieldsForProfile(profileType)
+      : [];
     const isInheritedField = inheritedFields.includes(fieldName);
     const overriddenFields = data.overridden_fields || [];
     const isAlreadyOverridden = overriddenFields.includes(fieldName);
@@ -598,7 +601,7 @@ export default function DynamicFormRenderer({
                            canManage={canManage}
                            applicationStatus={applicationStatus}
                            overriddenFields={data.overridden_fields || []}
-                           showOverrideControl={profileId && profileType && getInheritedFieldsForProfile(profileType).includes(fieldConfig.field_name)}
+                           showOverrideControl={enableProfileOverrides && profileId && profileType && getInheritedFieldsForProfile(profileType).includes(fieldConfig.field_name)}
                            profileType={profileType}
                            profileId={profileId}
                          />

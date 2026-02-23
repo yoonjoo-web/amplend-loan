@@ -36,6 +36,11 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     email: ''
   });
   const { toast } = useToast();
+  const canUseProfileOverrides = currentUser && (
+    currentUser.role === 'admin' ||
+    currentUser.app_role === 'Administrator' ||
+    currentUser.app_role === 'Loan Officer'
+  );
 
   useEffect(() => {
     const initializeBorrowerData = async () => {
@@ -395,6 +400,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         currentUser={currentUser}
         profileType="borrower"
         profileId={applicationData.primary_borrower_id}
+        enableProfileOverrides={canUseProfileOverrides}
         onAddComment={applicationData.onAddComment}
         fieldComments={applicationData.fieldComments || applicationData.field_comments}
         canManage={applicationData.canManage}

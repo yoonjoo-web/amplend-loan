@@ -214,7 +214,10 @@ export default function NewApplication() {
       try {
         if (permissions.isLoanOfficer || permissions.isAdministrator || permissions.isPlatformAdmin) {
           const usersResponse = await base44.functions.invoke('getAllUsers');
-          allUsers = usersResponse.data.users || [];
+          allUsers = usersResponse?.data?.users || [];
+        } else if (permissions.isBroker) {
+          const officersResponse = await base44.functions.invoke('getLoanOfficers');
+          allUsers = officersResponse?.data?.users || [];
         } else {
           allUsers = await User.list();
         }
@@ -1206,7 +1209,7 @@ export default function NewApplication() {
                               }
                               const officer = allLoanOfficers.find(u => u.id === formData.assigned_loan_officer_id);
                               if (!officer) {
-                                return 'Loading...';
+                                return isLoading ? 'Loading...' : 'Loan Officer';
                               }
                               return officer.first_name && officer.last_name 
                                 ? `${officer.first_name} ${officer.last_name}`
