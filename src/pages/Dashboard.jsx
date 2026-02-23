@@ -481,7 +481,9 @@ export default function Dashboard() {
         {/* Borrower Invite Requests */}
 
         {/* My Borrowers Summary */}
-        {myBorrowersSummary && myBorrowersSummary.role !== 'Broker' && (
+        {myBorrowersSummary &&
+          myBorrowersSummary.role !== 'Broker' &&
+          myBorrowersSummary.role !== 'Referral Partner' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
