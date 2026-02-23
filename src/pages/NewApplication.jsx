@@ -301,7 +301,6 @@ export default function NewApplication() {
       } else {
         setCurrentStep(initialVisibleSteps[0]?.id || 1);
       }
-      setHasUnsavedChanges(false);
     } catch (error) {
       console.error("Failed to load application:", error);
       // This catch is for unexpected errors not handled above
@@ -787,7 +786,6 @@ export default function NewApplication() {
       });
 
       await LoanApplication.update(formData.id, finalData);
-      setHasUnsavedChanges(false);
       
       try {
         const { borrowerFullName } = getBorrowerNames();
