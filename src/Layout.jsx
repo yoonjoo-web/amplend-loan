@@ -13,7 +13,10 @@ import {
   Briefcase,
   MessageSquare,
   UserCircle,
-  UserCheck
+  UserCheck,
+  UserRound,
+  Handshake,
+  Building2
 } from "lucide-react";
 import {
   SidebarProvider,
