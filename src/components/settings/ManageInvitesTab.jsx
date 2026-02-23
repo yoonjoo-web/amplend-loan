@@ -30,6 +30,12 @@ const SENDER_FILTERS = [
   { value: "broker", label: "Broker" },
 ];
 
+const STATUS_FILTERS = [
+  { value: "active", label: "Active invites" },
+  { value: "past", label: "Past invites" },
+  { value: "all", label: "All invites" }
+];
+
 const getSentAtLabel = (value) => {
   if (!value) return "N/A";
   const date = new Date(value);
@@ -134,6 +140,8 @@ export default function ManageInvitesTab({ currentUser }) {
   const [isLoading, setIsLoading] = useState(true);
   const [senderFilter, setSenderFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("30");
+  const [statusFilter, setStatusFilter] = useState("active");
+  const [page, setPage] = useState(1);
 
   const normalizeEmail = (email) => (email || "").trim().toLowerCase();
 
@@ -258,37 +266,27 @@ export default function ManageInvitesTab({ currentUser }) {
       .filter((request) => matchesDateFilter(request, dateFilter));
   }, [requests, senderFilter, dateFilter]);
 
-  const splitRequests = useMemo(() => {
-    const active = [];
-    const past = [];
-    normalizedRequests.forEach((request) => {
+  const filteredRequests = useMemo(() => {
+    const filtered = normalizedRequests.filter((request) => {
+      if (statusFilter === "all") return true;
       const onboarded = request._onboarded === true;
       const rejected = request.status === "rejected";
-      if (onboarded || rejected) {
-        past.push(request);
-      } else {
-        active.push(request);
-      }
+      const isPast = onboarded || rejected;
+      return statusFilter === "past" ? isPast : !isPast;
     });
-    return { active, past };
-  }, [normalizedRequests]);
+    return filtered;
+  }, [normalizedRequests, statusFilter]);
 
-  const activeInternalRequests = useMemo(
-    () => splitRequests.active.filter((request) => isInternalRequest(request)),
-    [splitRequests]
-  );
-  const activeBrokerRequests = useMemo(
-    () => splitRequests.active.filter((request) => !isInternalRequest(request)),
-    [splitRequests]
-  );
-  const pastInternalRequests = useMemo(
-    () => splitRequests.past.filter((request) => isInternalRequest(request)),
-    [splitRequests]
-  );
-  const pastBrokerRequests = useMemo(
-    () => splitRequests.past.filter((request) => !isInternalRequest(request)),
-    [splitRequests]
-  );
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (page - 1) * 10;
+    return filteredRequests.slice(startIndex, startIndex + 10);
+  }, [filteredRequests, page]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / 10));
+
+  useEffect(() => {
+    setPage(1);
+  }, [senderFilter, dateFilter, statusFilter]);
 
   return (
     <Card className="border-0 shadow-sm">
@@ -329,43 +327,52 @@ export default function ManageInvitesTab({ currentUser }) {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-full md:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_FILTERS.map((filter) => (
+                    <SelectItem key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
         {isLoading ? (
           <div className="text-sm text-slate-500">Loading invite requests...</div>
         ) : (
-          <div className="space-y-10">
-            <div className="space-y-3">
+          <div className="space-y-4">
+            <InviteTable rows={paginatedRequests} emptyLabel="No invites found for this filter." />
+            <div className="flex items-center justify-between text-sm text-slate-500">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Active Invites: Admin / Loan Officer</h3>
-                <p className="text-sm text-slate-500">Pending invites sent by internal team members.</p>
+                Showing {paginatedRequests.length ? (page - 1) * 10 + 1 : 0}-
+                {(page - 1) * 10 + paginatedRequests.length} of {filteredRequests.length}
               </div>
-              <InviteTable rows={activeInternalRequests} emptyLabel="No active internal invites found for this filter." />
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900">Active Invites: Broker</h3>
-                <p className="text-sm text-slate-500">Pending invites initiated by brokers.</p>
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-3 py-1 border rounded-md text-slate-600 disabled:text-slate-300 disabled:border-slate-200"
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  className="px-3 py-1 border rounded-md text-slate-600 disabled:text-slate-300 disabled:border-slate-200"
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </button>
               </div>
-              <InviteTable rows={activeBrokerRequests} emptyLabel="No active broker invites found for this filter." />
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900">Past Invites: Admin / Loan Officer</h3>
-                <p className="text-sm text-slate-500">Onboarded or rejected invites.</p>
-              </div>
-              <InviteTable rows={pastInternalRequests} emptyLabel="No past internal invites found for this filter." />
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900">Past Invites: Broker</h3>
-                <p className="text-sm text-slate-500">Onboarded or rejected invites initiated by brokers.</p>
-              </div>
-              <InviteTable rows={pastBrokerRequests} emptyLabel="No past broker invites found for this filter." />
             </div>
           </div>
         )}
