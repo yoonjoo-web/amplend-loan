@@ -479,16 +479,6 @@ export default function Dashboard() {
         )}
 
         {/* Borrower Invite Requests */}
-        {(permissions.isLoanOfficer || permissions.isAdministrator || permissions.isPlatformAdmin) && (
-          <BorrowerInviteRequests
-            currentUser={currentUser}
-            scope="admin"
-            limit={5}
-            showReject
-            title="Broker Invites"
-            description="Review broker-submitted borrower invite requests."
-          />
-        )}
 
         {/* My Borrowers Summary */}
         {myBorrowersSummary && myBorrowersSummary.role !== 'Broker' && (
