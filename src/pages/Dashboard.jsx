@@ -392,6 +392,16 @@ export default function Dashboard() {
       if (permissions.isBorrower) {
         applicationData.primary_borrower_id = currentUser.id;
       }
+      if (permissions.isBroker) {
+        applicationData.broker_ids = [currentUser.id].filter(Boolean);
+        applicationData.referral_broker = {
+          name: [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ').trim() || currentUser.full_name || currentUser.email || 'Broker',
+          email: currentUser.email || null,
+          phone: currentUser.phone || null,
+          user_id: currentUser.id || null
+        };
+        applicationData.referrer_name = applicationData.referral_broker.name;
+      }
 
       const response = await base44.functions.invoke('createLoanApplication', {
         application_data: applicationData
