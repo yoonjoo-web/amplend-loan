@@ -118,7 +118,8 @@ export default function Applications() {
         const response = await base44.functions.invoke('getAllApplications');
         allApps = response.data.applications || [];
       } else {
-        allApps = await base44.entities.LoanApplication.list('-created_date');
+        const response = await base44.functions.invoke('getMyApplications');
+        allApps = response.data.applications || [];
       }
 
       let filteredApps = allApps;

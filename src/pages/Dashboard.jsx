@@ -155,9 +155,13 @@ export default function Dashboard() {
     setLoading(true);
     try {
       // First load loans and applications
+      const applicationsPromise = permissions.canViewAnyApplication
+        ? base44.functions.invoke('getAllApplications').then((res) => res.data.applications || [])
+        : base44.functions.invoke('getMyApplications').then((res) => res.data.applications || []);
+
       const [loansData, applications] = await Promise.all([
         Loan.list('-created_date'),
-        LoanApplication.list('-created_date')
+        applicationsPromise
       ]);
       
       const loans = loansData || [];

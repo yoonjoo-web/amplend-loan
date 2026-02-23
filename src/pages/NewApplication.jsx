@@ -7,16 +7,6 @@ import { ArrowLeft, ArrowRight, Check, Save, Loader2, CheckCircle2 } from "lucid
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
@@ -55,10 +45,9 @@ export default function NewApplication() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSavingOnExit, setIsSavingOnExit] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [saveExitDialogOpen, setSaveExitDialogOpen] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [currentCommentField, setCurrentCommentField] = useState(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
@@ -436,7 +425,6 @@ export default function NewApplication() {
       });
       
       await LoanApplication.update(formData.id, dataToSave);
-      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error saving application:', error);
       toast({
@@ -472,7 +460,6 @@ export default function NewApplication() {
 
   const handleStepDataChange = useCallback((stepData) => {
     if (isReadOnly) return;
-    setHasUnsavedChanges(true);
     setFormData(prev => {
       const newData = { ...prev, ...stepData };
       
@@ -937,15 +924,11 @@ export default function NewApplication() {
       return;
     }
     (async () => {
+      setIsSavingOnExit(true);
       await saveProgress();
+      setIsSavingOnExit(false);
       navigate(createPageUrl("Applications"));
     })();
-  };
-
-  const handleSaveAndExit = async () => {
-    await saveProgress();
-    setSaveExitDialogOpen(false);
-    navigate(createPageUrl("Applications"));
   };
 
   const getApplicationTitle = () => {
@@ -1141,22 +1124,6 @@ export default function NewApplication() {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-        <AlertDialog open={saveExitDialogOpen} onOpenChange={setSaveExitDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>You have unsaved changes!</AlertDialogTitle>
-              <AlertDialogDescription>
-                Would you like to save your draft before exiting?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <Button variant="ghost" onClick={() => navigate(createPageUrl("Applications"))}>Exit Without Saving</Button>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSaveAndExit}>Save & Exit</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
         <div className="max-w-4xl mx-auto space-y-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -1187,9 +1154,19 @@ export default function NewApplication() {
                 variant="outline"
                 onClick={handleBackNavigation}
                 className="flex items-center gap-2"
+                disabled={isSavingOnExit}
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Applications
+                {isSavingOnExit ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Applications
+                  </>
+                )}
               </Button>
             </div>
 
