@@ -46,6 +46,7 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
   const [availableUsers, setAvailableUsers] = useState([]);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [linkedUser, setLinkedUser] = useState(null);
+  const [isInviting, setIsInviting] = useState(false);
 
   // Effect to update formData when the 'partner' prop changes.
   // This ensures the form is correctly populated when editing an existing partner
@@ -156,6 +157,27 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
 
   const handleInviteToPlatform = async () => {
     try {
+      if (!formData.email) {
+        if (toast) {
+          toast({
+            variant: "destructive",
+            title: "Email required",
+            description: "Add an email address before sending an invitation.",
+          });
+        }
+        return;
+      }
+      if (errors.email) {
+        if (toast) {
+          toast({
+            variant: "destructive",
+            title: "Invalid email",
+            description: errors.email,
+          });
+        }
+        return;
+      }
+      setIsInviting(true);
       const name = formData.contact_person || formData.name || '';
       await base44.functions.invoke('emailService', {
         email_type: 'invite_loan_partner',
@@ -167,8 +189,23 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
           partner_type: formData.app_role || fixedRole || ''
         }
       });
+      if (toast) {
+        toast({
+          title: "Invitation sent",
+          description: `Invite sent to ${formData.email}.`,
+        });
+      }
     } catch (error) {
       console.error('Error sending invitation:', error);
+      if (toast) {
+        toast({
+          variant: "destructive",
+          title: "Invitation failed",
+          description: error?.message || "Unable to send the invitation. Please try again.",
+        });
+      }
+    } finally {
+      setIsInviting(false);
     }
   };
 
@@ -296,9 +333,14 @@ export default function LoanPartnerForm({ partner, onSubmit, onCancel, isProcess
                 </PopoverContent>
               </Popover>
 
-              <Button variant="outline" onClick={handleInviteToPlatform}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={handleInviteToPlatform}
+                disabled={isInviting}
+              >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Invite to Platform
+                {isInviting ? 'Sending...' : 'Invite to Platform'}
               </Button>
             </div>
           )}
