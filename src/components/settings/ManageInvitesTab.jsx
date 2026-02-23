@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
-import { Borrower } from "@/entities/all";
+import { Borrower, User } from "@/entities/all";
+import { resolveBorrowerInviteFields } from "@/components/utils/borrowerInvitationFields";
 
 const STATUS_COLORS = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
@@ -39,7 +40,17 @@ const getSentAtLabel = (value) => {
 const getRequesterRole = (request) => {
   const normalized = normalizeAppRole(request?.requested_by_role || "");
   if (normalized) return normalized;
-  return request?.requested_by_role || "Unknown";
+  const rawRole = request?.requested_by_role || "";
+  if (rawRole.toLowerCase() === "admin") return "Administrator";
+  return rawRole || "Unknown";
+};
+
+const getInviteTypeLabel = (request) => {
+  const raw = request?.invite_type || request?.email_type || "invite";
+  return raw
+    .replace(/^invite_/, "")
+    .replace(/^request_/, "request_")
+    .replace(/_/g, " ");
 };
 
 const getRequesterName = (request) => {
@@ -82,10 +93,11 @@ const InviteTable = ({ rows, emptyLabel }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Borrower</TableHead>
+            <TableHead>Invitee</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Sent By</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Sent On</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
@@ -103,6 +115,7 @@ const InviteTable = ({ rows, emptyLabel }) => {
                 <TableCell className="text-slate-600">{request.requested_email || "No email"}</TableCell>
                 <TableCell className="text-slate-600">{getRequesterName(request)}</TableCell>
                 <TableCell className="text-slate-600">{getRequesterRole(request)}</TableCell>
+                <TableCell className="text-slate-500">{getInviteTypeLabel(request)}</TableCell>
                 <TableCell className="text-slate-500">{getSentAtLabel(request.created_date)}</TableCell>
                 <TableCell>
                   <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
@@ -122,38 +135,104 @@ export default function ManageInvitesTab({ currentUser }) {
   const [senderFilter, setSenderFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("30");
 
+  const normalizeEmail = (email) => (email || "").trim().toLowerCase();
+
   const loadRequests = async () => {
     setIsLoading(true);
     try {
-      const all = await base44.entities.BorrowerInviteRequest.list("-created_date");
-      const allRequests = all || [];
+      const [inviteRequests, borrowers, users] = await Promise.all([
+        base44.entities.BorrowerInviteRequest.list("-created_date"),
+        Borrower.list("-created_date").catch(() => []),
+        User.list().catch(() => [])
+      ]);
 
-      const borrowerIds = allRequests
-        .map((request) => request?.borrower_id)
-        .filter(Boolean);
+      const userById = new Map((users || []).map((user) => [user.id, user]));
+      const userByEmail = new Map(
+        (users || [])
+          .filter((user) => user.email)
+          .map((user) => [normalizeEmail(user.email), user])
+      );
+      const borrowerById = new Map((borrowers || []).map((borrower) => [borrower.id, borrower]));
 
-      if (!borrowerIds.length) {
-        setRequests(allRequests);
-        setIsLoading(false);
-        return;
-      }
-
-      let borrowers = [];
-      try {
-        borrowers = await Borrower.list("-created_date");
-      } catch (borrowerError) {
-        console.error("Error loading borrowers for invite cleanup:", borrowerError);
-      }
-
-      const borrowerMap = new Map((borrowers || []).map((borrower) => [borrower.id, borrower]));
-      const pendingRequests = allRequests.filter((request) => {
-        if (!request?.borrower_id) return true;
-        const borrower = borrowerMap.get(request.borrower_id);
-        if (!borrower) return true;
-        return borrower.is_invite_temp === true;
+      const normalizedRequests = (inviteRequests || []).map((request) => {
+        const inviter = request?.requested_by_user_id
+          ? userById.get(request.requested_by_user_id)
+          : null;
+        const requestedEmail = request.requested_email || request.recipient_email;
+        const emailKey = normalizeEmail(requestedEmail);
+        const onboardedByEmail = emailKey && userByEmail.has(emailKey);
+        const onboardedByBorrower = request.borrower_id
+          ? borrowerById.get(request.borrower_id)?.is_invite_temp !== true
+          : false;
+        return {
+          ...request,
+          created_date: request.sent_at || request.created_date,
+          requested_email: requestedEmail,
+          invite_type: request.invite_type || request.email_type,
+          requested_by_role: request.requested_by_role || inviter?.app_role || inviter?.role,
+          requested_by_name: request.requested_by_name || inviter?.full_name || inviter?.email,
+          _onboarded: Boolean(onboardedByEmail || onboardedByBorrower)
+        };
       });
 
-      setRequests(pendingRequests);
+      const requestEmailSet = new Set(
+        normalizedRequests
+          .map((request) => normalizeEmail(request.requested_email))
+          .filter(Boolean)
+      );
+
+      const derivedBorrowerInvites = (borrowers || [])
+        .map((borrower) => {
+          const { dateField, statusField } = resolveBorrowerInviteFields(borrower);
+          const statusValue = statusField ? borrower?.[statusField] : null;
+          const dateValue = dateField ? borrower?.[dateField] : null;
+
+          if (!statusValue && !dateValue) return null;
+
+          const invitedEmail = borrower.email || "";
+          if (!invitedEmail) return null;
+          if (borrower.user_id) return null;
+          if (userByEmail.has(normalizeEmail(invitedEmail))) return null;
+          if (requestEmailSet.has(normalizeEmail(invitedEmail))) return null;
+
+          const inviter = borrower.invited_by_user_id
+            ? userById.get(borrower.invited_by_user_id)
+            : null;
+          const requestedByName = inviter?.full_name || inviter?.email || "Unknown";
+          const requestedByRole = borrower.invited_by_role || inviter?.app_role || inviter?.role || "Unknown";
+          const source = normalizeAppRole(requestedByRole) === "Broker" ? "broker" : "internal";
+
+          return {
+            id: `borrower-${borrower.id}`,
+            borrower_id: borrower.id,
+            requested_email: invitedEmail,
+            requested_first_name: borrower.first_name || "",
+            requested_last_name: borrower.last_name || "",
+            requested_by_user_id: borrower.invited_by_user_id || null,
+            requested_by_role: requestedByRole,
+            requested_by_name: requestedByName,
+            created_date: dateValue || borrower.updated_date || borrower.created_date,
+            status: statusValue || "sent",
+            source,
+            invite_type: "invite_borrower",
+            _onboarded: false
+          };
+        })
+        .filter(Boolean);
+
+      const isOnboarded = (request) => {
+        const emailKey = normalizeEmail(request.requested_email);
+        if (emailKey && userByEmail.has(emailKey)) return true;
+        if (request.borrower_id) {
+          const borrower = borrowerById.get(request.borrower_id);
+          if (borrower && borrower.is_invite_temp !== true) return true;
+        }
+        return false;
+      };
+
+      const allRequests = [...normalizedRequests, ...derivedBorrowerInvites];
+
+      setRequests(allRequests);
     } catch (error) {
       console.error("Error loading borrower invite requests:", error);
       setRequests([]);
@@ -167,19 +246,48 @@ export default function ManageInvitesTab({ currentUser }) {
     }
   }, [currentUser]);
 
-  const filteredRequests = useMemo(() => {
+  const normalizedRequests = useMemo(() => {
+    const ensureStatus = (request) => ({
+      ...request,
+      status: (request.status || "sent").toLowerCase()
+    });
+
     return (requests || [])
+      .map(ensureStatus)
       .filter((request) => matchesSenderFilter(request, senderFilter))
       .filter((request) => matchesDateFilter(request, dateFilter));
   }, [requests, senderFilter, dateFilter]);
 
-  const internalRequests = useMemo(
-    () => filteredRequests.filter((request) => isInternalRequest(request)),
-    [filteredRequests]
+  const splitRequests = useMemo(() => {
+    const active = [];
+    const past = [];
+    normalizedRequests.forEach((request) => {
+      const onboarded = request._onboarded === true;
+      const rejected = request.status === "rejected";
+      if (onboarded || rejected) {
+        past.push(request);
+      } else {
+        active.push(request);
+      }
+    });
+    return { active, past };
+  }, [normalizedRequests]);
+
+  const activeInternalRequests = useMemo(
+    () => splitRequests.active.filter((request) => isInternalRequest(request)),
+    [splitRequests]
   );
-  const brokerRequests = useMemo(
-    () => filteredRequests.filter((request) => !isInternalRequest(request)),
-    [filteredRequests]
+  const activeBrokerRequests = useMemo(
+    () => splitRequests.active.filter((request) => !isInternalRequest(request)),
+    [splitRequests]
+  );
+  const pastInternalRequests = useMemo(
+    () => splitRequests.past.filter((request) => isInternalRequest(request)),
+    [splitRequests]
+  );
+  const pastBrokerRequests = useMemo(
+    () => splitRequests.past.filter((request) => !isInternalRequest(request)),
+    [splitRequests]
   );
 
   return (
@@ -187,7 +295,7 @@ export default function ManageInvitesTab({ currentUser }) {
       <CardHeader>
         <CardTitle>Manage Invites</CardTitle>
         <CardDescription>
-          Review all borrower invitations sent by administrators, loan officers, and brokers.
+          Review invitations sent from across the platform.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -227,21 +335,37 @@ export default function ManageInvitesTab({ currentUser }) {
         {isLoading ? (
           <div className="text-sm text-slate-500">Loading invite requests...</div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-10">
             <div className="space-y-3">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Admin / Loan Officer Invites</h3>
-                <p className="text-sm text-slate-500">Invitations sent by internal team members.</p>
+                <h3 className="text-base font-semibold text-slate-900">Active Invites: Admin / Loan Officer</h3>
+                <p className="text-sm text-slate-500">Pending invites sent by internal team members.</p>
               </div>
-              <InviteTable rows={internalRequests} emptyLabel="No internal invites found for this filter." />
+              <InviteTable rows={activeInternalRequests} emptyLabel="No active internal invites found for this filter." />
             </div>
 
             <div className="space-y-3">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Broker Invites</h3>
-                <p className="text-sm text-slate-500">Invitations initiated by brokers.</p>
+                <h3 className="text-base font-semibold text-slate-900">Active Invites: Broker</h3>
+                <p className="text-sm text-slate-500">Pending invites initiated by brokers.</p>
               </div>
-              <InviteTable rows={brokerRequests} emptyLabel="No broker invites found for this filter." />
+              <InviteTable rows={activeBrokerRequests} emptyLabel="No active broker invites found for this filter." />
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Past Invites: Admin / Loan Officer</h3>
+                <p className="text-sm text-slate-500">Onboarded or rejected invites.</p>
+              </div>
+              <InviteTable rows={pastInternalRequests} emptyLabel="No past internal invites found for this filter." />
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Past Invites: Broker</h3>
+                <p className="text-sm text-slate-500">Onboarded or rejected invites initiated by brokers.</p>
+              </div>
+              <InviteTable rows={pastBrokerRequests} emptyLabel="No past broker invites found for this filter." />
             </div>
           </div>
         )}

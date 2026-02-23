@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
       email_type,
       recipient_email,
       recipient_name,
-      data = {}
+      data = {},
+      skip_invite_log = false
     } = body;
 
     if (!email_type || !recipient_email) {
@@ -510,6 +511,58 @@ This is an automated message.
     }
 
     const result = await response.json();
+
+    const inviteEmailTypes = new Set([
+      'invite',
+      'invite_borrower',
+      'invite_borrower_broker',
+      'invite_co_borrower',
+      'invite_co_owner',
+      'invite_loan_partner',
+      'invite_team_member',
+      'request_co_borrower',
+      'request_co_owner'
+    ]);
+
+    if (inviteEmailTypes.has(email_type) && !skip_invite_log) {
+      try {
+        const inviterRole = user.app_role || (user.role === 'admin' ? 'Administrator' : user.role) || 'Unknown';
+        const source = 'log';
+        const recipientParts = String(recipient_name || '').trim().split(' ').filter(Boolean);
+        const recipientFirstName = data.first_name || recipientParts[0] || '';
+        const recipientLastName = data.last_name || recipientParts.slice(1).join(' ');
+
+        const recipientRoleByType: Record<string, string> = {
+          invite_borrower: 'Borrower',
+          invite_borrower_broker: 'Borrower',
+          invite_co_borrower: 'Borrower',
+          invite_co_owner: 'Borrower',
+          request_co_borrower: 'Borrower',
+          request_co_owner: 'Borrower',
+          invite_loan_partner: data.partner_type || 'Loan Partner',
+          invite_team_member: 'Loan Officer',
+          invite: data.role || 'Borrower'
+        };
+
+        await base44.entities.BorrowerInviteRequest.create({
+          source,
+          status: 'sent',
+          invite_type: email_type,
+          recipient_role: recipientRoleByType[email_type] || data.role || '',
+          requested_email: recipient_email,
+          requested_first_name: recipientFirstName,
+          requested_last_name: recipientLastName,
+          requested_by_user_id: user.id,
+          requested_by_role: inviterRole,
+          requested_by_name: user.full_name || user.email || '',
+          sent_at: new Date().toISOString(),
+          application_id: data.application_id || null,
+          entity_id: data.entity_id || null
+        });
+      } catch (logError) {
+        console.error('[emailService] Failed to log invite:', logError);
+      }
+    }
 
     return Response.json({ 
       success: true,

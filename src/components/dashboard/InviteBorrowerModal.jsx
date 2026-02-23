@@ -104,6 +104,7 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
         });
         await base44.functions.invoke('emailService', {
           email_type: 'invite_borrower_broker',
+          skip_invite_log: true,
           recipient_email: formData.requested_email,
           recipient_name: `${formData.requested_first_name} ${formData.requested_last_name}`,
           data: {
@@ -116,6 +117,7 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
       } else {
         await base44.functions.invoke('emailService', {
           email_type: 'invite_borrower',
+          skip_invite_log: true,
           recipient_email: formData.requested_email,
           recipient_name: `${formData.requested_first_name} ${formData.requested_last_name}`,
           data: {
