@@ -134,8 +134,11 @@ export const usePermissions = () => {
         }
 
         if (p.isBorrower) {
-          p.canSignApplication = !p.isBorrowerLiaison;
-          p.canSubmitApplication = !p.isBorrowerLiaison;
+           p.canSignApplication = !p.isBorrowerLiaison;
+           p.canSubmitApplication = !p.isBorrowerLiaison;
+           if (p.isBorrowerLiaison) {
+             p.canCreateApplication = false;
+           }
         }
 
         // --- Loans (Rule 3 - UPDATED) ---
