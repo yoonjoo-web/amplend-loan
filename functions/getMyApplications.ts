@@ -92,6 +92,9 @@ Deno.serve(async (req) => {
       const matchesLoanBroker = matchesContact(app.loan_contacts?.broker, user, loanPartnerAccessIds);
       if (matchesReferralBroker || matchesLoanBroker) return true;
 
+      // Also check broker_user_id field (set when broker creates application)
+      if (app.broker_user_id && app.broker_user_id === userId) return true;
+
       return false;
     });
 
