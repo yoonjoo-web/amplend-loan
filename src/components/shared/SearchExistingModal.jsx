@@ -59,42 +59,33 @@ export default function SearchExistingModal({
             </Button>
           </div>
 
-          {/* Search Component */}
-          <Command className="border rounded-lg" shouldFilter={false}>
-            <CommandInput
+          {/* Search input */}
+          <div className="border rounded-lg overflow-hidden">
+            <input
+              type="text"
               placeholder={placeholder}
-              className="border-b px-3 py-2 text-sm"
               value={search}
-              onValueChange={setSearch}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full border-b px-3 py-2 text-sm outline-none"
             />
-
-            <CommandList className="max-h-64 overflow-auto">
+            <div className="max-h-64 overflow-auto">
               {isLoading && (
-                <div className="p-4 text-center text-sm text-slate-500">
-                  Loading...
-                </div>
+                <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
               )}
-
               {!isLoading && filteredItems.length === 0 && (
-                <CommandEmpty className="p-4 text-sm text-slate-500">
-                  {emptyMessage}
-                </CommandEmpty>
+                <div className="p-4 text-sm text-slate-500">{emptyMessage}</div>
               )}
-
-              <CommandGroup>
-                {filteredItems.map(item => (
-                  <CommandItem
-                    key={item.id}
-                    value={item.id}
-                    onSelect={() => onSelect(item)}
-                    className="cursor-pointer px-3 py-2"
-                  >
-                    {renderItem(item)}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
+              {!isLoading && filteredItems.map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => onSelect(item)}
+                  className="cursor-pointer px-3 py-2 hover:bg-slate-100 text-sm"
+                >
+                  {renderItem(item)}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>
