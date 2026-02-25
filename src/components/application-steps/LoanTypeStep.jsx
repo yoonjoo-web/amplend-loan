@@ -21,19 +21,18 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
   }, [currentUser?.role, isReadOnly, normalizedRole, permissions]);
 
   const handleAddLiaison = async (liaisonId) => {
-    if (!liaisonId) return;
+    if (!liaisonId || !data?.id) return;
     const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
     if (existing.includes(liaisonId)) return;
     const updated = [...existing, liaisonId];
-    // Update local state first
-    onChange({ liaison_ids: updated });
-    // Immediately persist to database
-    if (data?.id) {
-      try {
-        await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
-      } catch (error) {
-        console.error('Error saving liaison to database:', error);
-      }
+    try {
+      // Save to database first before updating local state
+      await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      // Then update local state after successful save
+      onChange({ liaison_ids: updated });
+    } catch (error) {
+      console.error('Error saving liaison to database:', error);
+      throw error;
     }
   };
 
