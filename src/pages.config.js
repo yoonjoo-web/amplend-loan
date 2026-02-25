@@ -65,6 +65,7 @@ import MyTasks from './pages/MyTasks';
 import NewApplication from './pages/NewApplication';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
+import MyPartners from './pages/MyPartners';
 import __Layout from './Layout.jsx';
 
 
@@ -87,6 +88,7 @@ export const PAGES = {
     "NewApplication": NewApplication,
     "Onboarding": Onboarding,
     "Settings": Settings,
+    "MyPartners": MyPartners,
 }
 
 export const pagesConfig = {
