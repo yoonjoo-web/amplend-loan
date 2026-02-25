@@ -27,8 +27,7 @@ export default function MyBorrowers() {
   const isBroker = normalizedRole === 'Broker';
   const isReferralPartner = normalizedRole === 'Referral Partner';
   const isLiaison = normalizedRole === 'Liaison';
-  const isBorrower = normalizedRole === 'Borrower';
-  const canView = isBroker || isReferralPartner || isLiaison || isBorrower;
+  const canView = isBroker || isReferralPartner || isLiaison;
 
   useEffect(() => {
     if (!permissionsLoading && currentUser && canView) {
