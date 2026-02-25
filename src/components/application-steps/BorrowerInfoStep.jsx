@@ -56,7 +56,10 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
           ...(applicationData.co_borrowers || []).map(cb => cb.user_id || cb.borrower_id)
         ].filter(Boolean);
         const filteredBorrowers = borrowers.filter(
-          b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
+          b => 
+            b.borrower_type !== 'liaison' && 
+            !currentBorrowerIds.includes(b.user_id) && 
+            !currentBorrowerIds.includes(b.id)
         );
         setAllBorrowers(filteredBorrowers);
 
