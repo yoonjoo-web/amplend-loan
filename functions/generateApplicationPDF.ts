@@ -240,6 +240,23 @@ Deno.serve(async (req) => {
     addTwoColumnFields('Borrower Type:', borrowerTypeLabels[application.borrower_type] || formatValue(application.borrower_type), 'Co-Borrower:', application.has_coborrowers === 'yes' ? 'Yes' : 'No');
     addField('Submitted Date:', formatDate(application.created_date));
 
+    // Liaison Information (if assigned)
+    if (application.liaison_ids && application.liaison_ids.length > 0) {
+      addSection('Assigned Liaison');
+      // Fetch liaison details for the first liaison
+      try {
+        const liaisons = await base44.asServiceRole.entities.LoanPartner.filter({ app_role: 'Liaison' });
+        const assignedLiaison = liaisons.find(l => application.liaison_ids.includes(l.id));
+        if (assignedLiaison) {
+          addField('Name:', assignedLiaison.name);
+          addField('Email:', assignedLiaison.email);
+          addField('Phone:', formatPhone(assignedLiaison.phone));
+        }
+      } catch (liaisionError) {
+        console.error('Error fetching liaison details:', liaisionError);
+      }
+    }
+
     // Primary Borrower Information
     addSection('Primary Borrower Information');
     addTwoColumnFields('First Name:', application.borrower_first_name, 'Last Name:', application.borrower_last_name);
