@@ -170,10 +170,12 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
       return;
     }
 
+    const mappedData = syncEntities('Borrower', 'LoanApplication', borrower);
     const brokerReferralUpdate = buildBrokerReferralUpdate(applicationData);
     onUpdate({
       ...applicationData,
       primary_borrower_id: borrower.user_id,
+      ...mappedData,
       ...brokerReferralUpdate
     });
 
