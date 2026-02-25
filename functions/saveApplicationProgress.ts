@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
       isBrokerOwner ||
       isPrimaryBorrower ||
       isCoBorrower ||
+      isBorrowerByEmail ||
       isCreator ||
       isUserOnApplicationTeam(application, { id: user.id, email: user.email, partnerIds: loanPartnerIds });
 
