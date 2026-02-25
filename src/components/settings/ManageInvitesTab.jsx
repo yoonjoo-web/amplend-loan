@@ -147,6 +147,8 @@ export default function ManageInvitesTab({ currentUser }) {
   const loadRequests = async () => {
     setIsLoading(true);
     try {
+      const unwrapFunctionData = (result) => result?.data || result || {};
+
       const inviteRequestsPromise = base44.entities.BorrowerInviteRequest.list("-created_date");
       const activationSupportPromise = base44.functions
         .invoke("getInviteActivationData")
@@ -157,14 +159,16 @@ export default function ManageInvitesTab({ currentUser }) {
         activationSupportPromise
       ]);
 
-      let borrowers = activationSupport?.borrowers || null;
-      let users = activationSupport?.users || null;
-      let inviteTokens = activationSupport?.inviteTokens || null;
+      const activationSupportData = unwrapFunctionData(activationSupport);
+      let borrowers = activationSupportData?.borrowers || null;
+      let users = activationSupportData?.users || null;
+      let inviteTokens = activationSupportData?.inviteTokens || null;
 
       if (!users) {
         try {
           const allUsersResult = await base44.functions.invoke("getAllUsers");
-          users = allUsersResult?.users || [];
+          const allUsersData = unwrapFunctionData(allUsersResult);
+          users = allUsersData?.users || [];
         } catch (error) {
           users = null;
         }
