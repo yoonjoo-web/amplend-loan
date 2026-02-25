@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -28,12 +28,14 @@ Deno.serve(async (req) => {
       return Response.json({ status: 'no_borrower' });
     }
 
-    if (borrower.is_invite_temp) {
+    // Activate the borrower record
+    if (borrower.is_invite_temp || !borrower.user_id) {
       await base44.asServiceRole.entities.Borrower.update(borrower.id, {
         is_invite_temp: false,
         invite_request_status: 'activated',
-        user_id: borrower.user_id || userId
+        user_id: userId
       });
+      borrower = { ...borrower, user_id: userId, is_invite_temp: false };
     }
 
     if (borrower.invite_request_id) {
@@ -46,6 +48,42 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error('Error updating invite request status:', error);
       }
+    }
+
+    // Find applications where this borrower is referenced but not yet linked by user_id
+    // Check as primary borrower (by borrower entity ID)
+    try {
+      const appsAsPrimary = await base44.asServiceRole.entities.LoanApplication.filter({ primary_borrower_id: borrower.id });
+      for (const app of (appsAsPrimary || [])) {
+        await base44.asServiceRole.entities.LoanApplication.update(app.id, {
+          primary_borrower_id: userId
+        });
+      }
+    } catch (err) {
+      console.error('Error linking borrower as primary on applications:', err);
+    }
+
+    // Check as co-borrower (by borrower_id inside co_borrowers array)
+    try {
+      const allApps = await base44.asServiceRole.entities.LoanApplication.list();
+      for (const app of (allApps || [])) {
+        if (!app.co_borrowers || !Array.isArray(app.co_borrowers)) continue;
+        let updated = false;
+        const updatedCoBorrowers = app.co_borrowers.map(cb => {
+          if (cb.borrower_id === borrower.id && (!cb.user_id || cb.user_id !== userId)) {
+            updated = true;
+            return { ...cb, user_id: userId };
+          }
+          return cb;
+        });
+        if (updated) {
+          await base44.asServiceRole.entities.LoanApplication.update(app.id, {
+            co_borrowers: updatedCoBorrowers
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error linking borrower as co-borrower on applications:', err);
     }
 
     return Response.json({ status: 'activated', borrower_id: borrower.id });
