@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { X } from 'lucide-react';
@@ -23,8 +23,19 @@ export default function SearchExistingModal({
   renderItem,
   searchFields = ['name', 'email']
 }) {
+  const [search, setSearch] = useState('');
 
   if (!isOpen) return null;
+
+  const filteredItems = search.trim() === ''
+    ? items
+    : items.filter(item => {
+        const term = search.toLowerCase();
+        return searchFields.some(field => {
+          const fieldValue = field.split('.').reduce((obj, key) => obj?.[key], item);
+          return fieldValue && String(fieldValue).toLowerCase().includes(term);
+        });
+      });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
@@ -45,27 +56,12 @@ export default function SearchExistingModal({
           </div>
 
           {/* Search Component */}
-          <Command
-            className="border rounded-lg"
-            filter={(value, search) => {
-              const item = items.find(i => i.id === value);
-              if (!item) return 0;
-
-              const term = search.toLowerCase();
-
-              for (const field of searchFields) {
-                const fieldValue = field.split('.').reduce((obj, key) => obj?.[key], item);
-                if (fieldValue && String(fieldValue).toLowerCase().includes(term)) {
-                  return 1;
-                }
-              }
-
-              return 0;
-            }}
-          >
+          <Command className="border rounded-lg" shouldFilter={false}>
             <CommandInput
               placeholder={placeholder}
               className="border-b px-3 py-2 text-sm"
+              value={search}
+              onValueChange={setSearch}
             />
 
             <CommandList className="max-h-64 overflow-auto">
@@ -75,12 +71,14 @@ export default function SearchExistingModal({
                 </div>
               )}
 
-              <CommandEmpty className="p-4 text-sm text-slate-500">
-                {emptyMessage}
-              </CommandEmpty>
+              {!isLoading && filteredItems.length === 0 && (
+                <CommandEmpty className="p-4 text-sm text-slate-500">
+                  {emptyMessage}
+                </CommandEmpty>
+              )}
 
               <CommandGroup>
-                {items.map(item => (
+                {filteredItems.map(item => (
                   <CommandItem
                     key={item.id}
                     value={item.id}
