@@ -190,6 +190,11 @@ export default function Dashboard() {
       let userApps = applications || [];
       if (permissions.isLoanOfficer) {
         userApps = userApps.filter(a => a.assigned_loan_officer_id === currentUser.id);
+      } else if (permissions.isBroker) {
+        userApps = userApps.filter(a =>
+          (a.broker_user_id && a.broker_user_id === currentUser.id) ||
+          isUserOnApplicationTeam(a, currentUser, permissions)
+        );
       } else if (permissions.isBorrower) {
         if (permissions.isBorrowerLiaison) {
           userApps = userApps.filter((a) => isUserOnApplicationTeam(a, currentUser, permissions));
