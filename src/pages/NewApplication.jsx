@@ -340,23 +340,34 @@ export default function NewApplication() {
   }, [formData, visibleSteps, currentStep]);
 
   useEffect(() => {
-    if (!formData) return;
-    const liaisonIds = formData.liaison_ids || [];
-    if (liaisonIds.length === 0) {
-      setLiaisonPartners([]);
-      return;
-    }
-    
-    const resolveNames = async () => {
-      const allPartners = await base44.entities.LoanPartner.list().catch(() => []);
-      const resolved = liaisonIds.map((id) => {
-        const match = allPartners.find((p) => p.id === id || p.user_id === id);
-        return match ? (match.name || match.contact_person || match.email || id) : id;
-      }).filter(Boolean);
-      setLiaisonPartners(resolved);
-    };
-    
-    resolveNames();
+   if (!formData) return;
+   const liaisonIds = formData.liaison_ids || [];
+   if (liaisonIds.length === 0) {
+     setLiaisonPartners([]);
+     return;
+   }
+
+   const resolveNames = async () => {
+     try {
+       const allPartners = await base44.entities.LoanPartner.list().catch(() => []);
+       const resolved = liaisonIds.map((id) => {
+         if (!id) return null;
+         const match = allPartners.find((p) => p.id === id || p.user_id === id);
+         if (match) {
+           return match.name || match.contact_person || match.email || id;
+         }
+         // If no match found, still return the ID (liaison may be in another system)
+         return id;
+       }).filter(Boolean);
+       console.log('DEBUG - Resolved liaison names:', { liaisonIds, resolved, allPartners });
+       setLiaisonPartners(resolved);
+     } catch (error) {
+       console.error('Error resolving liaison names:', error);
+       setLiaisonPartners(liaisonIds.filter(Boolean));
+     }
+   };
+
+   resolveNames();
   }, [formData?.liaison_ids]);
 
   const canManage = permissions?.canManageApplications;
