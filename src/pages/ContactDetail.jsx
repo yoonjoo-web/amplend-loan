@@ -442,8 +442,17 @@ export default function ContactDetail() {
           }
           
           try {
-            const borrowers = await base44.entities.Borrower.list().catch(() => []);
-            const visibleBorrowers = (borrowers || []).filter(b => !b.is_invite_temp);
+            const [borrowers, users] = await Promise.all([
+              base44.entities.Borrower.list().catch(() => []),
+              base44.entities.User.list().catch(() => [])
+            ]);
+            const usersById = new Map((users || []).map((user) => [user.id, user]));
+            const visibleBorrowers = (borrowers || []).filter((b) => {
+              if (b.is_invite_temp) return false;
+              if (b.borrower_type === 'liaison') return false; // legacy records before role migration
+              const linkedUser = b.user_id ? usersById.get(b.user_id) : null;
+              return normalizeAppRole(linkedUser?.app_role) !== 'Liaison';
+            });
             setAllBorrowers(visibleBorrowers);
             
             const [entityLoans, entityApplications] = await Promise.all([
