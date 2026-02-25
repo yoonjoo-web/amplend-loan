@@ -296,14 +296,48 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
     }
 
     try {
-      if (currentUser?.app_role === 'Broker') {
-        const brokerReferralUpdate = buildBrokerReferralUpdate(applicationData);
-        if (Object.keys(brokerReferralUpdate).length > 0) {
-          onUpdate({ ...applicationData, ...brokerReferralUpdate });
+      const isBroker = currentUser?.app_role === 'Broker';
+      const brokerName = getBrokerName(currentUser);
+
+      // Create or find a Borrower record so the invited user can be linked
+      let borrowerRecord = null;
+      try {
+        const existing = await base44.entities.Borrower.filter({ email: inviteForm.email });
+        if (existing && existing.length > 0) {
+          borrowerRecord = existing[0];
+        } else {
+          borrowerRecord = await base44.entities.Borrower.create({
+            first_name: inviteForm.first_name,
+            last_name: inviteForm.last_name,
+            email: inviteForm.email,
+            is_invite_temp: true,
+            invite_request_status: 'pending',
+            invited_by_user_id: currentUser?.id || null,
+            invited_by_role: currentUser?.app_role || null,
+            invitation_status: 'invited',
+            invitation_sent_date: new Date().toISOString()
+          });
         }
+      } catch (borrowerError) {
+        console.error('Error creating borrower record:', borrowerError);
       }
 
-      const isBroker = currentUser?.app_role === 'Broker';
+      // Link this borrower as primary borrower on the application and populate name/email fields
+      const updates = {
+        borrower_first_name: inviteForm.first_name,
+        borrower_last_name: inviteForm.last_name,
+        borrower_email: inviteForm.email,
+        borrower_invitation_status: 'invited'
+      };
+      if (borrowerRecord?.id) {
+        updates.primary_borrower_id = borrowerRecord.id;
+      }
+      if (isBroker) {
+        const brokerReferralUpdate = buildBrokerReferralUpdate(applicationData);
+        Object.assign(updates, brokerReferralUpdate);
+      }
+      onUpdate({ ...applicationData, ...updates });
+
       await base44.functions.invoke('emailService', {
         email_type: isBroker ? 'invite_borrower_broker' : 'invite_borrower',
         recipient_email: inviteForm.email,
@@ -311,7 +345,9 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         data: {
           first_name: inviteForm.first_name,
           last_name: inviteForm.last_name,
-          ...(isBroker ? { broker_name: currentUser?.full_name || `${currentUser?.first_name || ''} ${currentUser?.last_name || ''}`.trim() || 'Your broker' } : {})
+          application_number: applicationData.application_number,
+          application_id: applicationData.id,
+          ...(isBroker ? { broker_name: brokerName } : {})
         }
       });
 
