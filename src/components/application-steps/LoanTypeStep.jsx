@@ -25,10 +25,15 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
     if (existing.includes(liaisonId)) return;
     const updated = [...existing, liaisonId];
+    // Update local state first
     onChange({ liaison_ids: updated });
-    // Immediately persist so it survives page reload
+    // Immediately persist to database
     if (data?.id) {
-      await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      try {
+        await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      } catch (error) {
+        console.error('Error saving liaison to database:', error);
+      }
     }
   };
 
