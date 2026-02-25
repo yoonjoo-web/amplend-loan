@@ -6,9 +6,16 @@ import AddLiaisonModal from './AddLiaisonModal';
 import { normalizeAppRole } from '@/components/utils/appRoles';
 import { base44 } from '@/api/base44Client';
 
+const normalizeLiaisonIds = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (value === null || value === undefined || value === '') return [];
+  return [value];
+};
+
 export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions, onAddLiaisonSave }) {
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const [liaisonNames, setLiaisonNames] = useState([]);
+  const liaisonIds = normalizeLiaisonIds(data?.liaison_ids);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const canShowAddLiaison = useMemo(() => {
     if (isReadOnly) return false;
@@ -25,7 +32,6 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
   // Load and resolve liaison names whenever liaison_ids change
   useEffect(() => {
     const resolveLiaisonNames = async () => {
-      const liaisonIds = data?.liaison_ids || [];
       if (liaisonIds.length === 0) {
         setLiaisonNames([]);
         return;
@@ -41,16 +47,16 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
         setLiaisonNames(resolved);
       } catch (error) {
         console.error('Error resolving liaison names:', error);
-        setLiaisonNames(liaisonIds.filter(Boolean));
+        setLiaisonNames(liaisonIds);
       }
     };
 
     resolveLiaisonNames();
-  }, [data?.liaison_ids]);
+  }, [liaisonIds.join('|')]);
 
   const handleAddLiaison = async (liaisonId) => {
     if (!liaisonId || !data?.id) return;
-    const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
+    const existing = liaisonIds;
     if (existing.includes(liaisonId)) return;
     const updated = [...existing, liaisonId];
     
@@ -84,13 +90,13 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
             </Button>
           </div>
         )}
-        {liaisonNames.length > 0 && (
+        {(liaisonNames.length > 0 || liaisonIds.length > 0) && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Assigned Liaisons:</p>
             <div className="flex flex-wrap gap-2">
-              {liaisonNames.map((name, idx) => (
+              {(liaisonNames.length > 0 ? liaisonNames : liaisonIds).map((name, idx) => (
                 <Badge key={idx} variant="secondary">
-                  {name}
+                  {String(name)}
                 </Badge>
               ))}
             </div>
