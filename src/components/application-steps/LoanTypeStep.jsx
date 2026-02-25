@@ -22,6 +22,32 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     );
   }, [currentUser?.role, isReadOnly, normalizedRole, permissions]);
 
+  // Load and resolve liaison names whenever liaison_ids change
+  useEffect(() => {
+    const resolveLiaisonNames = async () => {
+      const liaisonIds = data?.liaison_ids || [];
+      if (liaisonIds.length === 0) {
+        setLiaisonNames([]);
+        return;
+      }
+
+      try {
+        const allPartners = await base44.entities.LoanPartner.list();
+        const resolved = liaisonIds.map((id) => {
+          if (!id) return null;
+          const match = allPartners.find((p) => p.id === id || p.user_id === id);
+          return match ? (match.name || match.contact_person || match.email || id) : id;
+        }).filter(Boolean);
+        setLiaisonNames(resolved);
+      } catch (error) {
+        console.error('Error resolving liaison names:', error);
+        setLiaisonNames(liaisonIds.filter(Boolean));
+      }
+    };
+
+    resolveLiaisonNames();
+  }, [data?.liaison_ids]);
+
   const handleAddLiaison = async (liaisonId) => {
     if (!liaisonId || !data?.id) return;
     const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
