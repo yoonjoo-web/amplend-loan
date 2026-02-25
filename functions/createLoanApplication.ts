@@ -87,6 +87,11 @@ Deno.serve(async (req) => {
       assigned_loan_officer_id: assignedOfficerId || null
     };
 
+    // For brokers, ensure broker_user_id is set so they can retrieve their own applications
+    if (isBroker && !createData.broker_user_id) {
+      createData.broker_user_id = user.id;
+    }
+
     const newApplication = await base44.asServiceRole.entities.LoanApplication.create(createData);
 
     return Response.json({ application: newApplication });
