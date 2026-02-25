@@ -134,6 +134,12 @@ export default function Layout({ children, currentPageName }) {
       show: permissions.canViewMyBorrowers,
     },
     {
+      title: "My Partners",
+      url: createPageUrl("MyPartners"),
+      icon: Handshake,
+      show: permissions.canViewMyPartners,
+    },
+    {
       title: "Messages",
       url: createPageUrl("Messages"),
       icon: MessageSquare,
