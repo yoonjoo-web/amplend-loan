@@ -461,12 +461,13 @@ export default function NewApplication() {
     return cleanedData;
   };
 
-  const saveProgress = async (stepToSave) => {
+  const saveProgress = async (stepToSave, dataOverrides = {}) => {
     if (isReadOnly) return;
     setIsProcessing(true);
     try {
       const dataToSave = cleanFormDataForSaving({
         ...formData,
+        ...dataOverrides,
         current_step: stepToSave || currentStep
       });
 

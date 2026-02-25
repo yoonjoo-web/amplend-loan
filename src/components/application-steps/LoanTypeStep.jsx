@@ -66,7 +66,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
       
       // Reload parent to ensure persistence
       if (onAddLiaisonSave) {
-        await onAddLiaisonSave();
+        await onAddLiaisonSave(undefined, { liaison_ids: updated });
       }
     } catch (error) {
       console.error('ERROR - Failed to save liaison:', error);
