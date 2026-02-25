@@ -203,25 +203,24 @@ export default function Onboarding() {
       await base44.auth.updateMe(updateData);
       const effectiveRole = normalizedRole || currentUser.app_role || updateData.app_role || '';
 
-      let borrowerId = null;
-      const borrowers = await base44.entities.Borrower.filter({ email: email });
-      if (borrowers && borrowers.length > 0) {
-        borrowerId = borrowers[0].id;
-        if (!borrowers[0].user_id) {
-          await base44.entities.Borrower.update(borrowers[0].id, {
+      if (effectiveRole === 'Borrower') {
+        const borrowers = await base44.entities.Borrower.filter({ email: email });
+        if (borrowers && borrowers.length > 0) {
+          if (!borrowers[0].user_id) {
+            await base44.entities.Borrower.update(borrowers[0].id, {
+              user_id: currentUser.id,
+              first_name: formData.first_name.trim(),
+              last_name: formData.last_name.trim()
+            });
+          }
+        } else {
+          await base44.entities.Borrower.create({
             user_id: currentUser.id,
             first_name: formData.first_name.trim(),
-            last_name: formData.last_name.trim()
+            last_name: formData.last_name.trim(),
+            email: email
           });
         }
-      } else if (effectiveRole === 'Borrower' || effectiveRole === 'Liaison') {
-        const createdBorrower = await base44.entities.Borrower.create({
-          user_id: currentUser.id,
-          first_name: formData.first_name.trim(),
-          last_name: formData.last_name.trim(),
-          email: email
-        });
-        borrowerId = createdBorrower?.id || null;
       }
       
       const partners = await base44.entities.LoanPartner.filter({ email: email });
