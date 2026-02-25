@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'application_id and data are required' }, { status: 400 });
     }
 
-    // Fetch the application to verify access
+    // Fetch the application to verify access and get the preserved fields
     const application = await base44.asServiceRole.entities.LoanApplication.get(application_id);
     if (!application) {
       return Response.json({ error: 'Application not found' }, { status: 404 });
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
         const byEmail = await base44.asServiceRole.entities.Borrower.filter({ email: user.email });
         if (byEmail && byEmail.length > 0) borrowerContactId = byEmail[0].id;
       }
-    } catch (_) { /* ignore */ }
+    } catch (_e) { /* ignore */ }
 
     let loanPartnerIds = [];
     try {
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
         const byEmail = await base44.asServiceRole.entities.LoanPartner.filter({ email: user.email });
         if (byEmail && byEmail.length > 0) loanPartnerIds = byEmail.map(p => p.id).filter(Boolean);
       }
-    } catch (_) { /* ignore */ }
+    } catch (_e) { /* ignore */ }
 
     const isPrimaryBorrower = application.primary_borrower_id === user.id || application.primary_borrower_id === borrowerContactId;
     const createdById = typeof application.created_by === 'object' ? application.created_by?.id : application.created_by;
@@ -74,16 +74,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Always preserve broker/team identity fields from the original application
+    // Always restore broker/team identity fields from the stored application to prevent them being wiped
     const safeData = {
       ...data,
-      broker_user_id: application.broker_user_id || data.broker_user_id,
-      broker_ids: application.broker_ids || data.broker_ids,
-      referrer_ids: application.referrer_ids || data.referrer_ids,
-      liaison_ids: application.liaison_ids || data.liaison_ids,
-      referral_broker: application.referral_broker || data.referral_broker,
-      loan_contacts: application.loan_contacts || data.loan_contacts,
     };
+    if (application.broker_user_id) safeData.broker_user_id = application.broker_user_id;
+    if (application.broker_ids && application.broker_ids.length > 0) safeData.broker_ids = application.broker_ids;
+    if (application.referrer_ids && application.referrer_ids.length > 0) safeData.referrer_ids = application.referrer_ids;
+    if (application.liaison_ids && application.liaison_ids.length > 0) safeData.liaison_ids = application.liaison_ids;
+    if (application.referral_broker) safeData.referral_broker = application.referral_broker;
+    if (application.loan_contacts && Object.keys(application.loan_contacts).length > 0) safeData.loan_contacts = application.loan_contacts;
 
     await base44.asServiceRole.entities.LoanApplication.update(application_id, safeData);
 
