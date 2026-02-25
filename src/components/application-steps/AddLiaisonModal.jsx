@@ -185,11 +185,19 @@ export default function AddLiaisonModal({
     });
   }, [partners, searchTerm]);
 
-  const handleSelectPartner = (partner) => {
+  const handleSelectPartner = async (partner) => {
     const targetId = partner?.partner?.user_id || partner?.partner?.id || partner?.id;
     if (!targetId) return;
-    onAddLiaison(targetId);
-    onClose();
+    try {
+      await onAddLiaison(targetId);
+      onClose();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error?.message || 'Failed to add liaison. Please try again.'
+      });
+    }
   };
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -252,7 +260,7 @@ export default function AddLiaisonModal({
 
       const targetId = createdPartner?.user_id || createdPartner?.id;
       if (targetId) {
-        onAddLiaison(targetId);
+        await onAddLiaison(targetId);
       }
       onClose();
     } catch (error) {
