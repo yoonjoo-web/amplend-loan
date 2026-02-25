@@ -283,6 +283,11 @@ export default function Applications() {
     if (permissions.isBorrower && app.status === 'under_review') {
       return; // Do nothing - row should not be clickable
     }
+    // Brokers always open in view mode (they don't fill applications themselves)
+    if (permissions.isBroker) {
+      navigate(createPageUrl("NewApplication") + `?id=${app.id}&action=view`);
+      return;
+    }
     const action = app.status === 'draft' || app.status === 'review_completed' ? '' : '&action=view';
     navigate(createPageUrl("NewApplication") + `?id=${app.id}${action}`);
   };
