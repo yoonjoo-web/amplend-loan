@@ -221,7 +221,7 @@ export const usePermissions = () => {
 
         // --- Dashboard ---
         p.canViewDashboard = true;
-        p.canViewMyBorrowers = ['Broker', 'Referral Partner', 'Liaison'].includes(normalizedRole);
+        p.canViewMyBorrowers = ['Broker', 'Referral Partner', 'Liaison', 'Borrower'].includes(normalizedRole);
 
         if (p.isBorrower) {
           p.borrowerAccessIds = await getBorrowerAccessIds(base44, user);
