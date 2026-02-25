@@ -161,6 +161,15 @@ export default function ManageInvitesTab({ currentUser }) {
       let users = activationSupport?.users || null;
       let inviteTokens = activationSupport?.inviteTokens || null;
 
+      if (!users) {
+        try {
+          const allUsersResult = await base44.functions.invoke("getAllUsers");
+          users = allUsersResult?.users || [];
+        } catch (error) {
+          users = null;
+        }
+      }
+
       if (!borrowers || !users || !inviteTokens) {
         const [localBorrowers, localUsers, localInviteTokens] = await Promise.all([
           Borrower.list("-created_date").catch(() => []),
