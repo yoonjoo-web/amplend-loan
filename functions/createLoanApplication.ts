@@ -92,6 +92,9 @@ Deno.serve(async (req) => {
       createData.broker_user_id = user.id;
     }
 
+    // Always store the real creating user's ID so getMyApplications can find it
+    createData.created_by_user_id = user.id;
+
     const newApplication = await base44.asServiceRole.entities.LoanApplication.create(createData);
 
     return Response.json({ application: newApplication });
