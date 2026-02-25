@@ -120,14 +120,17 @@ export const usePermissions = () => {
           p.canManageApplications = false;
           p.canReassignLoanOfficer = false;
         } else if (p.isBroker) {
-          p.canCreateApplication = true;
-          p.canViewAnyApplication = false;
-          p.canManageOwnApplications = false;
-          p.canReviewApplication = false;
-          p.canManageApplications = false;
-          p.canReassignLoanOfficer = false;
-          p.canSignApplication = false;
-          p.canSubmitApplication = false;
+           p.canCreateApplication = true;
+           p.canViewAnyApplication = false;
+           p.canManageOwnApplications = false;
+           p.canReviewApplication = false;
+           p.canManageApplications = false;
+           p.canReassignLoanOfficer = false;
+           p.canSignApplication = false;
+           p.canSubmitApplication = false;
+        } else if (p.isLoanPartner && !p.isBroker) {
+           p.canCreateApplication = false;
+           p.canViewAnyApplication = false;
         }
 
         if (p.isBorrower) {
