@@ -21,6 +21,10 @@ export const isUserOnApplicationTeam = (
   if (liaisonIds.includes(userId) || partnerIds.some((id) => liaisonIds.includes(id))) return true;
   if (brokerIds.includes(userId) || partnerIds.some((id) => brokerIds.includes(id))) return true;
 
+  // Check broker_user_id (set when broker creates application via service role)
+  const brokerUserId = application.broker_user_id as string | undefined;
+  if (brokerUserId && brokerUserId === userId) return true;
+
   const matchesContact = (contact?: Record<string, unknown>) => {
     if (!contact || typeof contact !== 'object') return false;
     const contactUserId = (contact as { user_id?: string }).user_id;
