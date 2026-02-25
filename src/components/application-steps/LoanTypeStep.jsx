@@ -53,17 +53,23 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
     if (existing.includes(liaisonId)) return;
     const updated = [...existing, liaisonId];
+    
+    console.log('DEBUG - Saving liaison:', { appId: data.id, updated });
+    
     try {
-      // Update local state immediately for UI feedback
+      // Save to database first
+      const result = await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      console.log('DEBUG - Database save result:', result);
+      
+      // Update local state
       onChange({ liaison_ids: updated });
-      // Save to database
-      await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      
       // Reload parent to ensure persistence
       if (onAddLiaisonSave) {
         await onAddLiaisonSave();
       }
     } catch (error) {
-      console.error('Error saving liaison to database:', error);
+      console.error('ERROR - Failed to save liaison:', error);
       throw error;
     }
   };
