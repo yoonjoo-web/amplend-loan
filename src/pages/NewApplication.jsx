@@ -422,6 +422,11 @@ export default function NewApplication() {
         ...formData,
         current_step: stepToSave || currentStep
       });
+
+      // Preserve broker fields to prevent them from being wiped on save
+      if (formData.broker_user_id) dataToSave.broker_user_id = formData.broker_user_id;
+      if (formData.broker_ids && formData.broker_ids.length > 0) dataToSave.broker_ids = formData.broker_ids;
+      if (formData.referral_broker) dataToSave.referral_broker = formData.referral_broker;
       
       await LoanApplication.update(formData.id, dataToSave);
     } catch (error) {
