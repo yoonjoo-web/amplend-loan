@@ -46,8 +46,12 @@ export const runRoleMigration = async ({ toast } = {}) => {
       })
     );
 
-    // Prepare liaison borrower mappings before clearing borrower_type
-    const liaisonBorrowers = (borrowers || []).filter((b) => b.borrower_type === 'liaison');
+    const liaisonBorrowers = (borrowers || []).filter((b) => {
+      const linkedUser =
+        (b.user_id && usersById.get(b.user_id)) ||
+        (b.email && usersByEmail.get(b.email.toLowerCase()));
+      return normalizeAppRole(linkedUser?.app_role) === 'Liaison';
+    });
     const borrowerIdToUserId = new Map(
       (borrowers || [])
         .filter((b) => b.user_id)
@@ -61,13 +65,7 @@ export const runRoleMigration = async ({ toast } = {}) => {
           (borrower.user_id && usersById.get(borrower.user_id)) ||
           (borrower.email && usersByEmail.get(borrower.email.toLowerCase()));
 
-        if (borrower.borrower_type === 'liaison' && linkedUser) {
-          const normalizedRole = normalizeAppRole(linkedUser.app_role);
-          if (normalizedRole !== 'Liaison') {
-            await User.update(linkedUser.id, { app_role: 'Liaison' });
-            userUpdates += 1;
-          }
-        } else if (linkedUser) {
+        if (linkedUser) {
           const normalizedRole = normalizeAppRole(linkedUser.app_role);
           if (!normalizedRole || normalizedRole === 'Borrower') {
             if (linkedUser.app_role !== 'Borrower') {
@@ -75,11 +73,6 @@ export const runRoleMigration = async ({ toast } = {}) => {
               userUpdates += 1;
             }
           }
-        }
-
-        if (borrower.borrower_type) {
-          await Borrower.update(borrower.id, { borrower_type: null });
-          borrowerUpdates += 1;
         }
       })
     );

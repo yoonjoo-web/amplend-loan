@@ -449,7 +449,6 @@ export default function ContactDetail() {
             const usersById = new Map((users || []).map((user) => [user.id, user]));
             const visibleBorrowers = (borrowers || []).filter((b) => {
               if (b.is_invite_temp) return false;
-              if (b.borrower_type === 'liaison') return false; // legacy records before role migration
               const linkedUser = b.user_id ? usersById.get(b.user_id) : null;
               return normalizeAppRole(linkedUser?.app_role) !== 'Liaison';
             });
@@ -567,11 +566,7 @@ export default function ContactDetail() {
   };
 
   const handleEditContactInfo = () => {
-    const nextData = { ...contact };
-    if (contactType === 'borrower') {
-      delete nextData.borrower_type;
-    }
-    setEditedContactData(nextData);
+    setEditedContactData({ ...contact });
     setIsEditingContactInfo(true);
   };
 
@@ -603,9 +598,7 @@ export default function ContactDetail() {
       let updatedContact;
       if (contactType === 'borrower') {
         console.log('[ContactDetail] Updating borrower...');
-        const borrowerPayload = { ...editedContactData };
-        delete borrowerPayload.borrower_type;
-        updatedContact = await base44.entities.Borrower.update(contact.id, borrowerPayload);
+        updatedContact = await base44.entities.Borrower.update(contact.id, editedContactData);
       } else if (contactType === 'entity') {
         console.log('[ContactDetail] Updating entity...');
         updatedContact = await base44.entities.BorrowerEntity.update(contact.id, editedContactData);

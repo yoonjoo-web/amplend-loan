@@ -12,7 +12,6 @@ const defaultPermissions = {
   isBorrower: false,
   isBroker: false,
   isLoanPartner: false,
-  borrowerType: null,
   isBorrowerLiaison: false,
   
   // Application permissions

@@ -189,7 +189,6 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
     e.preventDefault();
 
     const cleanedData = { ...formData };
-    delete cleanedData.borrower_type;
 
     // Convert empty strings to null for numeric fields
     ['rehabs_done_36_months', 'rentals_owned_36_months', 'credit_score'].forEach(field => {
