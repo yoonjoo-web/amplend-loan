@@ -234,26 +234,36 @@ export default function NewApplication() {
         setPrimaryBorrowerUser(null);
       }
 
+      const allPartners = await base44.entities.LoanPartner.list().catch(() => []);
+
       if (permissions.isBorrower) {
         try {
-          const partners = await base44.entities.LoanPartner.list();
           const borrowersByUserId = await base44.entities.Borrower.filter({ user_id: currentUser.id }).catch(() => []);
           const borrowerRecord = borrowersByUserId?.[0] || (
             currentUser.email
               ? (await base44.entities.Borrower.filter({ email: currentUser.email }).catch(() => []))?.[0]
               : null
           );
-          const coBorrowerEntry = appData.co_borrowers?.find(cb =>
-            borrowerAccessIds.includes(cb.user_id) || borrowerAccessIds.includes(cb.borrower_id)
-          );
           const invitedByBroker = wasInvitedByBroker(borrowerRecord);
-          setHideLoanOfficerDetails(invitedByBroker || hasBrokerOnApplication(appData, partners));
+          setHideLoanOfficerDetails(invitedByBroker || hasBrokerOnApplication(appData, allPartners));
         } catch (error) {
           console.error('Error checking broker partners:', error);
           setHideLoanOfficerDetails(false);
         }
       } else {
         setHideLoanOfficerDetails(false);
+      }
+
+      // Resolve liaison names for the indicator
+      const liaisonIds = appData.liaison_ids || [];
+      if (liaisonIds.length > 0) {
+        const resolved = liaisonIds.map((id) => {
+          const match = allPartners.find((p) => p.id === id || p.user_id === id);
+          return match ? (match.name || match.contact_person || match.email || id) : id;
+        }).filter(Boolean);
+        setLiaisonPartners(resolved);
+      } else {
+        setLiaisonPartners([]);
       }
 
       if (appData.status === 'rejected') {
