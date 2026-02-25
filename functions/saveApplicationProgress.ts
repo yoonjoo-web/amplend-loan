@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
       isAdmin ||
       isLoanOfficer ||
       isAssignedOfficer ||
+      isBrokerOwner ||
       isPrimaryBorrower ||
       isCoBorrower ||
       isCreator ||
