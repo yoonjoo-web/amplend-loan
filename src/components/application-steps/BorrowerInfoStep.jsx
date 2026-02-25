@@ -68,10 +68,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
             if (borrower.is_invite_temp === true) return false;
             return Boolean(borrower.user_id);
           });
-          const filteredBrokerBorrowers = brokerBorrowersList.filter(
-            b => !currentBorrowerIds.includes(b.user_id) && !currentBorrowerIds.includes(b.id)
-          );
-          setBrokerBorrowers(filteredBrokerBorrowers);
+          setBrokerBorrowers(brokerBorrowersList);
           setIsBrokerBorrowersLoading(false);
         }
         
