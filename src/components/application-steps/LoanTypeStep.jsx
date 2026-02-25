@@ -20,7 +20,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     );
   }, [currentUser?.role, isReadOnly, normalizedRole, permissions]);
 
-  const handleAddLiaison = async (liaisonId) => {
+  const handleAddLiaison = async (liaisonId, onSave) => {
     if (!liaisonId || !data?.id) return;
     const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
     if (existing.includes(liaisonId)) return;
@@ -30,6 +30,10 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
       await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
       // Then update local state after successful save
       onChange({ liaison_ids: updated });
+      // Call parent save to ensure data persists
+      if (onSave) {
+        await onSave({ liaison_ids: updated });
+      }
     } catch (error) {
       console.error('Error saving liaison to database:', error);
       throw error;
