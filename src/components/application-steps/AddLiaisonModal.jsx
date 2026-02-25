@@ -153,12 +153,12 @@ export default function AddLiaisonModal({
         };
 
         relevantLoans.forEach((loan) => {
-          const ids = Array.from(new Set(loan.referrer_ids || []));
+          const ids = Array.from(new Set([...(loan.liaison_ids || []), ...(loan.referrer_ids || [])]));
           ids.forEach((id) => registerPartner(id));
         });
 
         relevantApplications.forEach((app) => {
-          const ids = Array.from(new Set(app.referrer_ids || []));
+          const ids = Array.from(new Set([...(app.liaison_ids || []), ...(app.referrer_ids || [])]));
           ids.forEach((id) => registerPartner(id));
         });
 
