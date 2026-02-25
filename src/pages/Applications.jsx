@@ -249,6 +249,7 @@ export default function Applications() {
         applicationData.primary_borrower_id = currentUser.id;
       }
       if (permissions.isBroker) {
+        applicationData.broker_user_id = currentUser.id;
         applicationData.broker_ids = [currentUser.id].filter(Boolean);
         applicationData.referral_broker = {
           name: [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ').trim() || currentUser.full_name || currentUser.email || 'Broker',
