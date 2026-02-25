@@ -74,6 +74,24 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     }
   };
 
+  const handleRemoveLiaison = async (indexToRemove) => {
+    if (!data?.id) return;
+    const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
+    const updated = existing.filter((_, index) => index !== indexToRemove);
+    
+    try {
+      await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      onChange({ liaison_ids: updated });
+      
+      if (onAddLiaisonSave) {
+        await onAddLiaisonSave();
+      }
+    } catch (error) {
+      console.error('ERROR - Failed to remove liaison:', error);
+      throw error;
+    }
+  };
+
   return (
     <>
       <DynamicFormRenderer
