@@ -147,12 +147,30 @@ export default function ManageInvitesTab({ currentUser }) {
   const loadRequests = async () => {
     setIsLoading(true);
     try {
-      const [inviteRequests, borrowers, users, inviteTokens] = await Promise.all([
-        base44.entities.BorrowerInviteRequest.list("-created_date"),
-        Borrower.list("-created_date").catch(() => []),
-        User.list().catch(() => []),
-        base44.entities.BorrowerInviteToken.list().catch(() => [])
+      const inviteRequestsPromise = base44.entities.BorrowerInviteRequest.list("-created_date");
+      const activationSupportPromise = base44.functions
+        .invoke("getInviteActivationData")
+        .catch(() => null);
+
+      const [inviteRequests, activationSupport] = await Promise.all([
+        inviteRequestsPromise,
+        activationSupportPromise
       ]);
+
+      let borrowers = activationSupport?.borrowers || null;
+      let users = activationSupport?.users || null;
+      let inviteTokens = activationSupport?.inviteTokens || null;
+
+      if (!borrowers || !users || !inviteTokens) {
+        const [localBorrowers, localUsers, localInviteTokens] = await Promise.all([
+          Borrower.list("-created_date").catch(() => []),
+          User.list().catch(() => []),
+          base44.entities.BorrowerInviteToken.list().catch(() => [])
+        ]);
+        borrowers = borrowers || localBorrowers;
+        users = users || localUsers;
+        inviteTokens = inviteTokens || localInviteTokens;
+      }
 
       const userById = new Map((users || []).map((user) => [user.id, user]));
       const tokenById = new Map((inviteTokens || []).map((token) => [token.id, token]));
