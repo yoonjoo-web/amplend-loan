@@ -512,14 +512,13 @@ export default function Loans() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Loans
+            Loan
           </h1>
         </motion.div>
 
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <CardTitle className="text-2xl">All Loans</CardTitle>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
