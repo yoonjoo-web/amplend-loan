@@ -76,27 +76,6 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
 
   return (
     <>
-      <div className="space-y-4">
-        {canShowAddLiaison && (
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setShowAddLiaisonModal(true)}>
-              Add Liaison
-            </Button>
-          </div>
-        )}
-        {liaisonNames.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Assigned Liaisons:</p>
-            <div className="flex flex-wrap gap-2">
-              {liaisonNames.map((name, idx) => (
-                <Badge key={idx} variant="secondary">
-                  {name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
       <DynamicFormRenderer
         context="application"
         categoryFilter="loanType"
