@@ -792,7 +792,10 @@ export default function NewApplication() {
         submission_snapshots: submissionSnapshots
       });
 
-      await LoanApplication.update(formData.id, finalData);
+      await base44.functions.invoke('saveApplicationProgress', {
+        application_id: formData.id,
+        data: finalData
+      });
       
       try {
         const { borrowerFullName } = getBorrowerNames();
