@@ -64,7 +64,10 @@ Deno.serve(async (req) => {
 
     const isAdmin = user.role === 'admin' || user.app_role === 'Administrator';
     const isLoanOfficer = user.app_role === 'Loan Officer';
-    const isAssignedOfficer = application.assigned_loan_officer_id === user.id;
+    const isAssignedOfficer = String(application.assigned_loan_officer_id) === String(user.id);
+
+    // Direct broker check - fastest path for brokers
+    const isBrokerOwner = application.broker_user_id && String(application.broker_user_id) === String(user.id);
 
     let borrowerContactId = null;
     try {
