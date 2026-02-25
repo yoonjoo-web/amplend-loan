@@ -138,29 +138,25 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
   };
 
   const handleSelectBorrower = (borrower) => {
-    // When selecting from Borrower Info step, always set as primary borrower
-    // regardless of whether they have a user_id yet
     const mappedData = syncEntities('Borrower', 'LoanApplication', borrower);
-    
+
+    // Always immediately set borrower fields so they appear on the application right away
+    const updates = {
+      ...applicationData,
+      primary_borrower_id: borrower.user_id || borrower.id,
+      ...mappedData
+    };
+
     if (borrower.user_id) {
-      onUpdate({
-        ...applicationData,
-        primary_borrower_id: borrower.user_id,
-        ...mappedData
-      });
+      onUpdate(updates);
       toast({
         title: "Primary Borrower Selected",
         description: `${borrower.first_name} ${borrower.last_name} has been set as the primary borrower.`
       });
       setShowSearchDialog(false);
     } else {
-      // Set the borrower info but mark that invitation is pending
-      onUpdate({
-        ...applicationData,
-        primary_borrower_id: borrower.id,
-        ...mappedData,
-        borrower_invitation_status: 'pending'
-      });
+      // Borrower exists but has no user account yet — set fields immediately, then prompt to send invite
+      onUpdate({ ...updates, borrower_invitation_status: 'pending' });
       setSelectedBorrowerToLink(borrower);
       setShowInviteLinkDialog(true);
       setShowSearchDialog(false);
