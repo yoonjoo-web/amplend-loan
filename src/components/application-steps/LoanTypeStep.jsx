@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import DynamicFormRenderer from '../forms/DynamicFormRenderer';
 import AddLiaisonModal from './AddLiaisonModal';
 import { normalizeAppRole } from '@/components/utils/appRoles';
@@ -7,6 +8,7 @@ import { base44 } from '@/api/base44Client';
 
 export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions, onAddLiaisonSave }) {
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
+  const [liaisonNames, setLiaisonNames] = useState([]);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const canShowAddLiaison = useMemo(() => {
     if (isReadOnly) return false;
