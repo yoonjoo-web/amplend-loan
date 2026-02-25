@@ -98,9 +98,16 @@ Deno.serve(async (req) => {
     let isCoBorrower = false;
     if (Array.isArray(application.co_borrowers)) {
       isCoBorrower = application.co_borrowers.some(cb =>
-        cb.user_id === user.id || cb.borrower_id === borrowerContactId
+        cb.user_id === user.id ||
+        cb.borrower_id === borrowerContactId ||
+        (user.email && cb.email && cb.email.toLowerCase() === user.email.toLowerCase())
       );
     }
+
+    // Also check if the invited borrower matches the application's borrower email
+    // (broker invited them as primary borrower but user_id linkage is by borrower entity ID)
+    const isBorrowerByEmail = user.email && application.borrower_email &&
+      application.borrower_email.toLowerCase() === user.email.toLowerCase();
 
     const hasAccess =
       isAdmin ||
