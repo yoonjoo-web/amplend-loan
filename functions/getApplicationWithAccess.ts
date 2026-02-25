@@ -69,30 +69,32 @@ Deno.serve(async (req) => {
       console.error('Error resolving loan partner ids:', error);
     }
 
+    const isBrokerOwner = application.broker_user_id && application.broker_user_id === user.id;
     const isPrimaryBorrower = application.primary_borrower_id === user.id || application.primary_borrower_id === borrowerContactId;
     const createdById = typeof application.created_by === 'object'
       ? application.created_by?.id
       : application.created_by;
-    const isCreator = createdById === user.id;
-    
+    const isCreator = createdById === user.id || application.created_by === user.email;
+    const isBorrowerByEmail = user.email && application.borrower_email &&
+      application.borrower_email.toLowerCase() === user.email.toLowerCase();
+
     // Check if user is a co-borrower
     let isCoBorrower = false;
     if (application.co_borrowers && Array.isArray(application.co_borrowers)) {
       isCoBorrower = application.co_borrowers.some(cb =>
-        cb.user_id === user.id || cb.borrower_id === borrowerContactId
+        cb.user_id === user.id ||
+        cb.borrower_id === borrowerContactId ||
+        (user.email && cb.email && cb.email.toLowerCase() === user.email.toLowerCase())
       );
     }
 
-    // Grant access if:
-    // - User is admin or administrator (full access)
-    // - User is the assigned loan officer
-    // - User is the primary borrower
-    // - User is a co-borrower
     const hasAccess =
       isAdmin ||
       isAssignedOfficer ||
+      isBrokerOwner ||
       isPrimaryBorrower ||
       isCoBorrower ||
+      isBorrowerByEmail ||
       isCreator ||
       isUserOnApplicationTeam(application as Record<string, unknown>, {
         id: user.id,
