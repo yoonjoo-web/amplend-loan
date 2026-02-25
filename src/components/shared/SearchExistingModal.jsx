@@ -25,6 +25,10 @@ export default function SearchExistingModal({
 }) {
   const [search, setSearch] = useState('');
 
+  React.useEffect(() => {
+    if (isOpen) setSearch('');
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const filteredItems = search.trim() === ''
