@@ -339,6 +339,26 @@ export default function NewApplication() {
     }
   }, [formData, visibleSteps, currentStep]);
 
+  useEffect(() => {
+    if (!formData) return;
+    const liaisonIds = formData.liaison_ids || [];
+    if (liaisonIds.length === 0) {
+      setLiaisonPartners([]);
+      return;
+    }
+    
+    const resolveNames = async () => {
+      const allPartners = await base44.entities.LoanPartner.list().catch(() => []);
+      const resolved = liaisonIds.map((id) => {
+        const match = allPartners.find((p) => p.id === id || p.user_id === id);
+        return match ? (match.name || match.contact_person || match.email || id) : id;
+      }).filter(Boolean);
+      setLiaisonPartners(resolved);
+    };
+    
+    resolveNames();
+  }, [formData?.liaison_ids]);
+
   const canManage = permissions?.canManageApplications;
   const canReview = permissions?.canReviewApplication && formData && ['submitted', 'under_review', 'review_completed'].includes(formData.status);
   
