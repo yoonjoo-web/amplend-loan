@@ -5,7 +5,7 @@ import AddLiaisonModal from './AddLiaisonModal';
 import { normalizeAppRole } from '@/components/utils/appRoles';
 import { base44 } from '@/api/base44Client';
 
-export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions }) {
+export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions, onAddLiaisonSave }) {
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const canShowAddLiaison = useMemo(() => {
