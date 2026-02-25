@@ -123,7 +123,13 @@ export default function Applications() {
       }
 
       let filteredApps = allApps;
-      if (permissions.isBorrower) {
+      if (permissions.isBroker) {
+        // Brokers: show apps where they are broker_user_id or on the team
+        filteredApps = allApps.filter((app) =>
+          (app.broker_user_id && app.broker_user_id === currentUser.id) ||
+          isUserOnApplicationTeam(app, currentUser, permissions)
+        );
+      } else if (permissions.isBorrower) {
         const borrowerAccessIds = permissions.borrowerAccessIds || [currentUser.id];
         if (permissions.isBorrowerLiaison) {
           filteredApps = allApps.filter((app) => isUserOnApplicationTeam(app, currentUser, permissions));
