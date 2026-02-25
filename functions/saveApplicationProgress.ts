@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+
 function isUserOnApplicationTeam(application, user) {
   if (!application || !user) return false;
 
