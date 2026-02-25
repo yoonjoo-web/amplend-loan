@@ -1136,6 +1136,10 @@ export default function NewApplication() {
         }
     }
 
+    if (StepComponent === LoanTypeStep) {
+        props.onAddLiaisonSave = saveProgress;
+    }
+
     return (
         <StepComponent {...props} />
     );
