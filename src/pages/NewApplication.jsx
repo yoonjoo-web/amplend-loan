@@ -28,12 +28,6 @@ import DynamicFormRenderer from "../components/forms/DynamicFormRenderer";
 import UpdateProfileModal from "../components/shared/UpdateProfileModal";
 import { mapLoanApplicationToBorrower, mapLoanApplicationToBorrowerEntity } from "@/components/utils/entitySyncHelper";
 
-const normalizeIdList = (value) => {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (value === null || value === undefined || value === '') return [];
-  return [value];
-};
-
 const allSteps = [
   { id: 1, title: 'Loan Type', component: LoanTypeStep, description: 'Select the type of loan you need' },
   { id: 2, title: 'Borrower Information', component: BorrowerInfoStep, description: 'Provide your personal details' },
@@ -261,7 +255,7 @@ export default function NewApplication() {
       }
 
       // Resolve liaison names for the indicator
-      const liaisonIds = normalizeIdList(appData.liaison_ids);
+      const liaisonIds = appData.liaison_ids || [];
       if (liaisonIds.length > 0) {
         const resolved = liaisonIds.map((id) => {
           const match = allPartners.find((p) => p.id === id || p.user_id === id);
@@ -345,11 +339,9 @@ export default function NewApplication() {
     }
   }, [formData, visibleSteps, currentStep]);
 
-  const normalizedFormLiaisonIds = useMemo(() => normalizeIdList(formData?.liaison_ids), [formData?.liaison_ids]);
-
   useEffect(() => {
    if (!formData) return;
-   const liaisonIds = normalizedFormLiaisonIds;
+   const liaisonIds = formData.liaison_ids || [];
    if (liaisonIds.length === 0) {
      setLiaisonPartners([]);
      return;
@@ -371,12 +363,12 @@ export default function NewApplication() {
        setLiaisonPartners(resolved);
      } catch (error) {
        console.error('Error resolving liaison names:', error);
-       setLiaisonPartners(liaisonIds);
+       setLiaisonPartners(liaisonIds.filter(Boolean));
      }
    };
 
    resolveNames();
-  }, [formData, normalizedFormLiaisonIds]);
+  }, [formData?.liaison_ids]);
 
   const canManage = permissions?.canManageApplications;
   const canReview = permissions?.canReviewApplication && formData && ['submitted', 'under_review', 'review_completed'].includes(formData.status);
@@ -469,13 +461,12 @@ export default function NewApplication() {
     return cleanedData;
   };
 
-  const saveProgress = async (stepToSave, dataOverrides = {}) => {
+  const saveProgress = async (stepToSave) => {
     if (isReadOnly) return;
     setIsProcessing(true);
     try {
       const dataToSave = cleanFormDataForSaving({
         ...formData,
-        ...dataOverrides,
         current_step: stepToSave || currentStep
       });
 

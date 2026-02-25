@@ -6,16 +6,9 @@ import AddLiaisonModal from './AddLiaisonModal';
 import { normalizeAppRole } from '@/components/utils/appRoles';
 import { base44 } from '@/api/base44Client';
 
-const normalizeLiaisonIds = (value) => {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (value === null || value === undefined || value === '') return [];
-  return [value];
-};
-
 export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions, onAddLiaisonSave }) {
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const [liaisonNames, setLiaisonNames] = useState([]);
-  const liaisonIds = normalizeLiaisonIds(data?.liaison_ids);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const canShowAddLiaison = useMemo(() => {
     if (isReadOnly) return false;
@@ -32,6 +25,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
   // Load and resolve liaison names whenever liaison_ids change
   useEffect(() => {
     const resolveLiaisonNames = async () => {
+      const liaisonIds = data?.liaison_ids || [];
       if (liaisonIds.length === 0) {
         setLiaisonNames([]);
         return;
@@ -47,16 +41,16 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
         setLiaisonNames(resolved);
       } catch (error) {
         console.error('Error resolving liaison names:', error);
-        setLiaisonNames(liaisonIds);
+        setLiaisonNames(liaisonIds.filter(Boolean));
       }
     };
 
     resolveLiaisonNames();
-  }, [liaisonIds.join('|')]);
+  }, [data?.liaison_ids]);
 
   const handleAddLiaison = async (liaisonId) => {
     if (!liaisonId || !data?.id) return;
-    const existing = liaisonIds;
+    const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
     if (existing.includes(liaisonId)) return;
     const updated = [...existing, liaisonId];
     
@@ -72,7 +66,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
       
       // Reload parent to ensure persistence
       if (onAddLiaisonSave) {
-        await onAddLiaisonSave(undefined, { liaison_ids: updated });
+        await onAddLiaisonSave();
       }
     } catch (error) {
       console.error('ERROR - Failed to save liaison:', error);
@@ -90,13 +84,13 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
             </Button>
           </div>
         )}
-        {(liaisonNames.length > 0 || liaisonIds.length > 0) && (
+        {liaisonNames.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Assigned Liaisons:</p>
             <div className="flex flex-wrap gap-2">
-              {(liaisonNames.length > 0 ? liaisonNames : liaisonIds).map((name, idx) => (
+              {liaisonNames.map((name, idx) => (
                 <Badge key={idx} variant="secondary">
-                  {String(name)}
+                  {name}
                 </Badge>
               ))}
             </div>

@@ -130,11 +130,7 @@ Deno.serve(async (req) => {
     if (application.broker_user_id) safeData.broker_user_id = application.broker_user_id;
     if (application.broker_ids && application.broker_ids.length > 0) safeData.broker_ids = application.broker_ids;
     if (application.referrer_ids && application.referrer_ids.length > 0) safeData.referrer_ids = application.referrer_ids;
-    // Preserve liaison_ids only when the client did not explicitly submit them.
-    // Liaison assignment is a valid user edit in the application flow.
-    if (!Array.isArray(safeData.liaison_ids) && application.liaison_ids && application.liaison_ids.length > 0) {
-      safeData.liaison_ids = application.liaison_ids;
-    }
+    if (application.liaison_ids && application.liaison_ids.length > 0) safeData.liaison_ids = application.liaison_ids;
     if (application.referral_broker) safeData.referral_broker = application.referral_broker;
     if (application.loan_contacts && Object.keys(application.loan_contacts).length > 0) safeData.loan_contacts = application.loan_contacts;
 
