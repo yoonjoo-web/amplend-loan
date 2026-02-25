@@ -26,9 +26,11 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     if (existing.includes(liaisonId)) return;
     const updated = [...existing, liaisonId];
     try {
-      // Save directly to database, then reload parent data
+      // Update local state immediately for UI feedback
+      onChange({ liaison_ids: updated });
+      // Save to database
       await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
-      // Reload parent component's formData to pick up the changes
+      // Reload parent to ensure persistence
       if (onAddLiaisonSave) {
         await onAddLiaisonSave();
       }
