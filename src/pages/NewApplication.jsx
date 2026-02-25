@@ -363,7 +363,11 @@ export default function NewApplication() {
       }
     });
 
+    // Fields that must never be nulled out (they are identity/access fields)
+    const preserveFields = ['broker_user_id', 'broker_ids', 'referrer_ids', 'liaison_ids', 'referral_broker', 'loan_contacts'];
+
     Object.keys(cleanedData).forEach(key => {
+      if (preserveFields.includes(key)) return;
       if (cleanedData[key] === '') {
         cleanedData[key] = null;
       }
