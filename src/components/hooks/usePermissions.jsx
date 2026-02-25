@@ -67,6 +67,7 @@ const defaultPermissions = {
   // Dashboard
   canViewDashboard: false,
   canViewMyBorrowers: false,
+  canViewMyPartners: false,
   borrowerAccessIds: [],
   loanPartnerAccessIds: [],
 };
