@@ -1591,7 +1591,7 @@ export default function ContactDetail() {
                         }
 
                         const isBroker = currentUser?.app_role === 'Broker';
-                        await base44.functions.invoke('emailService', {
+                        const emailResult = await base44.functions.invoke('emailService', {
                           email_type: contactType === 'partner'
                             ? 'invite_loan_partner'
                             : (isBroker ? 'invite_borrower_broker' : 'invite_borrower'),
@@ -1614,7 +1614,7 @@ export default function ContactDetail() {
                         });
 
                         try {
-                          await base44.entities.BorrowerInviteRequest.create({
+                          const inviteRequest = await base44.entities.BorrowerInviteRequest.create({
                             source: 'log',
                             status: 'sent',
                             invite_type: contactType === 'partner'
@@ -1629,8 +1629,20 @@ export default function ContactDetail() {
                             requested_by_user_id: currentUser?.id || null,
                             requested_by_role: currentUser?.app_role || currentUser?.role || 'Unknown',
                             requested_by_name: currentUser?.full_name || currentUser?.email || '',
-                            sent_at: new Date().toISOString()
+                            sent_at: new Date().toISOString(),
+                            invite_token_id: emailResult?.details?.invite_token_id || null
                           });
+
+                          const inviteTokenId = emailResult?.details?.invite_token_id;
+                          if (inviteTokenId && inviteRequest?.id) {
+                            try {
+                              await base44.entities.BorrowerInviteToken.update(inviteTokenId, {
+                                request_id: inviteRequest.id
+                              });
+                            } catch (tokenLinkError) {
+                              console.error('Error linking invite token to logged invitation:', tokenLinkError);
+                            }
+                          }
                         } catch (logError) {
                           console.error('Error logging invitation:', logError);
                         }

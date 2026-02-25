@@ -11,6 +11,7 @@ import { resolveBorrowerInviteFields } from "@/components/utils/borrowerInvitati
 const STATUS_COLORS = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
   sent: "bg-blue-100 text-blue-800 border-blue-200",
+  activated: "bg-emerald-100 text-emerald-800 border-emerald-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
 };
 
@@ -146,13 +147,15 @@ export default function ManageInvitesTab({ currentUser }) {
   const loadRequests = async () => {
     setIsLoading(true);
     try {
-      const [inviteRequests, borrowers, users] = await Promise.all([
+      const [inviteRequests, borrowers, users, inviteTokens] = await Promise.all([
         base44.entities.BorrowerInviteRequest.list("-created_date"),
         Borrower.list("-created_date").catch(() => []),
-        User.list().catch(() => [])
+        User.list().catch(() => []),
+        base44.entities.BorrowerInviteToken.list().catch(() => [])
       ]);
 
       const userById = new Map((users || []).map((user) => [user.id, user]));
+      const tokenById = new Map((inviteTokens || []).map((token) => [token.id, token]));
       const userByEmail = new Map(
         (users || [])
           .filter((user) => user.email)
@@ -166,10 +169,13 @@ export default function ManageInvitesTab({ currentUser }) {
           : null;
         const requestedEmail = request.requested_email || request.recipient_email;
         const emailKey = normalizeEmail(requestedEmail);
+        const tokenRecord = request?.invite_token_id ? tokenById.get(request.invite_token_id) : null;
+        const tokenUsed = (tokenRecord?.status || "").toLowerCase() === "used";
         const onboardedByEmail = emailKey && userByEmail.has(emailKey);
         const onboardedByBorrower = request.borrower_id
           ? borrowerById.get(request.borrower_id)?.is_invite_temp !== true
           : false;
+        const isActivated = tokenUsed || onboardedByEmail || onboardedByBorrower || (request.status || "").toLowerCase() === "activated";
         return {
           ...request,
           created_date: request.sent_at || request.created_date,
@@ -177,7 +183,8 @@ export default function ManageInvitesTab({ currentUser }) {
           invite_type: request.invite_type || request.email_type,
           requested_by_role: request.requested_by_role || inviter?.app_role || inviter?.role,
           requested_by_name: request.requested_by_name || inviter?.full_name || inviter?.email,
-          _onboarded: Boolean(onboardedByEmail || onboardedByBorrower)
+          _token_used: tokenUsed,
+          _onboarded: Boolean(isActivated)
         };
       });
 
@@ -207,6 +214,8 @@ export default function ManageInvitesTab({ currentUser }) {
           const requestedByName = inviter?.full_name || inviter?.email || "Unknown";
           const requestedByRole = borrower.invited_by_role || inviter?.app_role || inviter?.role || "Unknown";
           const source = normalizeAppRole(requestedByRole) === "Broker" ? "broker" : "internal";
+          const tokenRecord = borrower.invite_token_id ? tokenById.get(borrower.invite_token_id) : null;
+          const tokenUsed = (tokenRecord?.status || "").toLowerCase() === "used";
 
           return {
             id: `borrower-${borrower.id}`,
@@ -218,23 +227,14 @@ export default function ManageInvitesTab({ currentUser }) {
             requested_by_role: requestedByRole,
             requested_by_name: requestedByName,
             created_date: dateValue || borrower.updated_date || borrower.created_date,
-            status: statusValue || "sent",
+            status: tokenUsed ? "activated" : (statusValue || "sent"),
             source,
             invite_type: "invite_borrower",
-            _onboarded: false
+            _token_used: tokenUsed,
+            _onboarded: tokenUsed
           };
         })
         .filter(Boolean);
-
-      const isOnboarded = (request) => {
-        const emailKey = normalizeEmail(request.requested_email);
-        if (emailKey && userByEmail.has(emailKey)) return true;
-        if (request.borrower_id) {
-          const borrower = borrowerById.get(request.borrower_id);
-          if (borrower && borrower.is_invite_temp !== true) return true;
-        }
-        return false;
-      };
 
       const allRequests = [...normalizedRequests, ...derivedBorrowerInvites];
 
@@ -255,7 +255,12 @@ export default function ManageInvitesTab({ currentUser }) {
   const normalizedRequests = useMemo(() => {
     const ensureStatus = (request) => ({
       ...request,
-      status: (request.status || "sent").toLowerCase()
+      status:
+        (request.status || "").toLowerCase() === "rejected"
+          ? "rejected"
+          : (request._onboarded || request._token_used)
+            ? "activated"
+            : (request.status || "sent").toLowerCase()
     });
 
     return (requests || [])

@@ -25,6 +25,7 @@ export default function Onboarding() {
   const [hideBranding, setHideBranding] = useState(false);
   const [isInviteInvalid, setIsInviteInvalid] = useState(false);
   const [inviteTokenId, setInviteTokenId] = useState(null);
+  const [inviteRequestId, setInviteRequestId] = useState(null);
 
   useEffect(() => {
     loadUserData();
@@ -95,6 +96,7 @@ export default function Onboarding() {
             return;
           }
           setInviteTokenId(tokenRecord.id);
+          setInviteRequestId(tokenRecord.request_id || null);
         } catch (error) {
           console.error('Error validating invite token:', error);
           setIsInviteInvalid(true);
@@ -245,6 +247,18 @@ export default function Onboarding() {
           });
         } catch (error) {
           console.error('Error marking invite token as used:', error);
+        }
+      }
+
+      if (inviteRequestId) {
+        try {
+          await base44.entities.BorrowerInviteRequest.update(inviteRequestId, {
+            status: 'activated',
+            activated_by_user_id: currentUser.id,
+            activated_at: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('Error marking invite request as activated:', error);
         }
       }
 

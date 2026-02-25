@@ -115,7 +115,7 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           }
         });
       } else {
-        await base44.functions.invoke('emailService', {
+        const emailResult = await base44.functions.invoke('emailService', {
           email_type: 'invite_borrower',
           skip_invite_log: true,
           recipient_email: formData.requested_email,
@@ -126,7 +126,7 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           }
         });
 
-        await base44.entities.BorrowerInviteRequest.create({
+        const inviteRequest = await base44.entities.BorrowerInviteRequest.create({
           source: 'internal',
           status: 'sent',
           borrower_id: null,
@@ -135,8 +135,20 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
           requested_last_name: formData.requested_last_name,
           requested_by_user_id: inviter?.id || null,
           requested_by_role: inviterRole,
-          requested_by_name: inviter?.full_name || inviter?.email || ''
+          requested_by_name: inviter?.full_name || inviter?.email || '',
+          invite_token_id: emailResult?.details?.invite_token_id || null
         });
+
+        const inviteTokenId = emailResult?.details?.invite_token_id;
+        if (inviteTokenId && inviteRequest?.id) {
+          try {
+            await base44.entities.BorrowerInviteToken.update(inviteTokenId, {
+              request_id: inviteRequest.id
+            });
+          } catch (linkError) {
+            console.error('Error linking invite token to internal invite request:', linkError);
+          }
+        }
       }
 
       toast({

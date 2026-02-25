@@ -251,7 +251,32 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    if ((email_type === 'invite_borrower' || email_type === 'invite_borrower_broker') && data?.invite_token) {
+    const onboardingInviteEmailTypes = new Set([
+      'invite_borrower',
+      'invite_borrower_broker',
+      'invite_loan_partner',
+      'invite_team_member'
+    ]);
+
+    let generatedInviteTokenId: string | null = null;
+    let generatedInviteToken: string | null = null;
+
+    if (onboardingInviteEmailTypes.has(email_type) && !data?.invite_token) {
+      try {
+        generatedInviteToken = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        const tokenRecord = await base44.entities.BorrowerInviteToken.create({
+          token: generatedInviteToken,
+          status: 'active',
+          issued_at: new Date().toISOString()
+        });
+        generatedInviteTokenId = tokenRecord?.id || null;
+        data.invite_token = generatedInviteToken;
+      } catch (tokenError) {
+        console.error('[emailService] Failed to create invite token:', tokenError);
+      }
+    }
+
+    if (onboardingInviteEmailTypes.has(email_type) && data?.invite_token) {
       const tokenParam = `invite_token=${encodeURIComponent(data.invite_token)}`;
       const hasQuery = template.cta_url.includes('?');
       template.cta_url = `${template.cta_url}${hasQuery ? '&' : '?'}${tokenParam}`;
@@ -544,7 +569,7 @@ This is an automated message.
           invite: data.role || 'Borrower'
         };
 
-        await base44.entities.BorrowerInviteRequest.create({
+        const inviteRequest = await base44.entities.BorrowerInviteRequest.create({
           source,
           status: 'sent',
           invite_type: email_type,
@@ -557,8 +582,19 @@ This is an automated message.
           requested_by_name: user.full_name || user.email || '',
           sent_at: new Date().toISOString(),
           application_id: data.application_id || null,
-          entity_id: data.entity_id || null
+          entity_id: data.entity_id || null,
+          invite_token_id: generatedInviteTokenId || null
         });
+
+        if (generatedInviteTokenId && inviteRequest?.id) {
+          try {
+            await base44.entities.BorrowerInviteToken.update(generatedInviteTokenId, {
+              request_id: inviteRequest.id
+            });
+          } catch (tokenLinkError) {
+            console.error('[emailService] Failed to link invite token to request:', tokenLinkError);
+          }
+        }
       } catch (logError) {
         console.error('[emailService] Failed to log invite:', logError);
       }
@@ -570,7 +606,9 @@ This is an automated message.
       message_id: result.id,
       details: {
         recipient: recipient_email,
-        type: email_type
+        type: email_type,
+        invite_token: generatedInviteToken || data?.invite_token || null,
+        invite_token_id: generatedInviteTokenId || null
       }
     });
 
