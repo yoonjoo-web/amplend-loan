@@ -56,6 +56,7 @@ export default function NewApplication() {
   const [primaryBorrowerUser, setPrimaryBorrowerUser] = useState(null);
   const [showProceedContactSyncModal, setShowProceedContactSyncModal] = useState(false);
   const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
+  const [liaisonPartners, setLiaisonPartners] = useState([]);
 
   const { toast } = useToast();
 
