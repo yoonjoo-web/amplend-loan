@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import DynamicFormRenderer from '../forms/DynamicFormRenderer';
 import AddLiaisonModal from './AddLiaisonModal';
 import { normalizeAppRole } from '@/components/utils/appRoles';
+import { base44 } from '@/api/base44Client';
 
 export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions }) {
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
@@ -19,11 +20,16 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     );
   }, [currentUser?.role, isReadOnly, normalizedRole, permissions]);
 
-  const handleAddLiaison = (liaisonId) => {
+  const handleAddLiaison = async (liaisonId) => {
     if (!liaisonId) return;
     const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
     if (existing.includes(liaisonId)) return;
-    onChange({ liaison_ids: [...existing, liaisonId] });
+    const updated = [...existing, liaisonId];
+    onChange({ liaison_ids: updated });
+    // Immediately persist so it survives page reload
+    if (data?.id) {
+      await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+    }
   };
 
   return (
