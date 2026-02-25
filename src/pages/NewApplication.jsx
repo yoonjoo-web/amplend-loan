@@ -1236,6 +1236,18 @@ export default function NewApplication() {
               </Card>
             )}
 
+            {liaisonPartners.length > 0 && (
+              <Card className="border-slate-200 bg-slate-50 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Handshake className="w-4 h-4 text-slate-600 shrink-0" />
+                    <p className="text-sm font-semibold text-slate-800">Assigned Liaison{liaisonPartners.length > 1 ? 's' : ''}:</p>
+                    <p className="text-sm text-slate-600">{liaisonPartners.join(', ')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="mb-6">
