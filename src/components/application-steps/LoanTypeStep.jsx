@@ -103,6 +103,43 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
         isReadOnly={isReadOnly}
         showTabs={false}
       />
+      
+      {/* Assigned Liaisons Display */}
+      {liaisonNames.length > 0 && (
+        <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <h4 className="text-sm font-semibold text-slate-900 mb-3">Assigned Liaisons</h4>
+          <div className="flex flex-wrap gap-2">
+            {liaisonNames.map((name, index) => (
+              <Badge key={index} variant="secondary" className="flex items-center gap-2 px-3 py-1">
+                {name}
+                {!isReadOnly && (
+                  <button
+                    onClick={() => handleRemoveLiaison(index)}
+                    className="ml-1 hover:text-red-600 transition-colors"
+                    title="Remove liaison"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add Liaison Button */}
+      {canShowAddLiaison && !isReadOnly && (
+        <div className="mt-4">
+          <Button
+            onClick={() => setShowAddLiaisonModal(true)}
+            variant="outline"
+            size="sm"
+          >
+            {liaisonNames.length > 0 ? 'Change Liaison' : 'Add Liaison'}
+          </Button>
+        </div>
+      )}
+
       <AddLiaisonModal
         isOpen={showAddLiaisonModal}
         onClose={() => setShowAddLiaisonModal(false)}
