@@ -388,7 +388,7 @@ export default function Applications() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Application
+            Applications
           </h1>
           {permissions.canCreateApplication &&
           <Button
