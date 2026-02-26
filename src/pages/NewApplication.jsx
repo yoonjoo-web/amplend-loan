@@ -1445,7 +1445,6 @@ export default function NewApplication() {
             )}
 
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-
               <CardContent className="p-6">
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-4">
