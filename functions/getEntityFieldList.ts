@@ -130,7 +130,8 @@ const SKIP_FIELDS = [
   'acknowledgement_agreed', 'authorization_agreed',
   'rejection_reason', 'notes', 'overridden_fields',
   'borrower_completion_status', 'borrower_invitation_status',
-  'borrower_ids', 'loan_officer_ids', 'guarantor_ids', 'referrer_ids',
+  'borrower_ids', 'loan_officer_ids', 'guarantor_ids',
+  'broker_id', 'referrer_id', 'liaison_id',
   'individuals', 'draws', 'loan_contacts', 'unit_information',
   'modification_history'
 ];

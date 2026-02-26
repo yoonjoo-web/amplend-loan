@@ -26,7 +26,10 @@ import FieldCommentModal from "../components/application-review/FieldCommentModa
 import LoanOfficerReassignModal from "../components/applications/LoanOfficerReassignModal";
 import DynamicFormRenderer from "../components/forms/DynamicFormRenderer";
 import UpdateProfileModal from "../components/shared/UpdateProfileModal";
+import AddLiaisonModal from "../components/application-steps/AddLiaisonModal";
+import AddBrokerModal from "../components/application-steps/AddBrokerModal";
 import { mapLoanApplicationToBorrower, mapLoanApplicationToBorrowerEntity } from "@/components/utils/entitySyncHelper";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const allSteps = [
   { id: 1, title: 'Loan Type', component: LoanTypeStep, description: 'Select the type of loan you need' },
@@ -57,8 +60,15 @@ export default function NewApplication() {
   const [showProceedContactSyncModal, setShowProceedContactSyncModal] = useState(false);
   const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
   const [liaisonPartners, setLiaisonPartners] = useState([]);
+  const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
+  const [showAddBrokerModal, setShowAddBrokerModal] = useState(false);
 
   const { toast } = useToast();
+  const toIdArray = useCallback((singleValue, legacyList) => {
+    if (singleValue) return [singleValue];
+    if (Array.isArray(legacyList)) return legacyList.filter(Boolean);
+    return [];
+  }, []);
 
   const getVisibleSteps = useCallback((formData, userIsCoBorrower = false) => {
     return allSteps.filter(step => {
@@ -155,7 +165,7 @@ export default function NewApplication() {
           const createdById = typeof appData.created_by === 'object' ? appData.created_by?.id : appData.created_by;
           const isCreator = createdById === currentUser.id;
           
-          const isBrokerOwner = appData.broker_user_id && appData.broker_user_id === currentUser.id;
+          const isBrokerOwner = (appData.broker_id || appData.broker_user_id) && (appData.broker_id || appData.broker_user_id) === currentUser.id;
           if (!permissions.canManageApplications && !permissions.canManageOwnApplications && !isPrimaryBorrower && !isCoBorrower && !isCreator && !isBrokerOwner) {
             accessDenied = true;
             throw new Error('You do not have permission to access this application');
@@ -255,7 +265,7 @@ export default function NewApplication() {
       }
 
       // Resolve liaison names for the indicator
-      const liaisonIds = appData.liaison_ids || [];
+      const liaisonIds = toIdArray(appData.liaison_id, appData.liaison_ids);
       if (liaisonIds.length > 0) {
         const resolved = liaisonIds.map((id) => {
           const match = allPartners.find((p) => p.id === id || p.user_id === id);
@@ -325,7 +335,7 @@ export default function NewApplication() {
     } finally {
       setIsLoading(false);
     }
-  }, [navigate, location.search, getVisibleSteps, toast, currentUser, permissions]);
+  }, [navigate, location.search, getVisibleSteps, toast, currentUser, permissions, toIdArray]);
 
   useEffect(() => {
     if (!permissionsLoading && currentUser) {
@@ -341,7 +351,7 @@ export default function NewApplication() {
 
   useEffect(() => {
    if (!formData) return;
-   const liaisonIds = formData.liaison_ids || [];
+   const liaisonIds = toIdArray(formData.liaison_id, formData.liaison_ids);
    if (liaisonIds.length === 0) {
      setLiaisonPartners([]);
      return;
@@ -368,7 +378,7 @@ export default function NewApplication() {
    };
 
    resolveNames();
-  }, [formData?.liaison_ids]);
+  }, [formData?.liaison_id, formData?.liaison_ids, toIdArray]);
 
   const canManage = permissions?.canManageApplications;
   const canReview = permissions?.canReviewApplication && formData && ['submitted', 'under_review', 'review_completed'].includes(formData.status);
@@ -407,7 +417,7 @@ export default function NewApplication() {
     });
 
     // Fields that must never be nulled out (they are identity/access fields)
-    const preserveFields = ['broker_user_id', 'broker_ids', 'referrer_ids', 'liaison_ids', 'referral_broker', 'loan_contacts'];
+    const preserveFields = ['broker_id', 'referrer_id', 'liaison_id', 'broker_ids', 'referrer_ids', 'liaison_ids', 'referral_broker', 'loan_contacts'];
 
     Object.keys(cleanedData).forEach(key => {
       if (preserveFields.includes(key)) return;
@@ -521,6 +531,68 @@ export default function NewApplication() {
       return newData;
     });
   }, [isReadOnly, permissions.canManageApplications]);
+
+  const handleAddLiaison = useCallback(async (liaisonId) => {
+    if (!liaisonId || !formData?.id) return;
+    const currentLiaisonId = formData?.liaison_id || (Array.isArray(formData?.liaison_ids) ? formData.liaison_ids[0] : null);
+    if (currentLiaisonId === liaisonId) return;
+    try {
+      await base44.entities.LoanApplication.update(formData.id, {
+        liaison_id: liaisonId,
+      });
+      handleStepDataChange({
+        liaison_id: liaisonId,
+      });
+    } catch (error) {
+      console.error('ERROR - Failed to save liaison:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add liaison. Please try again.",
+      });
+      throw error;
+    }
+  }, [formData, handleStepDataChange, toast]);
+
+  const handleAddBroker = useCallback(async (brokerId, brokerPartner = null) => {
+    if (!brokerId || !formData?.id) return;
+    if (String(formData?.broker_id || '') === String(brokerId)) return;
+
+    const brokerName =
+      brokerPartner?.name ||
+      brokerPartner?.contact_person ||
+      [brokerPartner?.first_name, brokerPartner?.last_name].filter(Boolean).join(' ').trim() ||
+      brokerPartner?.email ||
+      null;
+
+    const brokerSnapshot = brokerPartner ? {
+      name: brokerName || 'Broker',
+      email: brokerPartner?.email || null,
+      phone: brokerPartner?.phone || null,
+      user_id: brokerPartner?.user_id || (String(brokerId) === String(brokerPartner?.id) ? null : brokerId) || null,
+      id: brokerPartner?.id || null
+    } : null;
+
+    try {
+      const payload = {
+        broker_id: brokerId,
+        ...(brokerSnapshot ? {
+          referral_broker: brokerSnapshot,
+          referrer_name: brokerSnapshot.name
+        } : {})
+      };
+      await base44.entities.LoanApplication.update(formData.id, payload);
+      handleStepDataChange(payload);
+    } catch (error) {
+      console.error('ERROR - Failed to save broker:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add broker. Please try again.",
+      });
+      throw error;
+    }
+  }, [formData, handleStepDataChange, toast]);
 
   const handleStartReview = async () => {
     setIsProcessing(true);
@@ -1149,6 +1221,7 @@ export default function NewApplication() {
 
     if (StepComponent === LoanTypeStep) {
         props.onAddLiaisonSave = saveProgress;
+        props.hideInlineLiaisonControls = true;
     }
 
     return (
@@ -1175,6 +1248,15 @@ export default function NewApplication() {
     || '';
   const showBrokerName = permissions?.isBorrower && hideLoanOfficerDetails;
   const showAssignmentCard = formData && (canManage || permissions?.isBroker || showBrokerName);
+  const normalizedRole = normalizeAppRole(currentUser?.app_role);
+  const canShowPartnerActionButtons = !isReadOnly && Boolean(
+    currentUser?.role === 'admin' ||
+    permissions?.isBorrower ||
+    permissions?.isBroker ||
+    permissions?.isAdministrator ||
+    permissions?.isLoanOfficer ||
+    ['Borrower', 'Broker', 'Administrator', 'Loan Officer'].includes(normalizedRole)
+  );
 
   return (
     <>
@@ -1281,6 +1363,25 @@ export default function NewApplication() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {canShowPartnerActionButtons && (
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddBrokerModal(true)}
+                >
+                  {formData?.broker_id ? 'Change Broker' : 'Add Broker'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddLiaisonModal(true)}
+                >
+                  Add Liaison
+                </Button>
+              </div>
             )}
 
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -1472,6 +1573,23 @@ export default function NewApplication() {
             onRefresh={loadApplication}
           />
         )}
+
+        <AddLiaisonModal
+          isOpen={showAddLiaisonModal}
+          onClose={() => setShowAddLiaisonModal(false)}
+          applicationData={formData}
+          onAddLiaison={handleAddLiaison}
+          permissions={permissions}
+        />
+
+        <AddBrokerModal
+          isOpen={showAddBrokerModal}
+          onClose={() => setShowAddBrokerModal(false)}
+          applicationData={formData}
+          onAddBroker={handleAddBroker}
+          permissions={permissions}
+          currentUser={currentUser}
+        />
       </div>
     </>
   );

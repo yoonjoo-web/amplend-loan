@@ -41,7 +41,9 @@ Deno.serve(async (req) => {
 
     const isBorrower = loan.borrower_ids?.some((id) => id === user.id || id === borrowerContactId);
     const isGuarantor = loan.guarantor_ids?.includes(user.id);
-    const isReferrer = loan.referrer_ids?.includes(user.id);
+    const isReferrer =
+      loan.referrer_id === user.id ||
+      (Array.isArray(loan.referrer_ids) && loan.referrer_ids.includes(user.id));
 
     if (!(isAdmin || isLoanOfficer || isAssignedOfficer || isBorrower || isGuarantor || isReferrer)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });

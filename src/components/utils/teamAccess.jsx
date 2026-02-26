@@ -4,15 +4,22 @@ export const isUserOnLoanTeam = (loan, user, access = {}) => {
   if (!userId) return false;
   const partnerIds = Array.isArray(access.loanPartnerAccessIds) ? access.loanPartnerAccessIds : [];
 
-  const matchesIdList = (ids) => {
-    if (!Array.isArray(ids)) return false;
-    if (ids.includes(userId)) return true;
-    return partnerIds.some((partnerId) => ids.includes(partnerId));
+  const toIdArray = (singleValue, legacyList) => {
+    if (singleValue) return [String(singleValue)];
+    if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+    return [];
   };
 
-  if (matchesIdList(loan.referrer_ids)) return true;
-  if (matchesIdList(loan.liaison_ids)) return true;
-  if (matchesIdList(loan.broker_ids)) return true;
+  const matchesIdList = (values) => {
+    if (!Array.isArray(values)) return false;
+    const ids = values.map(String);
+    if (ids.includes(String(userId))) return true;
+    return partnerIds.some((partnerId) => ids.includes(String(partnerId)));
+  };
+
+  if (matchesIdList(toIdArray(loan.referrer_id, loan.referrer_ids))) return true;
+  if (matchesIdList(toIdArray(loan.liaison_id, loan.liaison_ids))) return true;
+  if (matchesIdList(toIdArray(loan.broker_id, loan.broker_ids))) return true;
 
   const contact = loan.loan_contacts?.broker;
   if (contact && typeof contact === 'object') {
@@ -36,18 +43,23 @@ export const isUserOnApplicationTeam = (application, user, access = {}) => {
   if (createdById && createdById === userId) return true;
   const partnerIds = Array.isArray(access.loanPartnerAccessIds) ? access.loanPartnerAccessIds : [];
 
-  const matchesIdList = (ids) => {
-    if (!Array.isArray(ids)) return false;
-    if (ids.includes(userId)) return true;
-    return partnerIds.some((partnerId) => ids.includes(partnerId));
+  const toIdArray = (singleValue, legacyList) => {
+    if (singleValue) return [String(singleValue)];
+    if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+    return [];
   };
 
-  if (matchesIdList(application.referrer_ids)) return true;
-  if (matchesIdList(application.liaison_ids)) return true;
-  if (matchesIdList(application.broker_ids)) return true;
+  const matchesIdList = (values) => {
+    if (!Array.isArray(values)) return false;
+    const ids = values.map(String);
+    if (ids.includes(String(userId))) return true;
+    return partnerIds.some((partnerId) => ids.includes(String(partnerId)));
+  };
 
-  // Check broker_user_id (set when broker creates application)
-  if (application.broker_user_id && application.broker_user_id === userId) return true;
+  if (matchesIdList(toIdArray(application.referrer_id, application.referrer_ids))) return true;
+  if (matchesIdList(toIdArray(application.liaison_id, application.liaison_ids))) return true;
+  if (matchesIdList(toIdArray(application.broker_id, application.broker_ids))) return true;
+  if ((application.broker_id || application.broker_user_id) && (application.broker_id || application.broker_user_id) === userId) return true;
 
   const matchesContact = (contact) => {
     if (!contact || typeof contact !== 'object') return false;

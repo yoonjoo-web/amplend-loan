@@ -242,11 +242,17 @@ Deno.serve(async (req) => {
       loanOfficerIds.push(user.id);
     }
 
-    // Prepare referrer IDs if referrer_name exists
+    const toIdArray = (singleValue: unknown, legacyList: unknown): string[] => {
+      if (singleValue) return [String(singleValue)];
+      if (Array.isArray(legacyList)) return (legacyList as unknown[]).map(String).filter(Boolean);
+      return [];
+    };
+
+    // Prepare referrer ID if referrer_name exists
     console.log('[createLoanFromApplication] Resolving referrer');
-    const referrerIds = [];
+    let referrerId: string | null = application.referrer_id ? String(application.referrer_id) : null;
     let referrerUser = null;
-    if (application.referrer_name) {
+    if (!referrerId && application.referrer_name) {
       // Search for matching loan partner
       const allPartners = await base44.asServiceRole.entities.LoanPartner.list();
       // Match by name (referrer_name format: "First Initial. Last Name")
@@ -265,11 +271,13 @@ Deno.serve(async (req) => {
         const allUsers = await base44.asServiceRole.entities.User.list();
         referrerUser = allUsers.find(u => u.email === matchingPartner.email);
         if (referrerUser) {
-          referrerIds.push(referrerUser.id);
+          referrerId = referrerUser.id;
         }
       }
     }
 
+    const brokerId = application.broker_id || (Array.isArray(application.broker_ids) ? application.broker_ids[0] : null);
+    const liaisonId = application.liaison_id || (Array.isArray(application.liaison_ids) ? application.liaison_ids[0] : null);
     // Create the loan object using mapped data and additional fields
     console.log('[createLoanFromApplication] Building loan payload');
     const loanData = {
@@ -277,7 +285,9 @@ Deno.serve(async (req) => {
       borrower_ids: borrowerIds,
       loan_officer_ids: loanOfficerIds,
       guarantor_ids: [],
-      referrer_ids: referrerIds,
+      broker_id: brokerId || null,
+      liaison_id: liaisonId || null,
+      referrer_id: referrerId || null,
       
       // Use mapped data from helper (includes all property, financial, and borrower fields)
       ...mappedLoanData,
@@ -347,9 +357,9 @@ Deno.serve(async (req) => {
     }
 
     // Notify referrer if they exist
-    if (referrerUser && referrerIds.length > 0) {
+    if (referrerUser && referrerId) {
       try {
-        console.log('[createLoanFromApplication] Notifying referrer:', referrerUser.id);
+      console.log('[createLoanFromApplication] Notifying referrer:', referrerUser.id);
         const borrowerName = application.borrower_first_name && application.borrower_last_name 
           ? `${application.borrower_first_name} ${application.borrower_last_name}`
           : 'a borrower';

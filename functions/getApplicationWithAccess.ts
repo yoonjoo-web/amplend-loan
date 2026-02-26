@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       console.error('Error resolving loan partner ids:', error);
     }
 
-    const isBrokerOwner = application.broker_user_id && application.broker_user_id === user.id;
+    const isBrokerOwner = (application.broker_id || application.broker_user_id) && (application.broker_id || application.broker_user_id) === user.id;
     const isPrimaryBorrower = application.primary_borrower_id === user.id || application.primary_borrower_id === borrowerContactId;
     const createdById = typeof application.created_by === 'object'
       ? application.created_by?.id

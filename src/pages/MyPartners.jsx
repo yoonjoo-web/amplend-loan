@@ -55,13 +55,15 @@ export default function MyPartners() {
       const partnerIdSet = new Set();
 
       myApplications.forEach((app) => {
+        [app.broker_id, app.referrer_id, app.liaison_id].filter(Boolean).forEach((id) => partnerIdSet.add(id));
         (app.broker_ids || []).forEach((id) => partnerIdSet.add(id));
         (app.referrer_ids || []).forEach((id) => partnerIdSet.add(id));
         (app.liaison_ids || []).forEach((id) => partnerIdSet.add(id));
-        if (app.broker_user_id) partnerIdSet.add(app.broker_user_id);
+        if (app.broker_id || app.broker_user_id) partnerIdSet.add(app.broker_id || app.broker_user_id);
       });
 
       myLoans.forEach((loan) => {
+        [loan.broker_id, loan.referrer_id, loan.liaison_id].filter(Boolean).forEach((id) => partnerIdSet.add(id));
         (loan.broker_ids || []).forEach((id) => partnerIdSet.add(id));
         (loan.referrer_ids || []).forEach((id) => partnerIdSet.add(id));
         (loan.liaison_ids || []).forEach((id) => partnerIdSet.add(id));

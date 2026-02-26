@@ -497,17 +497,22 @@ export default function ContactDetail() {
               return false;
             };
             
+            const toIdArray = (singleValue, legacyList) => {
+              if (singleValue) return [singleValue];
+              return Array.isArray(legacyList) ? legacyList : [];
+            };
+
             contactRelatedLoans = (allLoans || []).filter((loan) =>
-              matchesPartnerIds(loan.referrer_ids) ||
-              matchesPartnerIds(loan.liaison_ids) ||
-              matchesPartnerIds(loan.broker_ids) ||
+              matchesPartnerIds(toIdArray(loan.referrer_id, loan.referrer_ids)) ||
+              matchesPartnerIds(toIdArray(loan.liaison_id, loan.liaison_ids)) ||
+              matchesPartnerIds(toIdArray(loan.broker_id, loan.broker_ids)) ||
               matchesPartnerContact(loan.loan_contacts?.broker)
             );
             
             contactRelatedApplications = (allApplications || []).filter((app) =>
-              matchesPartnerIds(app.referrer_ids) ||
-              matchesPartnerIds(app.liaison_ids) ||
-              matchesPartnerIds(app.broker_ids) ||
+              matchesPartnerIds(toIdArray(app.referrer_id, app.referrer_ids)) ||
+              matchesPartnerIds(toIdArray(app.liaison_id, app.liaison_ids)) ||
+              matchesPartnerIds(toIdArray(app.broker_id, app.broker_ids)) ||
               matchesPartnerContact(app.referral_broker) ||
               matchesPartnerContact(app.loan_contacts?.broker)
             );

@@ -7,23 +7,20 @@ export const isUserOnApplicationTeam = (
   if (!userId) return false;
   const partnerIds = Array.isArray(user.partnerIds) ? user.partnerIds : [];
 
-  const referrerIds = Array.isArray(application.referrer_ids)
-    ? (application.referrer_ids as string[])
-    : [];
-  const liaisonIds = Array.isArray(application.liaison_ids)
-    ? (application.liaison_ids as string[])
-    : [];
-  const brokerIds = Array.isArray(application.broker_ids)
-    ? (application.broker_ids as string[])
-    : [];
+  const asIdArray = (singleValue: unknown, legacyList: unknown): string[] => {
+    if (singleValue) return [String(singleValue)];
+    if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+    return [];
+  };
+  const referrerIds = asIdArray(application.referrer_id, application.referrer_ids);
+  const liaisonIds = asIdArray(application.liaison_id, application.liaison_ids);
+  const brokerIds = asIdArray(application.broker_id, application.broker_ids);
 
   if (referrerIds.includes(userId) || partnerIds.some((id) => referrerIds.includes(id))) return true;
   if (liaisonIds.includes(userId) || partnerIds.some((id) => liaisonIds.includes(id))) return true;
   if (brokerIds.includes(userId) || partnerIds.some((id) => brokerIds.includes(id))) return true;
-
-  // Check broker_user_id (set when broker creates application via service role)
-  const brokerUserId = application.broker_user_id as string | undefined;
-  if (brokerUserId && brokerUserId === userId) return true;
+  const brokerOwnerId = (application.broker_id || application.broker_user_id) as string | undefined;
+  if (brokerOwnerId && brokerOwnerId === userId) return true;
 
   const matchesContact = (contact?: Record<string, unknown>) => {
     if (!contact || typeof contact !== 'object') return false;

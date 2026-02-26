@@ -117,14 +117,24 @@ export default function LoanDetail() {
       const resolvedLoanPartnerAccessIds = await getLoanPartnerAccessIds(base44, user);
       setBorrowerAccessIds(resolvedBorrowerAccessIds);
 
+      const toIdArray = (singleValue, legacyList) => {
+        if (singleValue) return [String(singleValue)];
+        if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+        return [];
+      };
+
+      const matchesTeamIds = (values) =>
+        Array.isArray(values) &&
+        values.some((id) => String(id) === String(user.id) || resolvedLoanPartnerAccessIds.includes(String(id)));
+
       const canViewLoan = 
         user.role === 'admin' || 
         user.app_role === 'Administrator' ||
         user.app_role === 'Loan Officer' ||
         loanData.borrower_ids?.some((id) => resolvedBorrowerAccessIds.includes(id)) ||
-        loanData.liaison_ids?.some((id) => id === user.id || resolvedLoanPartnerAccessIds.includes(id)) ||
-        loanData.referrer_ids?.some((id) => id === user.id || resolvedLoanPartnerAccessIds.includes(id)) ||
-        loanData.broker_ids?.some((id) => id === user.id || resolvedLoanPartnerAccessIds.includes(id));
+        matchesTeamIds(toIdArray(loanData.liaison_id, loanData.liaison_ids)) ||
+        matchesTeamIds(toIdArray(loanData.referrer_id, loanData.referrer_ids)) ||
+        matchesTeamIds(toIdArray(loanData.broker_id, loanData.broker_ids));
 
       if (!canViewLoan) {
         toast({

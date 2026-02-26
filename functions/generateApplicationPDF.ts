@@ -241,12 +241,15 @@ Deno.serve(async (req) => {
     addField('Submitted Date:', formatDate(application.created_date));
 
     // Liaison Information (if assigned)
-    if (application.liaison_ids && application.liaison_ids.length > 0) {
+    const liaisonIds = application.liaison_id
+      ? [application.liaison_id]
+      : (Array.isArray(application.liaison_ids) ? application.liaison_ids : []);
+    if (liaisonIds.length > 0) {
       addSection('Assigned Liaison');
-      // Fetch liaison details for the first liaison
+      // Fetch liaison details for the assigned liaison
       try {
         const liaisons = await base44.asServiceRole.entities.LoanPartner.filter({ app_role: 'Liaison' });
-        const assignedLiaison = liaisons.find(l => application.liaison_ids.includes(l.id));
+        const assignedLiaison = liaisons.find(l => liaisonIds.includes(l.id) || liaisonIds.includes(l.user_id));
         if (assignedLiaison) {
           addField('Name:', assignedLiaison.name);
           addField('Email:', assignedLiaison.email);

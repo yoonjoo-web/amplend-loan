@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { base44 } from "@/api/base44Client";
@@ -13,6 +14,7 @@ const STATUS_COLORS = {
   sent: "bg-blue-100 text-blue-800 border-blue-200",
   activated: "bg-emerald-100 text-emerald-800 border-emerald-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
+  deleted: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
 const DATE_FILTERS = [
@@ -90,7 +92,7 @@ const matchesDateFilter = (request, dateFilter) => {
   return sentAt >= cutoff;
 };
 
-const InviteTable = ({ rows, emptyLabel }) => {
+const InviteTable = ({ rows, emptyLabel, onDeleteInvite, deletingInviteId, canDeleteInvite }) => {
   if (!rows.length) {
     return <div className="text-sm text-slate-500">{emptyLabel}</div>;
   }
@@ -106,6 +108,7 @@ const InviteTable = ({ rows, emptyLabel }) => {
             <TableHead>Role</TableHead>
             <TableHead>Sent On</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -113,6 +116,7 @@ const InviteTable = ({ rows, emptyLabel }) => {
             const status = (request.status || "pending").toLowerCase();
             const badgeClass = STATUS_COLORS[status] || "bg-slate-100 text-slate-700 border-slate-200";
             const borrowerName = `${request.requested_first_name || ""} ${request.requested_last_name || ""}`.trim();
+            const canDelete = typeof canDeleteInvite === "function" ? canDeleteInvite(request) : false;
             return (
               <TableRow key={request.id}>
                 <TableCell className="font-medium text-slate-900">
@@ -124,6 +128,20 @@ const InviteTable = ({ rows, emptyLabel }) => {
                 <TableCell className="text-slate-500">{getSentAtLabel(request.created_date)}</TableCell>
                 <TableCell>
                   <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {canDelete ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={deletingInviteId === request.id}
+                      onClick={() => onDeleteInvite?.(request)}
+                    >
+                      {deletingInviteId === request.id ? "Deleting..." : "Delete"}
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-slate-400">-</span>
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -141,8 +159,48 @@ export default function ManageInvitesTab({ currentUser }) {
   const [dateFilter, setDateFilter] = useState("30");
   const [statusFilter, setStatusFilter] = useState("active");
   const [page, setPage] = useState(1);
+  const [deletingInviteId, setDeletingInviteId] = useState(null);
 
   const normalizeEmail = (email) => (email || "").trim().toLowerCase();
+
+  const canDeleteInvite = (request) => {
+    if (!request || typeof request.id !== "string") return false;
+    if (request.id.startsWith("borrower-")) return false; // synthetic row, not a request record
+    if (!isInternalRequest(request)) return false; // only admin / loan officer invites
+    const status = (request.status || "").toLowerCase();
+    if (["activated", "rejected", "deleted"].includes(status)) return false;
+    if (request._onboarded || request._token_used) return false;
+    return ["pending", "sent", ""].includes(status);
+  };
+
+  const handleDeleteInvite = async (request) => {
+    if (!canDeleteInvite(request) || deletingInviteId) return;
+    setDeletingInviteId(request.id);
+    try {
+      if (request.invite_token_id) {
+        try {
+          await base44.entities.BorrowerInviteToken.update(request.invite_token_id, {
+            status: "inactive",
+            deactivated_by_user_id: currentUser?.id || null,
+            deactivated_at: new Date().toISOString()
+          });
+        } catch (tokenError) {
+          console.error("Error deactivating invite token:", tokenError);
+        }
+      }
+
+      await base44.entities.BorrowerInviteRequest.update(request.id, {
+        status: "deleted",
+        deleted_by_user_id: currentUser?.id || null,
+        deleted_at: new Date().toISOString()
+      });
+
+      await loadRequests();
+    } catch (error) {
+      console.error("Error deleting invite request:", error);
+    }
+    setDeletingInviteId(null);
+  };
 
   const loadRequests = async () => {
     setIsLoading(true);
@@ -296,6 +354,7 @@ export default function ManageInvitesTab({ currentUser }) {
 
     return (requests || [])
       .map(ensureStatus)
+      .filter((request) => request.status !== "deleted")
       .filter((request) => matchesSenderFilter(request, senderFilter))
       .filter((request) => matchesDateFilter(request, dateFilter));
   }, [requests, senderFilter, dateFilter]);
@@ -382,7 +441,13 @@ export default function ManageInvitesTab({ currentUser }) {
           <div className="text-sm text-slate-500">Loading invite requests...</div>
         ) : (
           <div className="space-y-4">
-            <InviteTable rows={paginatedRequests} emptyLabel="No invites found for this filter." />
+            <InviteTable
+              rows={paginatedRequests}
+              emptyLabel="No invites found for this filter."
+              onDeleteInvite={handleDeleteInvite}
+              deletingInviteId={deletingInviteId}
+              canDeleteInvite={canDeleteInvite}
+            />
             <div className="flex items-center justify-between text-sm text-slate-500">
               <div>
                 Showing {paginatedRequests.length ? (page - 1) * 10 + 1 : 0}-

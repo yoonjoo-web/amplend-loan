@@ -133,12 +133,17 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
       console.error('Error loading loan partners:', error);
     }
 
+    const toIdArray = (singleValue, legacyList) => {
+      if (singleValue) return [singleValue];
+      return Array.isArray(legacyList) ? legacyList : [];
+    };
+
     const teamIds = new Set([
       ...(loan.borrower_ids || []),
       ...(loan.loan_officer_ids || []),
-      ...(loan.referrer_ids || []),
-      ...(loan.liaison_ids || []),
-      ...(loan.broker_ids || []),
+      ...toIdArray(loan.referrer_id, loan.referrer_ids),
+      ...toIdArray(loan.liaison_id, loan.liaison_ids),
+      ...toIdArray(loan.broker_id, loan.broker_ids),
       ...(loan.title_company_ids || []),
       ...(loan.insurance_company_ids || []),
       ...(loan.servicer_ids || []),
@@ -188,7 +193,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
     const loanUserIds = new Set([
       ...(loan.borrower_ids || []),
       ...(loan.loan_officer_ids || []),
-      ...(loan.referrer_ids || [])
+      ...toIdArray(loan.referrer_id, loan.referrer_ids)
     ]);
 
     const assignable = allUsers.filter(u => {

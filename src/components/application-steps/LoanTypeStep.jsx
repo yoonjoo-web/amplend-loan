@@ -7,7 +7,7 @@ import AddLiaisonModal from './AddLiaisonModal';
 import { normalizeAppRole } from '@/components/utils/appRoles';
 import { base44 } from '@/api/base44Client';
 
-export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions, onAddLiaisonSave }) {
+export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, currentUser, permissions, onAddLiaisonSave, hideInlineLiaisonControls = false }) {
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const [liaisonNames, setLiaisonNames] = useState([]);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
@@ -23,10 +23,15 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     );
   }, [currentUser?.role, isReadOnly, normalizedRole, permissions]);
 
+  const getLiaisonIds = () => {
+    if (data?.liaison_id) return [data.liaison_id];
+    return Array.isArray(data?.liaison_ids) ? data.liaison_ids.filter(Boolean) : [];
+  };
+
   // Load and resolve liaison names whenever liaison_ids change
   useEffect(() => {
     const resolveLiaisonNames = async () => {
-      const liaisonIds = data?.liaison_ids || [];
+      const liaisonIds = getLiaisonIds();
       if (liaisonIds.length === 0) {
         setLiaisonNames([]);
         return;
@@ -47,23 +52,24 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
     };
 
     resolveLiaisonNames();
-  }, [data?.liaison_ids]);
+  }, [data?.liaison_id, data?.liaison_ids]);
 
   const handleAddLiaison = async (liaisonId) => {
     if (!liaisonId || !data?.id) return;
-    const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
-    if (existing.includes(liaisonId)) return;
-    const updated = [...existing, liaisonId];
+    const currentLiaisonId = data?.liaison_id || (Array.isArray(data?.liaison_ids) ? data.liaison_ids[0] : null);
+    if (currentLiaisonId === liaisonId) return;
     
-    console.log('DEBUG - Saving liaison:', { appId: data.id, updated });
+    console.log('DEBUG - Saving liaison:', { appId: data.id, liaisonId });
     
     try {
       // Save to database first
-      const result = await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
+      const result = await base44.entities.LoanApplication.update(data.id, {
+        liaison_id: liaisonId
+      });
       console.log('DEBUG - Database save result:', result);
       
       // Update local state
-      onChange({ liaison_ids: updated });
+      onChange({ liaison_id: liaisonId });
       
       // Reload parent to ensure persistence
       if (onAddLiaisonSave) {
@@ -77,12 +83,15 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
 
   const handleRemoveLiaison = async (indexToRemove) => {
     if (!data?.id) return;
-    const existing = Array.isArray(data?.liaison_ids) ? data.liaison_ids : [];
-    const updated = existing.filter((_, index) => index !== indexToRemove);
+    const existing = getLiaisonIds();
+    const idToRemove = existing[indexToRemove];
+    if (!idToRemove) return;
     
     try {
-      await base44.entities.LoanApplication.update(data.id, { liaison_ids: updated });
-      onChange({ liaison_ids: updated });
+      await base44.entities.LoanApplication.update(data.id, {
+        liaison_id: null
+      });
+      onChange({ liaison_id: null });
       
       if (onAddLiaisonSave) {
         await onAddLiaisonSave();
@@ -107,7 +116,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
       {/* Assigned Liaisons Display */}
       {liaisonNames.length > 0 && (
         <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-          <h4 className="text-sm font-semibold text-slate-900 mb-3">Assigned Liaisons</h4>
+          <h4 className="text-sm font-semibold text-slate-900 mb-3">Assigned Liaison</h4>
           <div className="flex flex-wrap gap-2">
             {liaisonNames.map((name, index) => (
               <Badge key={index} variant="secondary" className="flex items-center gap-2 px-3 py-1">
@@ -128,7 +137,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
       )}
 
       {/* Add Liaison Button */}
-      {canShowAddLiaison && !isReadOnly && (
+      {canShowAddLiaison && !isReadOnly && !hideInlineLiaisonControls && (
         <div className="mt-4">
           <Button
             onClick={() => setShowAddLiaisonModal(true)}
@@ -140,13 +149,15 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
         </div>
       )}
 
-      <AddLiaisonModal
-        isOpen={showAddLiaisonModal}
-        onClose={() => setShowAddLiaisonModal(false)}
-        applicationData={data}
-        onAddLiaison={handleAddLiaison}
-        permissions={permissions}
-      />
+      {!hideInlineLiaisonControls && (
+        <AddLiaisonModal
+          isOpen={showAddLiaisonModal}
+          onClose={() => setShowAddLiaisonModal(false)}
+          applicationData={data}
+          onAddLiaison={handleAddLiaison}
+          permissions={permissions}
+        />
+      )}
     </>
   );
 });

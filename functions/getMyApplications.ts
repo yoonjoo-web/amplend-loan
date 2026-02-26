@@ -48,6 +48,12 @@ const matchesContact = (contact, user, partnerIds) => {
   return false;
 };
 
+const toIdArray = (singleValue, legacyList) => {
+  if (singleValue) return [String(singleValue)];
+  if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+  return [];
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -77,23 +83,25 @@ Deno.serve(async (req) => {
       );
       if (isCreator || isPrimaryBorrower || isCoBorrower) return true;
 
-      const matchesIdList = (ids) => {
-        if (!Array.isArray(ids)) return false;
-        if (ids.includes(userId)) return true;
-        return loanPartnerAccessIds.some((partnerId) => ids.includes(partnerId));
+      const matchesIdList = (values) => {
+        if (!Array.isArray(values)) return false;
+        const ids = values.map(String);
+        if (ids.includes(String(userId))) return true;
+        return loanPartnerAccessIds.some((partnerId) => ids.includes(String(partnerId)));
       };
 
-      const matchesReferrerIds = matchesIdList(app.referrer_ids);
-      const matchesLiaisonIds = matchesIdList(app.liaison_ids);
-      const matchesBrokerIds = matchesIdList(app.broker_ids);
-      if (matchesReferrerIds || matchesLiaisonIds || matchesBrokerIds) return true;
+      const matchesReferrerId = matchesIdList(toIdArray(app.referrer_id, app.referrer_ids));
+      const matchesLiaisonId = matchesIdList(toIdArray(app.liaison_id, app.liaison_ids));
+      const matchesBrokerId = matchesIdList(toIdArray(app.broker_id, app.broker_ids));
+      if (matchesReferrerId || matchesLiaisonId || matchesBrokerId) return true;
 
       const matchesReferralBroker = matchesContact(app.referral_broker, user, loanPartnerAccessIds);
       const matchesLoanBroker = matchesContact(app.loan_contacts?.broker, user, loanPartnerAccessIds);
       if (matchesReferralBroker || matchesLoanBroker) return true;
 
-      // Also check broker_user_id field (set when broker creates application)
-      if (app.broker_user_id && app.broker_user_id === userId) return true;
+      // Also check broker_id field (set when broker creates application)
+      if (app.broker_id && app.broker_id === userId) return true;
+      if (app.broker_user_id && app.broker_user_id === userId) return true; // legacy fallback
 
       return false;
     });
@@ -105,6 +113,9 @@ Deno.serve(async (req) => {
         created_by: app?.created_by,
         primary_borrower_id: app?.primary_borrower_id,
         co_borrowers: app?.co_borrowers,
+        broker_id: app?.broker_id,
+        referrer_id: app?.referrer_id,
+        liaison_id: app?.liaison_id,
         broker_ids: app?.broker_ids,
         referrer_ids: app?.referrer_ids,
         liaison_ids: app?.liaison_ids,

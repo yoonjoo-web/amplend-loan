@@ -188,8 +188,9 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       if (selectedRoles.loan_officers && selectedLoan.loan_officer_ids) {
         participantIds.push(...selectedLoan.loan_officer_ids);
       }
-      if (selectedRoles.referrers && selectedLoan.referrer_ids) {
-        participantIds.push(...selectedLoan.referrer_ids);
+      if (selectedRoles.referrers) {
+        if (selectedLoan.referrer_id) participantIds.push(selectedLoan.referrer_id);
+        if (selectedLoan.referrer_ids) participantIds.push(...selectedLoan.referrer_ids);
       }
       
       // Remove duplicates
@@ -239,7 +240,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
     const roleMap = {
       borrowers: loan.borrower_ids?.length || 0,
       loan_officers: loan.loan_officer_ids?.length || 0,
-      referrers: loan.referrer_ids?.length || 0
+      referrers: (loan.referrer_id ? 1 : 0) || loan.referrer_ids?.length || 0
     };
     return roleMap[role] || 0;
   };

@@ -8,9 +8,14 @@ function isUserOnApplicationTeam(application, user) {
   const userEmail = user.email;
   const partnerIds = user.partnerIds || [];
 
-  const appReferrerIds = (application.referrer_ids || []).map(String);
-  const appLiaisonIds = (application.liaison_ids || []).map(String);
-  const appBrokerIds = (application.broker_ids || []).map(String);
+  const toIdArray = (singleValue, legacyList) => {
+    if (singleValue) return [String(singleValue)];
+    if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+    return [];
+  };
+  const appReferrerIds = toIdArray(application.referrer_id, application.referrer_ids);
+  const appLiaisonIds = toIdArray(application.liaison_id, application.liaison_ids);
+  const appBrokerIds = toIdArray(application.broker_id, application.broker_ids);
 
   if (userId && (appReferrerIds.includes(String(userId)) || appLiaisonIds.includes(String(userId)) || appBrokerIds.includes(String(userId)))) {
     return true;
@@ -21,7 +26,7 @@ function isUserOnApplicationTeam(application, user) {
     }
   }
 
-  if (application.broker_user_id && userId && String(application.broker_user_id) === String(userId)) {
+  if ((application.broker_id || application.broker_user_id) && userId && String(application.broker_id || application.broker_user_id) === String(userId)) {
     return true;
   }
 
@@ -68,7 +73,8 @@ Deno.serve(async (req) => {
     const isAssignedOfficer = String(application.assigned_loan_officer_id) === String(user.id);
 
     // Direct broker check - fastest path for brokers
-    const isBrokerOwner = application.broker_user_id && String(application.broker_user_id) === String(user.id);
+    const brokerOwnerId = application.broker_id || application.broker_user_id;
+    const isBrokerOwner = brokerOwnerId && String(brokerOwnerId) === String(user.id);
 
     let borrowerContactId = null;
     try {
@@ -127,7 +133,9 @@ Deno.serve(async (req) => {
 
     // Preserve broker/team identity fields from the stored application
     const safeData = { ...data };
-    if (application.broker_user_id) safeData.broker_user_id = application.broker_user_id;
+    if (application.broker_id || application.broker_user_id) safeData.broker_id = application.broker_id || application.broker_user_id;
+    if (application.referrer_id) safeData.referrer_id = application.referrer_id;
+    if (application.liaison_id) safeData.liaison_id = application.liaison_id;
     if (application.broker_ids && application.broker_ids.length > 0) safeData.broker_ids = application.broker_ids;
     if (application.referrer_ids && application.referrer_ids.length > 0) safeData.referrer_ids = application.referrer_ids;
     if (application.liaison_ids && application.liaison_ids.length > 0) safeData.liaison_ids = application.liaison_ids;

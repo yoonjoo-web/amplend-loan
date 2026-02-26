@@ -192,7 +192,7 @@ export default function Dashboard() {
         userApps = userApps.filter(a => a.assigned_loan_officer_id === currentUser.id);
       } else if (permissions.isBroker) {
         userApps = userApps.filter(a =>
-          (a.broker_user_id && a.broker_user_id === currentUser.id) ||
+          ((a.broker_id || a.broker_user_id) && (a.broker_id || a.broker_user_id) === currentUser.id) ||
           isUserOnApplicationTeam(a, currentUser, permissions)
         );
       } else if (permissions.isBorrower) {
@@ -402,7 +402,7 @@ export default function Dashboard() {
         applicationData.primary_borrower_id = currentUser.id;
       }
       if (permissions.isBroker) {
-        applicationData.broker_ids = [currentUser.id].filter(Boolean);
+        applicationData.broker_id = currentUser.id;
         applicationData.referral_broker = {
           name: [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ').trim() || currentUser.full_name || currentUser.email || 'Broker',
           email: currentUser.email || null,

@@ -49,19 +49,20 @@ const resolveBorrowerAccessIds = (applicationData, permissions) => {
 const resolvePartnerName = (partner, fallbackId) => {
   const name = partner?.name || partner?.contact_person;
   const email = partner?.email;
-  return [name, email, fallbackId].find(Boolean) || 'Unknown Liaison';
+  return [name, email, fallbackId].find(Boolean) || 'Unknown Broker';
 };
 
 const resolvePartnerRole = (partner) => {
   return normalizeAppRole(partner?.app_role || partner?.type || '') || 'Loan Partner';
 };
 
-export default function AddLiaisonModal({
+export default function AddBrokerModal({
   isOpen,
   onClose,
   applicationData,
-  onAddLiaison,
-  permissions
+  onAddBroker,
+  permissions,
+  currentUser
 }) {
   const { toast } = useToast();
   const [view, setView] = useState('options');
@@ -76,14 +77,20 @@ export default function AddLiaisonModal({
     phone: ''
   });
 
-  const canUseGlobalLiaisonList = Boolean(
+  const canUseGlobalBrokerList = Boolean(
     permissions?.isPlatformAdmin || permissions?.isAdministrator || permissions?.isLoanOfficer
   );
+  const brokerAccessIds = useMemo(() => {
+    return Array.from(new Set([
+      ...(permissions?.loanPartnerAccessIds || []),
+      currentUser?.id
+    ].filter(Boolean)));
+  }, [permissions?.loanPartnerAccessIds, currentUser?.id]);
 
-  const existingLiaisonIds = useMemo(() => {
-    if (applicationData?.liaison_id) return [applicationData.liaison_id];
-    return Array.isArray(applicationData?.liaison_ids) ? applicationData.liaison_ids : [];
-  }, [applicationData?.liaison_id, applicationData?.liaison_ids]);
+  const existingBrokerIds = useMemo(() => {
+    if (applicationData?.broker_id) return [applicationData.broker_id];
+    return Array.isArray(applicationData?.broker_ids) ? applicationData.broker_ids : [];
+  }, [applicationData?.broker_id, applicationData?.broker_ids]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -95,24 +102,94 @@ export default function AddLiaisonModal({
       email: '',
       phone: ''
     });
-    loadLiaisons();
+    loadBrokers();
   }, [isOpen]);
 
-  const loadLiaisons = async () => {
+  const loadBrokers = async () => {
     setIsLoading(true);
     try {
-      if (canUseGlobalLiaisonList) {
+      if (canUseGlobalBrokerList) {
         const loanPartnersData = await LoanPartner.list('-created_date').catch(() => []);
         const results = (loanPartnersData || [])
-          .filter((partner) => resolvePartnerRole(partner) === 'Liaison')
+          .filter((partner) => resolvePartnerRole(partner) === 'Broker')
           .map((partner) => ({
             id: partner?.id,
             partner,
             name: resolvePartnerName(partner, partner?.id),
-            role: 'Liaison',
+            role: 'Broker',
             email: partner?.email || null,
             phone: partner?.phone || null,
           }));
+        setPartners(results);
+      } else if (permissions?.isBroker) {
+        const [loanPartnersData, loansData, applicationsData] = await Promise.all([
+          LoanPartner.list('-created_date').catch(() => []),
+          Loan.list('-created_date').catch(() => []),
+          LoanApplication.list('-created_date').catch(() => [])
+        ]);
+
+        const toIds = (singleValue, legacyList) => {
+          if (singleValue) return [singleValue];
+          return Array.isArray(legacyList) ? legacyList : [];
+        };
+
+        const matchesKnownBroker = (values) => {
+          if (!Array.isArray(values)) return false;
+          return values.some((id) => brokerAccessIds.includes(id));
+        };
+
+        const appTeamIds = (app) => ([
+          ...toIds(app.broker_id || app.broker_user_id, app.broker_ids),
+          ...toIds(app.liaison_id, app.liaison_ids),
+          ...toIds(app.referrer_id, app.referrer_ids),
+        ].filter(Boolean));
+
+        const loanTeamIds = (loan) => ([
+          ...toIds(loan.broker_id, loan.broker_ids),
+          ...toIds(loan.liaison_id, loan.liaison_ids),
+          ...toIds(loan.referrer_id, loan.referrer_ids),
+        ].filter(Boolean));
+
+        const relevantApplications = (applicationsData || []).filter((app) =>
+          matchesKnownBroker(appTeamIds(app))
+        );
+
+        const relevantLoans = (loansData || []).filter((loan) =>
+          matchesKnownBroker(loanTeamIds(loan))
+        );
+
+        const partnerById = new Map();
+        (loanPartnersData || []).forEach((partner) => {
+          if (partner?.id) partnerById.set(partner.id, partner);
+          if (partner?.user_id) partnerById.set(partner.user_id, partner);
+        });
+
+        const statsMap = new Map();
+        const registerBroker = (partnerId) => {
+          if (!partnerId) return;
+          const partner = partnerById.get(partnerId);
+          const key = partner?.id || partnerId;
+          const existing = statsMap.get(key) || {
+            id: key,
+            partner,
+            name: resolvePartnerName(partner, partnerId),
+            role: resolvePartnerRole(partner),
+            email: partner?.email || null,
+            phone: partner?.phone || null,
+          };
+          statsMap.set(key, existing);
+        };
+
+        relevantApplications.forEach((app) => {
+          toIds(app.broker_id || app.broker_user_id, app.broker_ids).forEach(registerBroker);
+        });
+
+        relevantLoans.forEach((loan) => {
+          toIds(loan.broker_id, loan.broker_ids).forEach(registerBroker);
+        });
+
+        const results = Array.from(statsMap.values())
+          .filter((partner) => partner.role === 'Broker');
         setPartners(results);
       } else {
         const borrowerAccessIds = resolveBorrowerAccessIds(applicationData, permissions);
@@ -137,6 +214,10 @@ export default function AddLiaisonModal({
         });
 
         const statsMap = new Map();
+        const toIds = (singleValue, legacyList) => {
+          if (singleValue) return [singleValue];
+          return Array.isArray(legacyList) ? legacyList : [];
+        };
 
         const registerPartner = (partnerId) => {
           if (!partnerId) return;
@@ -153,35 +234,30 @@ export default function AddLiaisonModal({
           statsMap.set(key, existing);
         };
 
-        const toIds = (singleValue, legacyList) => {
-          if (singleValue) return [singleValue];
-          return Array.isArray(legacyList) ? legacyList : [];
-        };
-
         relevantLoans.forEach((loan) => {
           const ids = Array.from(new Set([
-            ...toIds(loan.liaison_id, loan.liaison_ids),
-            ...toIds(loan.referrer_id, loan.referrer_ids),
             ...toIds(loan.broker_id, loan.broker_ids),
+            ...toIds(loan.referrer_id, loan.referrer_ids),
+            ...toIds(loan.liaison_id, loan.liaison_ids),
           ]));
           ids.forEach((id) => registerPartner(id));
         });
 
         relevantApplications.forEach((app) => {
           const ids = Array.from(new Set([
-            ...toIds(app.liaison_id, app.liaison_ids),
-            ...toIds(app.referrer_id, app.referrer_ids),
             ...toIds(app.broker_id, app.broker_ids),
+            ...toIds(app.referrer_id, app.referrer_ids),
+            ...toIds(app.liaison_id, app.liaison_ids),
           ]));
           ids.forEach((id) => registerPartner(id));
         });
 
         const results = Array.from(statsMap.values())
-          .filter((partner) => partner.role === 'Liaison');
+          .filter((partner) => partner.role === 'Broker');
         setPartners(results);
       }
     } catch (error) {
-      console.error('Error loading liaisons:', error);
+      console.error('Error loading brokers:', error);
       setPartners([]);
     }
     setIsLoading(false);
@@ -191,18 +267,15 @@ export default function AddLiaisonModal({
     const needle = searchTerm.trim().toLowerCase();
     return partners.filter((partner) => {
       if (!needle) return true;
-      return [
-        partner.name,
-        partner.email,
-        partner.phone
-      ].some((value) => String(value || '').toLowerCase().includes(needle));
+      return [partner.name, partner.email, partner.phone]
+        .some((value) => String(value || '').toLowerCase().includes(needle));
     });
   }, [partners, searchTerm]);
 
-  const handleSelectPartner = (partner) => {
-    const targetId = partner?.partner?.user_id || partner?.partner?.id || partner?.id;
+  const handleSelectPartner = async (partnerRecord) => {
+    const targetId = partnerRecord?.partner?.user_id || partnerRecord?.partner?.id || partnerRecord?.id;
     if (!targetId) return;
-    onAddLiaison(targetId);
+    await onAddBroker(targetId, partnerRecord?.partner || null);
     onClose();
   };
 
@@ -235,7 +308,7 @@ export default function AddLiaisonModal({
     try {
       const fullName = `${inviteForm.first_name} ${inviteForm.last_name}`.trim();
       const partnerData = {
-        app_role: 'Liaison',
+        app_role: 'Broker',
         name: fullName,
         contact_person: fullName,
         email: inviteForm.email,
@@ -252,29 +325,29 @@ export default function AddLiaisonModal({
           data: {
             first_name: inviteForm.first_name,
             last_name: inviteForm.last_name,
-            partner_type: 'Liaison'
+            partner_type: 'Broker'
           }
         });
       } catch (emailError) {
-        console.error('Error sending liaison invitation:', emailError);
+        console.error('Error sending broker invitation:', emailError);
       }
 
       toast({
-        title: 'Liaison Invited',
+        title: 'Broker Invited',
         description: `Invitation sent to ${inviteForm.email}.`
       });
 
       const targetId = createdPartner?.user_id || createdPartner?.id;
       if (targetId) {
-        onAddLiaison(targetId);
+        await onAddBroker(targetId, createdPartner);
       }
       onClose();
     } catch (error) {
-      console.error('Error inviting liaison:', error);
+      console.error('Error inviting broker:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error?.message || 'Failed to invite liaison. Please try again.'
+        description: error?.message || 'Failed to invite broker. Please try again.'
       });
     }
     setIsSubmitting(false);
@@ -284,11 +357,11 @@ export default function AddLiaisonModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Add Liaison</DialogTitle>
+          <DialogTitle>Add Broker</DialogTitle>
           <DialogDescription>
-            {canUseGlobalLiaisonList
-              ? 'Invite a new liaison or select an existing one.'
-              : 'Invite a new liaison or select an existing one from My Partners.'}
+            {canUseGlobalBrokerList
+              ? 'Invite a new broker or select an existing one.'
+              : 'Invite a new broker or select an existing one from My Partners.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -319,19 +392,19 @@ export default function AddLiaisonModal({
           <div className="space-y-4">
             <Command>
               <CommandInput
-                placeholder="Search liaisons..."
+                placeholder="Search brokers..."
                 value={searchTerm}
                 onValueChange={setSearchTerm}
               />
               <CommandList>
                 <CommandEmpty>
-                  {isLoading ? 'Loading liaisons...' : 'No liaisons found.'}
+                  {isLoading ? 'Loading brokers...' : 'No brokers found.'}
                 </CommandEmpty>
                 <CommandGroup>
                   {filteredPartners
                     .filter((partner) => {
                       const targetId = partner?.partner?.user_id || partner?.partner?.id || partner?.id;
-                      return !existingLiaisonIds.includes(targetId);
+                      return !existingBrokerIds.includes(targetId);
                     })
                     .map((partner) => (
                       <CommandItem
@@ -359,9 +432,9 @@ export default function AddLiaisonModal({
           <form onSubmit={handleInviteSubmit} className="space-y-4 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="liaison_first_name">First Name *</Label>
+                <Label htmlFor="broker_first_name">First Name *</Label>
                 <Input
-                  id="liaison_first_name"
+                  id="broker_first_name"
                   value={inviteForm.first_name}
                   onChange={(e) => handleInviteChange('first_name', e.target.value)}
                   placeholder="First name"
@@ -369,9 +442,9 @@ export default function AddLiaisonModal({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="liaison_last_name">Last Name *</Label>
+                <Label htmlFor="broker_last_name">Last Name *</Label>
                 <Input
-                  id="liaison_last_name"
+                  id="broker_last_name"
                   value={inviteForm.last_name}
                   onChange={(e) => handleInviteChange('last_name', e.target.value)}
                   placeholder="Last name"
@@ -379,9 +452,9 @@ export default function AddLiaisonModal({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="liaison_email">Email *</Label>
+                <Label htmlFor="broker_email">Email *</Label>
                 <Input
-                  id="liaison_email"
+                  id="broker_email"
                   type="email"
                   value={inviteForm.email}
                   onChange={(e) => handleInviteChange('email', e.target.value)}
@@ -390,9 +463,9 @@ export default function AddLiaisonModal({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="liaison_phone">Phone</Label>
+                <Label htmlFor="broker_phone">Phone</Label>
                 <Input
-                  id="liaison_phone"
+                  id="broker_phone"
                   type="tel"
                   value={inviteForm.phone}
                   onChange={(e) => handleInviteChange('phone', e.target.value)}
