@@ -1440,6 +1440,8 @@ export default function NewApplication() {
                   </button>
                 )}
               </div>
+                </CardContent>
+              </Card>
             )}
 
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
