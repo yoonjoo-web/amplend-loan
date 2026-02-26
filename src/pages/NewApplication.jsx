@@ -60,6 +60,7 @@ export default function NewApplication() {
   const [showProceedContactSyncModal, setShowProceedContactSyncModal] = useState(false);
   const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
   const [liaisonPartners, setLiaisonPartners] = useState([]);
+  const [brokerPartnerName, setBrokerPartnerName] = useState('');
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const [showAddBrokerModal, setShowAddBrokerModal] = useState(false);
 
@@ -265,6 +266,20 @@ export default function NewApplication() {
       }
 
       // Resolve liaison names for the indicator
+      const brokerId = appData.broker_id || appData.broker_user_id || null;
+      if (brokerId) {
+        const brokerMatch = allPartners.find((p) => p.id === brokerId || p.user_id === brokerId);
+        setBrokerPartnerName(
+          brokerMatch?.name ||
+          brokerMatch?.contact_person ||
+          brokerMatch?.email ||
+          ''
+        );
+      } else {
+        setBrokerPartnerName('');
+      }
+
+      // Resolve liaison names for the indicator
       const liaisonIds = toIdArray(appData.liaison_id, appData.liaison_ids);
       if (liaisonIds.length > 0) {
         const resolved = liaisonIds.map((id) => {
@@ -379,6 +394,28 @@ export default function NewApplication() {
 
    resolveNames();
   }, [formData?.liaison_id, formData?.liaison_ids, toIdArray]);
+
+  useEffect(() => {
+    if (!formData) return;
+    const brokerId = formData.broker_id || formData.broker_user_id;
+    if (!brokerId) {
+      setBrokerPartnerName('');
+      return;
+    }
+
+    const resolveBrokerName = async () => {
+      try {
+        const allPartners = await base44.entities.LoanPartner.list().catch(() => []);
+        const match = allPartners.find((p) => p.id === brokerId || p.user_id === brokerId);
+        setBrokerPartnerName(match?.name || match?.contact_person || match?.email || '');
+      } catch (error) {
+        console.error('Error resolving broker name:', error);
+        setBrokerPartnerName('');
+      }
+    };
+
+    resolveBrokerName();
+  }, [formData?.broker_id, formData?.broker_user_id]);
 
   const canManage = permissions?.canManageApplications;
   const canReview = permissions?.canReviewApplication && formData && ['submitted', 'under_review', 'review_completed'].includes(formData.status);
@@ -1246,6 +1283,7 @@ export default function NewApplication() {
     || formData?.loan_contacts?.broker?.name
     || formData?.referral_broker?.email
     || '';
+  const assignedBrokerName = brokerPartnerName || brokerDisplayName;
   const showBrokerName = permissions?.isBorrower && hideLoanOfficerDetails;
   const showAssignmentCard = formData && (canManage || permissions?.isBroker || showBrokerName);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
@@ -1360,6 +1398,17 @@ export default function NewApplication() {
                     <Handshake className="w-4 h-4 text-slate-600 shrink-0" />
                     <p className="text-sm font-semibold text-slate-800">Assigned Liaison{liaisonPartners.length > 1 ? 's' : ''}:</p>
                     <p className="text-sm text-slate-600">{liaisonPartners.join(', ')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {(formData?.broker_id || assignedBrokerName) && (
+              <Card className="border-slate-200 bg-slate-50 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-800">Assigned Broker:</p>
+                    <p className="text-sm text-slate-600">{assignedBrokerName || 'Broker'}</p>
                   </div>
                 </CardContent>
               </Card>
