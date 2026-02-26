@@ -1351,7 +1351,7 @@ export default function NewApplication() {
                 {/* Loan Officer */}
                 {showAssignmentCard && !showBrokerName && (
                   <span className="flex items-center gap-1">
-                    <span className="text-slate-500 font-medium">LO:</span>
+                    <span className="text-slate-500 font-medium">Loan Officer:</span>
                     <span>
                       {formData.assigned_loan_officer_id ? (
                         hideLoanOfficerDetails ? 'Loan Officer' : (() => {
