@@ -63,9 +63,9 @@ import MyBorrowers from './pages/MyBorrowers';
 import MyPartners from './pages/MyPartners';
 import MyProfile from './pages/MyProfile';
 import MyTasks from './pages/MyTasks';
-import NewApplication from './pages/NewApplication';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
+import NewApplication from './pages/NewApplication';
 import __Layout from './Layout.jsx';
 
 
@@ -86,9 +86,9 @@ export const PAGES = {
     "MyPartners": MyPartners,
     "MyProfile": MyProfile,
     "MyTasks": MyTasks,
-    "NewApplication": NewApplication,
     "Onboarding": Onboarding,
     "Settings": Settings,
+    "NewApplication": NewApplication,
 }
 
 export const pagesConfig = {

@@ -3,7 +3,7 @@ import { LoanApplication, User } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Check, Save, Loader2, CheckCircle2, Handshake } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Save, Loader2, CheckCircle2, Handshake, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
