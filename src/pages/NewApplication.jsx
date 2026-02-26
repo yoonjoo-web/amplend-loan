@@ -1345,91 +1345,98 @@ export default function NewApplication() {
               </Button>
             </div>
 
-            {showAssignmentCard && (
-              <Card className="border-blue-200 bg-blue-50 mb-6">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-blue-900">
-                        {showBrokerName ? 'Assigned Broker' : 'Assigned Loan Officer'}
-                      </p>
-                      <p className="text-sm text-blue-700">
-                        {showBrokerName ? (
-                          brokerDisplayName || 'Broker'
-                        ) : (
-                          formData.assigned_loan_officer_id ? (
-                            (() => {
-                              if (hideLoanOfficerDetails) {
-                                return 'Loan Officer';
-                              }
-                              const officer = allLoanOfficers.find(u => u.id === formData.assigned_loan_officer_id);
-                              if (!officer) {
-                                return isLoading ? 'Loading...' : 'Loan Officer';
-                              }
-                              return officer.first_name && officer.last_name 
-                                ? `${officer.first_name} ${officer.last_name}`
-                                : officer.full_name || officer.email || 'Officer';
-                            })()
-                          ) : (
-                            'Not assigned'
-                          )
-                        )}
-                      </p>
-                    </div>
-                    {!showBrokerName && !isReadOnly && permissions.canReassignLoanOfficer && (
-                      <Button
-                        variant="outline"
-                        size="sm"
+            {/* Compact assignment row */}
+            {(showAssignmentCard || liaisonPartners.length > 0 || formData?.broker_id || assignedBrokerName) && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-6 text-sm text-slate-700">
+                {/* Loan Officer */}
+                {showAssignmentCard && !showBrokerName && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-slate-500 font-medium">LO:</span>
+                    <span>
+                      {formData.assigned_loan_officer_id ? (
+                        hideLoanOfficerDetails ? 'Loan Officer' : (() => {
+                          const officer = allLoanOfficers.find(u => u.id === formData.assigned_loan_officer_id);
+                          if (!officer) return 'Loan Officer';
+                          return officer.first_name && officer.last_name
+                            ? `${officer.first_name} ${officer.last_name}`
+                            : officer.full_name || officer.email || 'Officer';
+                        })()
+                      ) : 'Not assigned'}
+                    </span>
+                    {!isReadOnly && permissions.canReassignLoanOfficer && (
+                      <button
                         onClick={() => setShowReassignModal(true)}
-                        className="border-blue-300 hover:bg-blue-100"
+                        className="ml-0.5 text-slate-400 hover:text-slate-700 transition-colors"
+                        title={formData.assigned_loan_officer_id ? 'Reassign Loan Officer' : 'Assign Loan Officer'}
                       >
-                        {formData.assigned_loan_officer_id ? 'Reassign' : 'Assign'} Loan Officer
-                      </Button>
+                        <Pencil className="w-3 h-3" />
+                      </button>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {liaisonPartners.length > 0 && (
-              <Card className="border-slate-200 bg-slate-50 mb-6">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Handshake className="w-4 h-4 text-slate-600 shrink-0" />
-                    <p className="text-sm font-semibold text-slate-800">Assigned Liaison{liaisonPartners.length > 1 ? 's' : ''}:</p>
-                    <p className="text-sm text-slate-600">{liaisonPartners.join(', ')}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {(formData?.broker_id || assignedBrokerName) && (
-              <Card className="border-slate-200 bg-slate-50 mb-6">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-800">Assigned Broker:</p>
-                    <p className="text-sm text-slate-600">{assignedBrokerName || 'Broker'}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {canShowPartnerActionButtons && (
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddBrokerModal(true)}
-                >
-                  {formData?.broker_id ? 'Change Broker' : 'Add Broker'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddLiaisonModal(true)}
-                >
-                  Add Liaison
-                </Button>
+                  </span>
+                )}
+                {/* Broker name for borrower view */}
+                {showAssignmentCard && showBrokerName && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-slate-500 font-medium">Broker:</span>
+                    <span>{brokerDisplayName || 'Broker'}</span>
+                  </span>
+                )}
+                {/* Broker */}
+                {!showBrokerName && (formData?.broker_id || assignedBrokerName) && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-slate-500 font-medium">Broker:</span>
+                    <span>{assignedBrokerName || 'Broker'}</span>
+                    {canShowPartnerActionButtons && (
+                      <button
+                        onClick={() => setShowAddBrokerModal(true)}
+                        className="ml-0.5 text-slate-400 hover:text-slate-700 transition-colors"
+                        title="Change Broker"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </span>
+                )}
+                {/* Add Broker button if no broker assigned */}
+                {!showBrokerName && !formData?.broker_id && !assignedBrokerName && canShowPartnerActionButtons && (
+                  <button
+                    onClick={() => setShowAddBrokerModal(true)}
+                    className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+                    title="Add Broker"
+                  >
+                    <span className="text-slate-500 font-medium">Broker:</span>
+                    <span className="text-slate-400 italic">None</span>
+                    <Pencil className="w-3 h-3 ml-0.5" />
+                  </button>
+                )}
+                {/* Liaison */}
+                {liaisonPartners.length > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-slate-500 font-medium">Liaison:</span>
+                    <span>{liaisonPartners.join(', ')}</span>
+                    {canShowPartnerActionButtons && (
+                      <button
+                        onClick={() => setShowAddLiaisonModal(true)}
+                        className="ml-0.5 text-slate-400 hover:text-slate-700 transition-colors"
+                        title="Change Liaison"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </span>
+                )}
+                {/* Add Liaison button if none assigned */}
+                {liaisonPartners.length === 0 && canShowPartnerActionButtons && (
+                  <button
+                    onClick={() => setShowAddLiaisonModal(true)}
+                    className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+                    title="Add Liaison"
+                  >
+                    <span className="text-slate-500 font-medium">Liaison:</span>
+                    <span className="text-slate-400 italic">None</span>
+                    <Pencil className="w-3 h-3 ml-0.5" />
+                  </button>
+                )}
               </div>
             )}
 
