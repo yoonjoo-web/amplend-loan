@@ -102,6 +102,8 @@ const InviteTable = ({
   rejectingInviteId,
   canRejectInvite
 }) => {
+  const actionButtonClass = "bg-slate-700 hover:bg-slate-800 text-white border-slate-700 hover:border-slate-800";
+
   if (!rows.length) {
     return <div className="text-sm text-slate-500">{emptyLabel}</div>;
   }
@@ -117,7 +119,7 @@ const InviteTable = ({
             <TableHead>Role</TableHead>
             <TableHead>Sent On</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="w-[200px] pr-6 text-right">Actions</TableHead>
+            <TableHead className="w-[200px] pl-4">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -139,14 +141,14 @@ const InviteTable = ({
                 <TableCell>
                   <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
                 </TableCell>
-                <TableCell className="pr-6 text-right">
+                <TableCell className="pl-4">
                   {(canDelete || canReject) ? (
-                    <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                    <div className="inline-flex items-center gap-2 whitespace-nowrap">
                       {canReject && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="bg-slate-700 hover:bg-slate-800 text-white border-slate-700 hover:border-slate-800"
+                          className={actionButtonClass}
                           disabled={rejectingInviteId === request.id}
                           onClick={() => onRejectInvite?.(request)}
                         >
@@ -157,7 +159,7 @@ const InviteTable = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="bg-slate-700 hover:bg-slate-800 text-white border-slate-700 hover:border-slate-800"
+                          className={actionButtonClass}
                           disabled={deletingInviteId === request.id}
                           onClick={() => onDeleteInvite?.(request)}
                         >

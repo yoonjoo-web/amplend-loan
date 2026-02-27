@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Mail, LogOut, User, Settings, CheckCircle, ClipboardList } from "lucide-react";
+import { Bell, Mail, LogOut, User, Settings, CheckCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
@@ -73,29 +73,6 @@ export default function UniversalHeader({ currentUser }) {
     retry: false,
     staleTime: 30000,
     refetchInterval: 60000, // Refetch every minute
-  });
-
-  // Fetch private tickets for loan officers
-  const { data: privateTickets = [] } = useQuery({
-    queryKey: ['header-private-tickets', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser || currentUser.app_role !== 'Loan Officer') return [];
-      try {
-        const tickets = await base44.entities.ChecklistItem.filter({
-          is_private: true,
-          owner_id: currentUser.id,
-          status: { $in: ['in_progress', 'flagged'] }
-        });
-        return tickets || [];
-      } catch (error) {
-        console.log('Could not load private tickets:', error);
-        return [];
-      }
-    },
-    enabled: !!currentUser && currentUser.app_role === 'Loan Officer',
-    retry: false,
-    staleTime: 30000,
-    refetchInterval: 60000,
   });
 
   // Mark notification as read mutation
@@ -283,68 +260,6 @@ export default function UniversalHeader({ currentUser }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Private Tickets Popover - Only for Loan Officers */}
-          {currentUser.app_role === 'Loan Officer' && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <ClipboardList className="h-5 w-5" />
-                  {privateTickets.length > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    >
-                      {privateTickets.length > 9 ? '9+' : privateTickets.length}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Active Tickets</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(createPageUrl("Dashboard"))}
-                      className="text-xs text-blue-600 hover:text-blue-700"
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  {privateTickets.length > 0 ? (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {privateTickets.map((ticket) => (
-                        <div
-                          key={ticket.id}
-                          className="p-3 rounded-lg border hover:bg-slate-50 cursor-pointer transition-colors"
-                          onClick={() => navigate(createPageUrl("Dashboard"))}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{ticket.item_name}</p>
-                              <Badge 
-                                className={`mt-1 text-xs ${
-                                  ticket.status === 'flagged' 
-                                    ? 'bg-red-100 text-red-700' 
-                                    : 'bg-blue-100 text-blue-700'
-                                } border-0`}
-                              >
-                                {ticket.status === 'flagged' ? 'Flagged' : 'In Progress'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500 py-4 text-center">No active tickets</p>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-
           {/* Messages Popover */}
           <Popover>
             <PopoverTrigger asChild>

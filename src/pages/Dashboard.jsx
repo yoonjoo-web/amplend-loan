@@ -20,7 +20,6 @@ import InviteBorrowerModal from "../components/dashboard/InviteBorrowerModal";
 import InviteTeamModal from "../components/dashboard/InviteTeamModal";
 import InviteLoanPartnerModal from "../components/dashboard/InviteLoanPartnerModal";
 import BorrowerInviteRequests from "../components/shared/BorrowerInviteRequests";
-import PrivateTicketsWidget from "../components/dashboard/PrivateTicketsWidget";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
@@ -584,17 +583,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
-        {/* Private Tickets Widget - Only for Loan Officers */}
-        {currentUser?.app_role === 'Loan Officer' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
-          >
-            <PrivateTicketsWidget currentUser={currentUser} />
-          </motion.div>
-        )}
 
         {/* Recent Activity and Tasks */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" data-tour="recent-loans">
