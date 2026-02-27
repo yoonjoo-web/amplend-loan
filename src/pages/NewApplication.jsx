@@ -1347,6 +1347,8 @@ export default function NewApplication() {
 
             {/* Compact assignment row */}
             {(showAssignmentCard || liaisonPartners.length > 0 || formData?.broker_id || assignedBrokerName || canShowPartnerActionButtons) && (
+              <Card className="border-slate-200 bg-white mb-6">
+                <CardContent className="py-3 px-4">
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-6 text-sm text-slate-700">
                 {/* Loan Officer */}
                 {showAssignmentCard && !showBrokerName && (
@@ -1438,6 +1440,8 @@ export default function NewApplication() {
                   </button>
                 )}
               </div>
+                </CardContent>
+              </Card>
             )}
 
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
