@@ -199,6 +199,18 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       } catch (error) {
         console.error('LoanSidebar - Error fetching users:', error);
       }
+
+      if (!canManage) {
+        try {
+          const usersResponse = await base44.functions.invoke('getAllUsers');
+          const visibleUsers = usersResponse?.data?.users || usersResponse?.users || [];
+          if (Array.isArray(visibleUsers) && visibleUsers.length > 0) {
+            allUsers = visibleUsers;
+          }
+        } catch (error) {
+          console.error('LoanSidebar - Error fetching users via getAllUsers:', error);
+        }
+      }
       
       try {
         allBorrowers = await base44.entities.Borrower.list();
