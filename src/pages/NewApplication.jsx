@@ -1403,12 +1403,10 @@ export default function NewApplication() {
                 {!showBrokerName && !formData?.broker_id && !assignedBrokerName && canShowPartnerActionButtons && (
                   <button
                     onClick={() => setShowAddBrokerModal(true)}
-                    className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
-                    title="Add Broker"
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white transition-colors"
+                    title="+ Add Broker"
                   >
-                    <span className="text-slate-500 font-medium">Broker:</span>
-                    <span className="text-slate-400 italic">None</span>
-                    <Pencil className="w-3 h-3 ml-0.5" />
+                    <span>+ Add Broker</span>
                   </button>
                 )}
                 {/* Liaison */}
@@ -1431,12 +1429,10 @@ export default function NewApplication() {
                 {liaisonPartners.length === 0 && canShowPartnerActionButtons && (
                   <button
                     onClick={() => setShowAddLiaisonModal(true)}
-                    className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
-                    title="Add Liaison"
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white transition-colors"
+                    title="+ Add Liaison"
                   >
-                    <span className="text-slate-500 font-medium">Liaison:</span>
-                    <span className="text-slate-400 italic">None</span>
-                    <Pencil className="w-3 h-3 ml-0.5" />
+                    <span>+ Add Liaison</span>
                   </button>
                 )}
               </div>

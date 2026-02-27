@@ -141,10 +141,10 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
         <div className="mt-4">
           <Button
             onClick={() => setShowAddLiaisonModal(true)}
-            variant="outline"
             size="sm"
+            className="bg-slate-900 hover:bg-slate-800 text-white"
           >
-            {liaisonNames.length > 0 ? 'Change Liaison' : 'Add Liaison'}
+            {liaisonNames.length > 0 ? 'Change Liaison' : '+ Add Liaison'}
           </Button>
         </div>
       )}
