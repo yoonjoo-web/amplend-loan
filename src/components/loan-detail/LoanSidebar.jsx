@@ -135,7 +135,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     console.log('LoanSidebar - useEffect triggered');
     console.log('loan.borrower_ids:', loan.borrower_ids);
     console.log('loan.loan_officer_ids:', loan.loan_officer_ids);
+    console.log('loan.broker_id:', loan.broker_id);
+    console.log('loan.broker_ids:', loan.broker_ids);
+    console.log('loan.referrer_id:', loan.referrer_id);
     console.log('loan.referrer_ids:', loan.referrer_ids);
+    console.log('loan.liaison_id:', loan.liaison_id);
     console.log('loan.liaison_ids:', loan.liaison_ids);
     loadTeamMembers();
     loadModificationHistory();
@@ -146,7 +150,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     loan.borrower_entity_id,
     loan.borrower_entity_name,
     loan.loan_officer_ids,
+    loan.broker_id,
+    loan.broker_ids,
+    loan.liaison_id,
     loan.liaison_ids,
+    loan.referrer_id,
     loan.referrer_ids,
     loan.modification_history
   ]); // Added modification_history to dependencies to ensure history reloads
@@ -476,10 +484,17 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         });
       }
 
-      // Add liaisons (look in borrowers)
-      if (loan.liaison_ids && Array.isArray(loan.liaison_ids) && loan.liaison_ids.length > 0) {
-        console.log('Processing liaisons:', loan.liaison_ids);
-        loan.liaison_ids.forEach(id => {
+      const toIdArray = (singleValue, legacyList) => {
+        if (singleValue) return [String(singleValue)];
+        if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
+        return [];
+      };
+
+      // Add liaisons (single or legacy list)
+      const liaisonIds = toIdArray(loan.liaison_id, loan.liaison_ids);
+      if (liaisonIds.length > 0) {
+        console.log('Processing liaisons:', liaisonIds);
+        liaisonIds.forEach(id => {
           const user = allUsers.find(u => u.id === id);
           if (user) {
             addLiaisonMember(user);
@@ -490,17 +505,26 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         });
       }
 
-      // Add loan partners (look in loan partners)
-      if (loan.referrer_ids && Array.isArray(loan.referrer_ids) && loan.referrer_ids.length > 0) {
-        console.log('Processing referrers:', loan.referrer_ids);
-        loan.referrer_ids.forEach(id => {
-          const partner = allLoanPartners.find(p => p.id === id);
+      // Add loan partners (single or legacy list), including broker
+      const brokerIds = toIdArray(loan.broker_id, loan.broker_ids);
+      const referrerIds = toIdArray(loan.referrer_id, loan.referrer_ids);
+      const partnerIds = Array.from(new Set([...brokerIds, ...referrerIds]));
+      if (partnerIds.length > 0) {
+        console.log('Processing partners:', partnerIds);
+        partnerIds.forEach((id) => {
+          const partner = allLoanPartners.find(p => String(p.id) === String(id));
           if (partner) {
+            const isBroker = brokerIds.includes(String(id));
+            const resolvedRole = isBroker
+              ? 'Broker'
+              : (normalizeAppRole(partner.app_role || partner.type) || 'Loan Partner');
+            const alreadyAdded = team.some(member => member.id === partner.id && member.role === resolvedRole);
+            if (alreadyAdded) return;
             team.push({
               id: partner.id,
               email: partner.email,
               phone: partner.phone,
-              role: normalizeAppRole(partner.app_role || partner.type) || 'Loan Partner',
+              role: resolvedRole,
               messageUserId: partner.user_id || null,
               displayName: partner.name || 'Unknown Partner'
             });
