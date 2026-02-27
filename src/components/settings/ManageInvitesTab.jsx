@@ -102,8 +102,6 @@ const InviteTable = ({
   rejectingInviteId,
   canRejectInvite
 }) => {
-  const actionButtonClass = "bg-slate-700 hover:bg-slate-800 text-white border-slate-700 hover:border-slate-800";
-
   if (!rows.length) {
     return <div className="text-sm text-slate-500">{emptyLabel}</div>;
   }
@@ -148,7 +146,6 @@ const InviteTable = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className={actionButtonClass}
                           disabled={rejectingInviteId === request.id}
                           onClick={() => onRejectInvite?.(request)}
                         >
@@ -159,7 +156,6 @@ const InviteTable = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className={actionButtonClass}
                           disabled={deletingInviteId === request.id}
                           onClick={() => onDeleteInvite?.(request)}
                         >
