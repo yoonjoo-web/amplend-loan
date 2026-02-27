@@ -1346,7 +1346,7 @@ export default function NewApplication() {
             </div>
 
             {/* Compact assignment row */}
-            {(showAssignmentCard || liaisonPartners.length > 0 || formData?.broker_id || assignedBrokerName) && (
+            {(showAssignmentCard || liaisonPartners.length > 0 || formData?.broker_id || assignedBrokerName || canShowPartnerActionButtons) && (
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mb-6 text-sm text-slate-700">
                 {/* Loan Officer */}
                 {showAssignmentCard && !showBrokerName && (

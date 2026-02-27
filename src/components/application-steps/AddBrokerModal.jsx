@@ -56,6 +56,25 @@ const resolvePartnerRole = (partner) => {
   return normalizeAppRole(partner?.app_role || partner?.type || '') || 'Loan Partner';
 };
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_DIGITS_PATTERN = /^\d{10}$/;
+
+const formatPhoneNumber = (value) => {
+  if (!value) return '';
+  const cleaned = String(value).replace(/\D/g, '').slice(0, 10);
+  const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+  if (!match) return value;
+
+  let formatted = '';
+  if (match[1]) formatted = `(${match[1]}`;
+  if (match[1].length === 3) formatted += ') ';
+  if (match[2]) formatted += match[2];
+  if (match[2].length === 3) formatted += '-';
+  if (match[3]) formatted += match[3];
+
+  return formatted;
+};
+
 export default function AddBrokerModal({
   isOpen,
   onClose,
@@ -279,15 +298,28 @@ export default function AddBrokerModal({
     onClose();
   };
 
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validateEmail = (email) => EMAIL_PATTERN.test(email);
+  const validatePhone = (phone) => {
+    const digits = String(phone || '').replace(/\D/g, '');
+    return !digits || PHONE_DIGITS_PATTERN.test(digits);
+  };
 
   const handleInviteChange = (field, value) => {
+    if (field === 'phone') {
+      setInviteForm((prev) => ({ ...prev, phone: formatPhoneNumber(value) }));
+      return;
+    }
+    if (field === 'email') {
+      setInviteForm((prev) => ({ ...prev, email: String(value || '').replace(/\s+/g, '') }));
+      return;
+    }
     setInviteForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleInviteSubmit = async (e) => {
     e.preventDefault();
-    if (!inviteForm.first_name || !inviteForm.last_name || !inviteForm.email) {
+    const emailValue = inviteForm.email.trim();
+    if (!inviteForm.first_name || !inviteForm.last_name || !emailValue) {
       toast({
         variant: 'destructive',
         title: 'Missing required fields',
@@ -295,11 +327,19 @@ export default function AddBrokerModal({
       });
       return;
     }
-    if (!validateEmail(inviteForm.email)) {
+    if (!validateEmail(emailValue)) {
       toast({
         variant: 'destructive',
         title: 'Invalid email',
         description: 'Please enter a valid email address.'
+      });
+      return;
+    }
+    if (!validatePhone(inviteForm.phone)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid phone',
+        description: 'Phone must be 10 digits in the format (000) 000-0000.'
       });
       return;
     }
@@ -311,8 +351,8 @@ export default function AddBrokerModal({
         app_role: 'Broker',
         name: fullName,
         contact_person: fullName,
-        email: inviteForm.email,
-        phone: inviteForm.phone
+        email: emailValue,
+        phone: formatPhoneNumber(inviteForm.phone)
       };
 
       const createdPartner = await base44.entities.LoanPartner.create(partnerData);
@@ -320,7 +360,7 @@ export default function AddBrokerModal({
       try {
         await base44.functions.invoke('emailService', {
           email_type: 'invite_loan_partner',
-          recipient_email: inviteForm.email,
+          recipient_email: emailValue,
           recipient_name: fullName,
           data: {
             first_name: inviteForm.first_name,
@@ -334,7 +374,7 @@ export default function AddBrokerModal({
 
       toast({
         title: 'Broker Invited',
-        description: `Invitation sent to ${inviteForm.email}.`
+        description: `Invitation sent to ${emailValue}.`
       });
 
       const targetId = createdPartner?.user_id || createdPartner?.id;
@@ -459,6 +499,7 @@ export default function AddBrokerModal({
                   value={inviteForm.email}
                   onChange={(e) => handleInviteChange('email', e.target.value)}
                   placeholder="email@example.com"
+                  autoComplete="email"
                   disabled={isSubmitting}
                 />
               </div>
@@ -470,6 +511,11 @@ export default function AddBrokerModal({
                   value={inviteForm.phone}
                   onChange={(e) => handleInviteChange('phone', e.target.value)}
                   placeholder="(000) 000-0000"
+                  autoComplete="tel-national"
+                  inputMode="numeric"
+                  maxLength={14}
+                  pattern="\(\d{3}\) \d{3}-\d{4}"
+                  title="Use format (000) 000-0000"
                   disabled={isSubmitting}
                 />
               </div>

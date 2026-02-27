@@ -140,9 +140,11 @@ export default function Dashboard() {
   const [showInviteBorrowerModal, setShowInviteBorrowerModal] = useState(false);
   const [showInviteTeamModal, setShowInviteTeamModal] = useState(false);
   const [showInviteLoanPartnerModal, setShowInviteLoanPartnerModal] = useState(false);
+  const [invitePartnerType, setInvitePartnerType] = useState('Title Company');
+  const [lockInvitePartnerType, setLockInvitePartnerType] = useState(false);
   const [myBorrowersSummary, setMyBorrowersSummary] = useState(null);
   const isStaffUser = permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer;
-  const canShowQuickActions = isStaffUser || permissions.isBroker;
+  const canShowQuickActions = isStaffUser || permissions.isBroker || permissions.isBorrower;
 
 
   useEffect(() => {
@@ -377,6 +379,18 @@ export default function Dashboard() {
     });
   };
 
+  const openInviteLoanPartnerModal = (partnerType = 'Title Company', lockType = false) => {
+    setInvitePartnerType(partnerType);
+    setLockInvitePartnerType(lockType);
+    setShowInviteLoanPartnerModal(true);
+  };
+
+  const closeInviteLoanPartnerModal = () => {
+    setShowInviteLoanPartnerModal(false);
+    setInvitePartnerType('Title Company');
+    setLockInvitePartnerType(false);
+  };
+
   const handleNewApplication = async () => {
     if (!permissions.canCreateApplication) {
       toast({
@@ -462,18 +476,22 @@ export default function Dashboard() {
             className="flex gap-3"
             data-tour="quick-actions"
           >
-            <Button className="bg-slate-700 hover:bg-slate-800" onClick={handleNewApplication}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Application
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowInviteBorrowerModal(true)}
-              className="border-slate-300 hover:bg-slate-50"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Invite Borrower
-            </Button>
+            {(isStaffUser || permissions.isBroker) && (
+              <Button className="bg-slate-700 hover:bg-slate-800" onClick={handleNewApplication}>
+                <Plus className="w-4 h-4 mr-2" />
+                New Application
+              </Button>
+            )}
+            {(isStaffUser || permissions.isBroker) && (
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteBorrowerModal(true)}
+                className="border-slate-300 hover:bg-slate-50"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Invite Borrower
+              </Button>
+            )}
             {isStaffUser && (
               <Button
                 variant="outline"
@@ -487,11 +505,31 @@ export default function Dashboard() {
             {isStaffUser && (
               <Button
                 variant="outline"
-                onClick={() => setShowInviteLoanPartnerModal(true)}
+                onClick={() => openInviteLoanPartnerModal()}
                 className="border-amber-300 hover:bg-amber-50"
               >
                 <Users className="w-4 h-4 mr-2" />
                 Invite Loan Partner
+              </Button>
+            )}
+            {permissions.isBorrower && (
+              <Button
+                variant="outline"
+                onClick={() => openInviteLoanPartnerModal('Broker', true)}
+                className="border-indigo-300 hover:bg-indigo-50"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Invite Broker
+              </Button>
+            )}
+            {permissions.isBorrower && (
+              <Button
+                variant="outline"
+                onClick={() => openInviteLoanPartnerModal('Liaison', true)}
+                className="border-cyan-300 hover:bg-cyan-50"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Invite Liaison
               </Button>
             )}
           </motion.div>
@@ -720,8 +758,10 @@ export default function Dashboard() {
 
       <InviteLoanPartnerModal
         isOpen={showInviteLoanPartnerModal}
-        onClose={() => setShowInviteLoanPartnerModal(false)}
+        onClose={closeInviteLoanPartnerModal}
         onInviteSubmitted={handleInviteSubmitted}
+        defaultPartnerType={invitePartnerType}
+        lockPartnerType={lockInvitePartnerType}
       />
       </div>
     </>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,15 @@ const LOAN_PARTNER_TYPES = LOAN_PARTNER_ROLES.map((role) => ({
   label: role
 }));
 
-export default function InviteLoanPartnerModal({ isOpen, onClose, onInviteSubmitted }) {
+const DEFAULT_PARTNER_TYPE = 'Title Company';
+
+export default function InviteLoanPartnerModal({
+  isOpen,
+  onClose,
+  onInviteSubmitted,
+  defaultPartnerType = DEFAULT_PARTNER_TYPE,
+  lockPartnerType = false
+}) {
   const { toast } = useToast();
   const { currentUser } = usePermissions();
 
@@ -23,9 +31,19 @@ export default function InviteLoanPartnerModal({ isOpen, onClose, onInviteSubmit
     requested_email: '',
     requested_first_name: '',
     requested_last_name: '',
-    partner_type: 'Title Company'
+    partner_type: defaultPartnerType
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setFormData({
+      requested_email: '',
+      requested_first_name: '',
+      requested_last_name: '',
+      partner_type: defaultPartnerType || DEFAULT_PARTNER_TYPE
+    });
+  }, [isOpen, defaultPartnerType]);
 
   if (!isOpen) return null;
 
@@ -61,7 +79,7 @@ export default function InviteLoanPartnerModal({ isOpen, onClose, onInviteSubmit
         requested_email: '',
         requested_first_name: '',
         requested_last_name: '',
-        partner_type: 'Title Company'
+        partner_type: defaultPartnerType || DEFAULT_PARTNER_TYPE
       });
     } catch (error) {
       console.error('Error submitting invitation:', error);
@@ -143,7 +161,7 @@ export default function InviteLoanPartnerModal({ isOpen, onClose, onInviteSubmit
               <Select
                 value={formData.partner_type}
                 onValueChange={(value) => handleInputChange('partner_type', value)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || lockPartnerType}
               >
                 <SelectTrigger>
                   <SelectValue />
