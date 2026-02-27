@@ -13,7 +13,6 @@ import { Loader2, User as UserIcon, Hash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
-import { hasBrokerOnApplication, hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 import {
   Command,
   CommandEmpty,
@@ -35,7 +34,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
   });
   const [isCreating, setIsCreating] = useState(false);
   const [activeTab, setActiveTab] = useState("direct");
-  const [borrowerBrokerRestriction, setBorrowerBrokerRestriction] = useState(false);
+  const isBorrowerMessenger = ['Borrower', 'Liaison'].includes(normalizeAppRole(currentUser?.app_role));
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +49,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       let allApplications = [];
       const normalizedRole = normalizeAppRole(currentUser?.app_role);
       const isBorrowerRole = ['Borrower', 'Liaison'].includes(normalizedRole);
+      let partnerUserIds = new Set();
       
       // Try to load users - may fail for non-admin users
       try {
@@ -82,7 +82,6 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
         }
       }
 
-      let shouldRestrictToBroker = false;
       if (isBorrowerRole) {
         let borrowerRecord = null;
         try {
@@ -96,28 +95,66 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
           console.log('Cannot resolve borrower record:', error);
         }
 
-        const invitedByBroker = wasInvitedByBroker(borrowerRecord);
-        let hasBroker = false;
+        let allLoanPartners = [];
         try {
-          const loanPartners = await base44.entities.LoanPartner.list();
-          hasBroker = allLoans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
-            || allApplications.some((app) => hasBrokerOnApplication(app, loanPartners));
+          allLoanPartners = await base44.entities.LoanPartner.list();
         } catch (error) {
-          console.log('Cannot evaluate broker presence:', error);
+          console.log('Cannot load loan partners:', error);
         }
-        shouldRestrictToBroker = invitedByBroker || hasBroker;
-        setBorrowerBrokerRestriction(shouldRestrictToBroker);
-      } else {
-        setBorrowerBrokerRestriction(false);
+
+        const accessIds = new Set([currentUser.id, borrowerRecord?.id].filter(Boolean).map(String));
+        const myApplications = allApplications.filter((app) => {
+          if (accessIds.has(String(app.primary_borrower_id))) return true;
+          const coBorrowers = Array.isArray(app.co_borrowers) ? app.co_borrowers : [];
+          return coBorrowers.some((cb) =>
+            accessIds.has(String(cb?.user_id)) ||
+            accessIds.has(String(cb?.borrower_id)) ||
+            accessIds.has(String(cb?.id))
+          );
+        });
+        const myLoans = allLoans.filter((loan) => {
+          const borrowerIds = Array.isArray(loan.borrower_ids) ? loan.borrower_ids : [];
+          return borrowerIds.some((id) => accessIds.has(String(id)));
+        });
+
+        const partnerIds = new Set();
+        myApplications.forEach((app) => {
+          [app.broker_id, app.referrer_id, app.liaison_id, app.broker_user_id]
+            .filter(Boolean)
+            .forEach((id) => partnerIds.add(String(id)));
+          (app.broker_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (app.referrer_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (app.liaison_ids || []).forEach((id) => partnerIds.add(String(id)));
+        });
+        myLoans.forEach((loan) => {
+          [loan.broker_id, loan.referrer_id, loan.liaison_id]
+            .filter(Boolean)
+            .forEach((id) => partnerIds.add(String(id)));
+          (loan.broker_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (loan.referrer_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (loan.liaison_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (loan.title_company_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (loan.insurance_company_ids || []).forEach((id) => partnerIds.add(String(id)));
+          (loan.servicer_ids || []).forEach((id) => partnerIds.add(String(id)));
+        });
+
+        partnerUserIds = new Set();
+        allLoanPartners
+          .filter((partner) => partnerIds.has(String(partner.id)))
+          .forEach((partner) => {
+            if (partner.user_id) {
+              partnerUserIds.add(String(partner.user_id));
+            }
+          });
       }
       
       // Rule 12: Filter users based on permissions
       let filteredUsers = allUsers.filter(u => u.id !== currentUser?.id); // Exclude self
       
       if (permissions.canMessageOnlyLoanOfficers) {
-        if (isBorrowerRole && shouldRestrictToBroker) {
+        if (isBorrowerRole) {
           filteredUsers = filteredUsers.filter(u =>
-            normalizeAppRole(u.app_role) === 'Broker'
+            normalizeAppRole(u.app_role) === 'Loan Officer' || partnerUserIds.has(String(u.id))
           );
         } else {
           // Non-admin/non-LO users can only message loan officers
@@ -268,8 +305,8 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
               <div className="space-y-2">
                 <Label>
                   {permissions.canMessageOnlyLoanOfficers
-                    ? (borrowerBrokerRestriction
-                      ? 'Select a broker to message:'
+                    ? (isBorrowerMessenger
+                      ? 'Select a loan officer or partner to message:'
                       : 'Select a loan officer to message:')
                     : 'Select a person to message:'}
                 </Label>
@@ -422,8 +459,8 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
             <div className="space-y-2">
               <Label>
                 {permissions.canMessageOnlyLoanOfficers
-                  ? (borrowerBrokerRestriction
-                    ? 'Select a broker to message:'
+                  ? (isBorrowerMessenger
+                    ? 'Select a loan officer or partner to message:'
                     : 'Select a loan officer to message:')
                   : 'Select a person to message:'}
               </Label>

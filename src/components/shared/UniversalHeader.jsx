@@ -159,8 +159,26 @@ export default function UniversalHeader({ currentUser }) {
         ]);
         if (!isMounted) return;
 
+        const matchesBorrowerOnApplication = (app) => {
+          if (!app) return false;
+          if (borrowerIds.has(app.primary_borrower_id) || borrowerIds.has(app.created_by)) return true;
+          const coBorrowers = Array.isArray(app.co_borrowers) ? app.co_borrowers : [];
+          return coBorrowers.some((cb) =>
+            borrowerIds.has(cb?.user_id) || borrowerIds.has(cb?.borrower_id) || borrowerIds.has(cb?.id)
+          );
+        };
+
+        const matchesBorrowerOnLoan = (loan) => {
+          if (!loan) return false;
+          const borrowerList = Array.isArray(loan.borrower_ids) ? loan.borrower_ids : [];
+          return borrowerList.some((id) => borrowerIds.has(id));
+        };
+
+        const myApplications = applications.filter(matchesBorrowerOnApplication);
+        const myLoans = loans.filter(matchesBorrowerOnLoan);
+
         if (!invitedByBroker && !hasBorrowerRecord) {
-          invitedByBroker = applications.some((app) => {
+          invitedByBroker = myApplications.some((app) => {
             const coBorrowerEntry = app?.co_borrowers?.find(cb =>
               borrowerIds.has(cb.user_id) || borrowerIds.has(cb.borrower_id)
             );
@@ -170,8 +188,8 @@ export default function UniversalHeader({ currentUser }) {
 
         const loanPartners = await base44.entities.LoanPartner.list();
         if (!isMounted) return;
-        const hasBroker = loans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
-          || applications.some((app) => hasBrokerOnApplication(app, loanPartners));
+        const hasBroker = myLoans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
+          || myApplications.some((app) => hasBrokerOnApplication(app, loanPartners));
         setHideBranding(invitedByBroker || hasBroker);
       } catch (error) {
         console.error('Error resolving branding visibility:', error);

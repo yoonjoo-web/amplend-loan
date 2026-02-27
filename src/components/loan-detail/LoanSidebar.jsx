@@ -112,8 +112,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const [teamMembers, setTeamMembers] = useState([]);
   const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
   const [loanOfficerNameSet, setLoanOfficerNameSet] = useState(new Set());
-  const [borrowerInvitedByBroker, setBorrowerInvitedByBroker] = useState(false);
-  const [hasBrokerOnThisLoan, setHasBrokerOnThisLoan] = useState(false);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [modificationHistory, setModificationHistory] = useState([]);
@@ -127,6 +125,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const [showAddBrokerModal, setShowAddBrokerModal] = useState(false);
   const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const { toast } = useToast();
+  const normalizedRole = normalizeAppRole(currentUser?.app_role);
+  const canManage = currentUser && (
+    currentUser.role === 'admin' ||
+    ['Administrator', 'Loan Officer'].includes(normalizedRole)
+  );
 
   useEffect(() => {
     console.log('LoanSidebar - useEffect triggered');
@@ -189,6 +192,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       let allLoanPartners = [];
       let loanOfficerOverrides = [];
       let loanOfficerOverridesById = {};
+      let fallbackLoanOfficerUsers = [];
       
       try {
         allUsers = await base44.entities.User.list();
@@ -217,8 +221,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       const brokerOnThisLoan = hasBrokerOnLoan(loan, allLoanPartners);
       const shouldHideLoanOfficerDetails = isBorrowerRole && (invitedByBroker || brokerOnThisLoan);
       setHideLoanOfficerDetails(shouldHideLoanOfficerDetails);
-      setBorrowerInvitedByBroker(invitedByBroker);
-      setHasBrokerOnThisLoan(brokerOnThisLoan);
 
       if (!canManage && loan?.id) {
         try {
@@ -228,12 +230,21 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           loanOfficerOverrides = response?.data?.loan_officers || response?.loan_officers || [];
           loanOfficerOverridesById = loanOfficerOverrides.reduce((acc, officer) => {
             if (officer?.id) {
-              acc[officer.id] = officer;
+              acc[String(officer.id)] = officer;
             }
             return acc;
           }, {});
         } catch (error) {
           console.error('LoanSidebar - Error fetching loan officers for loan:', error);
+        }
+      }
+
+      if (!canManage && (!loanOfficerOverrides || loanOfficerOverrides.length === 0)) {
+        try {
+          const response = await base44.functions.invoke('getLoanOfficers');
+          fallbackLoanOfficerUsers = response?.data?.users || response?.users || [];
+        } catch (error) {
+          console.error('LoanSidebar - Error fetching fallback loan officers:', error);
         }
       }
 
@@ -293,12 +304,14 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       };
 
       const resolveLoanOfficer = async (id) => {
-        if (loanOfficerOverridesById[id]) {
-          return loanOfficerOverridesById[id];
+        const normalizedId = String(id);
+        if (loanOfficerOverridesById[normalizedId]) {
+          return loanOfficerOverridesById[normalizedId];
         }
         const user =
-          allUsers.find(u => u.id === id) ||
-          (allLoanOfficers || []).find(u => u.id === id);
+          allUsers.find(u => String(u.id) === normalizedId) ||
+          (allLoanOfficers || []).find(u => String(u.id) === normalizedId) ||
+          (fallbackLoanOfficerUsers || []).find(u => String(u.id) === normalizedId);
         if (user) return user;
         try {
           return await base44.entities.User.get(id);
@@ -526,11 +539,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     setPendingStatusChange(null);
   };
 
-  const canManage = currentUser && (
-    currentUser.role === 'admin' ||
-    ['Administrator', 'Loan Officer'].includes(currentUser.app_role)
-  );
-
   const currentStatus = STATUS_DESCRIPTIONS[loan.status] || {
     label: "Unknown Status",
     description: "This loan has an unrecognized status.",
@@ -538,13 +546,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   };
 
   const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker', 'Title Company', 'Insurance Company', 'Servicer'];
-  const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const isBorrowerRole = normalizedRole === 'Borrower';
   const isLiaisonRole = normalizedRole === 'Liaison';
   const isBrokerRole = normalizedRole === 'Broker';
   const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(normalizedRole);
   const isBorrowerMessenger = isBorrowerRole || isLiaisonRole;
-  const borrowerBrokerRestriction = isBorrowerMessenger && (borrowerInvitedByBroker || hasBrokerOnThisLoan);
   const hasBrokerOnTeam = teamMembers.some((member) => member.role === 'Broker');
   const hasLiaisonOnTeam = teamMembers.some((member) => member.role === 'Liaison');
   const canShowSelfServeTeamButtons = !canManage && (isBorrowerRole || isLiaisonRole || isBrokerRole);
@@ -561,29 +567,43 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   };
 
   const canMessageMember = (member) => {
+    const borrowerAllowedRoles = new Set([
+      'Loan Officer',
+      'Broker',
+      'Referral Partner',
+      'Title Company',
+      'Insurance Company',
+      'Servicer',
+      'Liaison',
+      'Loan Partner'
+    ]);
     if (!currentUser || !member?.messageUserId) return false;
     if (member.messageUserId === currentUser.id) return false;
     if (!isRestrictedMessenger) return true;
     if (isBorrowerMessenger) {
-      if (borrowerBrokerRestriction) {
-        return member.role === 'Broker';
-      }
-      return member.role === 'Loan Officer';
+      return borrowerAllowedRoles.has(member.role);
     }
     return member.role === 'Loan Officer';
   };
 
   const getMessageDisabledReason = (member) => {
+    const borrowerAllowedRoles = new Set([
+      'Loan Officer',
+      'Broker',
+      'Referral Partner',
+      'Title Company',
+      'Insurance Company',
+      'Servicer',
+      'Liaison',
+      'Loan Partner'
+    ]);
     if (!currentUser) return "Sign in to message";
     if (!member?.messageUserId) return "No linked user account";
     if (member.messageUserId === currentUser.id) return "You can't message yourself";
     if (isRestrictedMessenger) {
       if (isBorrowerMessenger) {
-        if (borrowerBrokerRestriction && member.role !== 'Broker') {
-          return "Borrowers can only message brokers";
-        }
-        if (!borrowerBrokerRestriction && member.role !== 'Loan Officer') {
-          return "Borrowers can only message loan officers";
+        if (!borrowerAllowedRoles.has(member.role)) {
+          return "Borrowers can only message loan officers or partners";
         }
       } else if (member.role !== 'Loan Officer') {
         return "Borrowers and partners can only message loan officers";

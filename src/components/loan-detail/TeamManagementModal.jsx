@@ -14,6 +14,8 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRoles";
 
+const ADDABLE_TEAM_ROLES = ['Loan Officer', ...LOAN_PARTNER_ROLES];
+
 export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, onRefresh }) {
   const { toast } = useToast();
   const [allUsers, setAllUsers] = useState([]);
@@ -57,12 +59,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       const borrowers = await base44.entities.Borrower.list();
       setAllBorrowers(borrowers || []);
       
-      // Load borrowers
+      // Load loan partners
       const loanPartners = await base44.entities.LoanPartner.list();
-      const partnerRoles = new Set(LOAN_PARTNER_ROLES.filter(role => role !== 'Liaison'));
-      setAllLoanPartners(
-        (loanPartners || []).filter((partner) => partnerRoles.has(normalizeAppRole(partner.app_role || partner.type)))
-      );
+      setAllLoanPartners(loanPartners || []);
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
@@ -91,10 +90,15 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     }
     // For liaisons, look in borrowers
     if (roleKey === 'liaison') {
+      const partner = allLoanPartners.find(p => p.id === userId);
+      if (partner && partner.name) {
+        return partner.name;
+      }
       const user = allUsers.find(u => u.id === userId);
       if (user && user.first_name && user.last_name) {
         return `${user.first_name} ${user.last_name}`;
       }
+      if (user?.email) return user.email;
       return 'Unknown Liaison';
     }
     
@@ -119,6 +123,10 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       return 'Borrower';
     }
     if (roleKey === 'liaison') {
+      const partner = allLoanPartners.find(p => p.id === userId);
+      if (partner) {
+        return normalizeAppRole(partner.app_role || partner.type || 'Liaison');
+      }
       return 'Liaison';
     }
     if (roleKey === 'partner') {
@@ -133,6 +141,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     if (!newMemberRole || !newMemberId) return;
 
     switch (newMemberRole) {
+      case 'Loan Officer':
+        if (!loanOfficerIds.includes(newMemberId)) {
+          setLoanOfficerIds([...loanOfficerIds, newMemberId]);
+        }
+        break;
       case 'Liaison':
         if (!liaisonIds.includes(newMemberId)) {
           setLiaisonIds([...liaisonIds, newMemberId]);
@@ -179,7 +192,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     let nextLiaisonIds = [...liaisonIds];
 
     if (newMemberRole && newMemberId) {
-      if (newMemberRole === 'Liaison') {
+      if (newMemberRole === 'Loan Officer') {
+        if (!nextLoanOfficerIds.includes(newMemberId)) {
+          nextLoanOfficerIds.push(newMemberId);
+        }
+      } else if (newMemberRole === 'Liaison') {
         if (!nextLiaisonIds.includes(newMemberId)) {
           nextLiaisonIds.push(newMemberId);
         }
@@ -233,10 +250,17 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     
     let existingIds = [];
     
+    if (newMemberRole === 'Loan Officer') {
+      existingIds = loanOfficerIds;
+      return allUsers.filter((u) =>
+        normalizeAppRole(u.app_role) === 'Loan Officer' && !existingIds.includes(u.id)
+      );
+    }
+
     if (newMemberRole === 'Liaison') {
       existingIds = liaisonIds;
-      return allUsers.filter(u =>
-        normalizeAppRole(u.app_role) === 'Liaison' && !existingIds.includes(u.id)
+      return allLoanPartners.filter((p) =>
+        normalizeAppRole(p.app_role || p.type) === 'Liaison' && !existingIds.includes(p.id)
       );
     }
 
@@ -245,8 +269,6 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     return allLoanPartners.filter(p =>
       normalizeAppRole(p.app_role || p.type) === normalizedRole && !existingIds.includes(p.id)
     );
-    
-    return [];
   };
 
   const renderTeamSection = (title, memberIds, roleKey) => {
@@ -310,7 +332,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {LOAN_PARTNER_ROLES.map((role) => (
+                        {ADDABLE_TEAM_ROLES.map((role) => (
                           <SelectItem key={role} value={role}>
                             {role}
                           </SelectItem>
@@ -332,7 +354,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                       <SelectContent>
                         {availableUsers.map(item => {
                           const displayName = 
-                            (newMemberRole !== 'Liaison' && item.name)
+                            (item.name)
                               ? item.name
                             : (item.first_name && item.last_name)
                               ? `${item.first_name} ${item.last_name}`
