@@ -92,7 +92,16 @@ const matchesDateFilter = (request, dateFilter) => {
   return sentAt >= cutoff;
 };
 
-const InviteTable = ({ rows, emptyLabel, onDeleteInvite, deletingInviteId, canDeleteInvite }) => {
+const InviteTable = ({
+  rows,
+  emptyLabel,
+  onDeleteInvite,
+  deletingInviteId,
+  canDeleteInvite,
+  onRejectInvite,
+  rejectingInviteId,
+  canRejectInvite
+}) => {
   if (!rows.length) {
     return <div className="text-sm text-slate-500">{emptyLabel}</div>;
   }
@@ -108,7 +117,7 @@ const InviteTable = ({ rows, emptyLabel, onDeleteInvite, deletingInviteId, canDe
             <TableHead>Role</TableHead>
             <TableHead>Sent On</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="w-[200px] pr-6 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -117,6 +126,7 @@ const InviteTable = ({ rows, emptyLabel, onDeleteInvite, deletingInviteId, canDe
             const badgeClass = STATUS_COLORS[status] || "bg-slate-100 text-slate-700 border-slate-200";
             const borrowerName = `${request.requested_first_name || ""} ${request.requested_last_name || ""}`.trim();
             const canDelete = typeof canDeleteInvite === "function" ? canDeleteInvite(request) : false;
+            const canReject = typeof canRejectInvite === "function" ? canRejectInvite(request) : false;
             return (
               <TableRow key={request.id}>
                 <TableCell className="font-medium text-slate-900">
@@ -129,16 +139,32 @@ const InviteTable = ({ rows, emptyLabel, onDeleteInvite, deletingInviteId, canDe
                 <TableCell>
                   <Badge className={`text-xs border ${badgeClass}`}>{status}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  {canDelete ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={deletingInviteId === request.id}
-                      onClick={() => onDeleteInvite?.(request)}
-                    >
-                      {deletingInviteId === request.id ? "Deleting..." : "Delete"}
-                    </Button>
+                <TableCell className="pr-6 text-right">
+                  {(canDelete || canReject) ? (
+                    <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                      {canReject && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-slate-700 hover:bg-slate-800 text-white border-slate-700 hover:border-slate-800"
+                          disabled={rejectingInviteId === request.id}
+                          onClick={() => onRejectInvite?.(request)}
+                        >
+                          {rejectingInviteId === request.id ? "Rejecting..." : "Reject"}
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-slate-700 hover:bg-slate-800 text-white border-slate-700 hover:border-slate-800"
+                          disabled={deletingInviteId === request.id}
+                          onClick={() => onDeleteInvite?.(request)}
+                        >
+                          {deletingInviteId === request.id ? "Deleting..." : "Delete"}
+                        </Button>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-xs text-slate-400">-</span>
                   )}
@@ -160,6 +186,7 @@ export default function ManageInvitesTab({ currentUser }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const [page, setPage] = useState(1);
   const [deletingInviteId, setDeletingInviteId] = useState(null);
+  const [rejectingInviteId, setRejectingInviteId] = useState(null);
 
   const normalizeEmail = (email) => (email || "").trim().toLowerCase();
 
@@ -167,6 +194,16 @@ export default function ManageInvitesTab({ currentUser }) {
     if (!request || typeof request.id !== "string") return false;
     if (request.id.startsWith("borrower-")) return false; // synthetic row, not a request record
     if (!isInternalRequest(request)) return false; // only admin / loan officer invites
+    const status = (request.status || "").toLowerCase();
+    if (["activated", "rejected", "deleted"].includes(status)) return false;
+    if (request._onboarded || request._token_used) return false;
+    return ["pending", "sent", ""].includes(status);
+  };
+
+  const canRejectInvite = (request) => {
+    if (!request || typeof request.id !== "string") return false;
+    if (request.id.startsWith("borrower-")) return false; // synthetic row, not a request record
+    if (request.source !== "broker") return false; // reject action is only for broker-made invites
     const status = (request.status || "").toLowerCase();
     if (["activated", "rejected", "deleted"].includes(status)) return false;
     if (request._onboarded || request._token_used) return false;
@@ -195,11 +232,73 @@ export default function ManageInvitesTab({ currentUser }) {
         deleted_at: new Date().toISOString()
       });
 
-      await loadRequests();
+      setRequests((prev) =>
+        (prev || []).map((row) =>
+          row.id === request.id
+            ? {
+                ...row,
+                status: "deleted",
+                deleted_by_user_id: currentUser?.id || null,
+                deleted_at: new Date().toISOString()
+              }
+            : row
+        )
+      );
     } catch (error) {
       console.error("Error deleting invite request:", error);
     }
     setDeletingInviteId(null);
+  };
+
+  const handleRejectInvite = async (request) => {
+    if (!canRejectInvite(request) || rejectingInviteId) return;
+    setRejectingInviteId(request.id);
+    try {
+      await base44.entities.BorrowerInviteRequest.update(request.id, {
+        status: "rejected",
+        rejected_by_user_id: currentUser?.id || null,
+        rejected_at: new Date().toISOString(),
+      });
+
+      if (request.invite_token_id) {
+        try {
+          await base44.entities.BorrowerInviteToken.update(request.invite_token_id, {
+            status: "inactive",
+            deactivated_by_user_id: currentUser?.id || null,
+            deactivated_at: new Date().toISOString()
+          });
+        } catch (tokenError) {
+          console.error("Error deactivating invite token:", tokenError);
+        }
+      }
+
+      if (request.borrower_id) {
+        try {
+          await base44.entities.Borrower.update(request.borrower_id, {
+            invite_request_status: "rejected",
+            is_invite_temp: true
+          });
+        } catch (borrowerError) {
+          console.error("Error updating borrower invite status:", borrowerError);
+        }
+      }
+
+      setRequests((prev) =>
+        (prev || []).map((row) =>
+          row.id === request.id
+            ? {
+                ...row,
+                status: "rejected",
+                rejected_by_user_id: currentUser?.id || null,
+                rejected_at: new Date().toISOString()
+              }
+            : row
+        )
+      );
+    } catch (error) {
+      console.error("Error rejecting invite request:", error);
+    }
+    setRejectingInviteId(null);
   };
 
   const loadRequests = async () => {
@@ -447,6 +546,9 @@ export default function ManageInvitesTab({ currentUser }) {
               onDeleteInvite={handleDeleteInvite}
               deletingInviteId={deletingInviteId}
               canDeleteInvite={canDeleteInvite}
+              onRejectInvite={handleRejectInvite}
+              rejectingInviteId={rejectingInviteId}
+              canRejectInvite={canRejectInvite}
             />
             <div className="flex items-center justify-between text-sm text-slate-500">
               <div>
