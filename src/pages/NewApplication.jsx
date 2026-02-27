@@ -1284,7 +1284,7 @@ export default function NewApplication() {
     || formData?.referral_broker?.email
     || '';
   const assignedBrokerName = brokerPartnerName || brokerDisplayName;
-  const showBrokerName = permissions?.isBorrower && hideLoanOfficerDetails;
+  const showBrokerName = permissions?.isBorrower && hideLoanOfficerDetails && Boolean(assignedBrokerName);
   const showAssignmentCard = formData && (canManage || permissions?.isBroker || showBrokerName);
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const canShowPartnerActionButtons = !isReadOnly && Boolean(
