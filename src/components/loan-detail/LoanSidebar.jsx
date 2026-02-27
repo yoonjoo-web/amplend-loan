@@ -400,6 +400,21 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       }
 
       const nextLoanOfficerNameSet = new Set();
+      const hasResolvedLoanOfficerOverrides = Array.isArray(loanOfficerOverrides) && loanOfficerOverrides.length > 0;
+
+      if (hasResolvedLoanOfficerOverrides) {
+        loanOfficerOverrides.forEach((user) => {
+          if (user) {
+            const fullName = user.first_name && user.last_name
+              ? `${user.first_name} ${user.last_name}`.trim()
+              : user.full_name;
+            [fullName, user.full_name, user.email].filter(Boolean).forEach((name) => {
+              nextLoanOfficerNameSet.add(String(name).trim().toLowerCase());
+            });
+          }
+          addLoanOfficerMember(user);
+        });
+      }
 
       // Add loan officers (look in users)
       const normalizedLoanOfficerIds = Array.isArray(loan.loan_officer_ids)
@@ -422,6 +437,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             return;
           }
           const fallbackId = normalizedLoanOfficerIds[index];
+          if (hasResolvedLoanOfficerOverrides) return;
           const alreadyAdded = team.some(member => member.id === fallbackId && member.role === 'Loan Officer');
           if (alreadyAdded) return;
           team.push({
