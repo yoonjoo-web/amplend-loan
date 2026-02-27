@@ -21,7 +21,7 @@ export const isUserOnLoanTeam = (loan, user, access = {}) => {
   if (matchesIdList(toIdArray(loan.liaison_id, loan.liaison_ids))) return true;
   if (matchesIdList(toIdArray(loan.broker_id, loan.broker_ids))) return true;
 
-  const contact = loan.loan_contacts?.broker;
+  const contact = loan.loan_partners?.broker;
   if (contact && typeof contact === 'object') {
     if (contact.user_id && contact.user_id === userId) return true;
     if (contact.id && (contact.id === userId || partnerIds.includes(contact.id))) return true;
@@ -71,5 +71,5 @@ export const isUserOnApplicationTeam = (application, user, access = {}) => {
     return false;
   };
 
-  return matchesContact(application.referral_broker) || matchesContact(application.loan_contacts?.broker);
+  return matchesContact(application.referral_broker) || matchesContact(application.loan_partners?.broker);
 };

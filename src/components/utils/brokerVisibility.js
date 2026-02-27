@@ -54,7 +54,7 @@ export const hasBrokerOnLoan = (loan, loanPartners = []) => {
     Boolean(loan?.broker_id) ||
     hasBrokerPartnerIds(loan?.referrer_ids, loanPartners) ||
     hasBrokerPartnerName(loan?.referrer_name, loanPartners) ||
-    hasBrokerContact(loan?.loan_contacts?.broker)
+    hasBrokerContact(loan?.loan_partners?.broker)
   );
 };
 
@@ -64,6 +64,6 @@ export const hasBrokerOnApplication = (application, loanPartners = []) => {
     hasBrokerPartnerIds(application?.referrer_ids, loanPartners) ||
     hasBrokerPartnerName(application?.referrer_name, loanPartners) ||
     hasBrokerContact(application?.referral_broker) ||
-    hasBrokerContact(application?.loan_contacts?.broker)
+    hasBrokerContact(application?.loan_partners?.broker)
   );
 };

@@ -28,7 +28,7 @@ const SKIP_FIELDS = [
   'borrower_completion_status', 'borrower_invitation_status',
   'borrower_ids', 'loan_officer_ids',
   'broker_id', 'referrer_id', 'liaison_id',
-  'individuals', 'draws', 'loan_contacts', 'unit_information',
+  'individuals', 'draws', 'loan_partners', 'unit_information',
   'modification_history'
 ];
 

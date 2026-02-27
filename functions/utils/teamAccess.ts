@@ -38,7 +38,7 @@ export const isUserOnApplicationTeam = (
   return (
     matchesContact(application.referral_broker as Record<string, unknown>) ||
     matchesContact(
-      (application.loan_contacts as Record<string, unknown>)?.broker as Record<string, unknown>
+      (application.loan_partners as Record<string, unknown>)?.broker as Record<string, unknown>
     )
   );
 };

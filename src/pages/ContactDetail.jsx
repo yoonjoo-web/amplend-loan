@@ -506,7 +506,7 @@ export default function ContactDetail() {
               matchesPartnerIds(toIdArray(loan.referrer_id, loan.referrer_ids)) ||
               matchesPartnerIds(toIdArray(loan.liaison_id, loan.liaison_ids)) ||
               matchesPartnerIds(toIdArray(loan.broker_id, loan.broker_ids)) ||
-              matchesPartnerContact(loan.loan_contacts?.broker)
+              matchesPartnerContact(loan.loan_partners?.broker)
             );
             
             contactRelatedApplications = (allApplications || []).filter((app) =>
@@ -514,7 +514,7 @@ export default function ContactDetail() {
               matchesPartnerIds(toIdArray(app.liaison_id, app.liaison_ids)) ||
               matchesPartnerIds(toIdArray(app.broker_id, app.broker_ids)) ||
               matchesPartnerContact(app.referral_broker) ||
-              matchesPartnerContact(app.loan_contacts?.broker)
+              matchesPartnerContact(app.loan_partners?.broker)
             );
           } catch (err) {
             console.error('Error loading related data for partner:', err);

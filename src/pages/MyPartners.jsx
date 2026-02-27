@@ -72,10 +72,10 @@ export default function MyPartners() {
         (loan.servicer_ids || []).forEach((id) => partnerIdSet.add(id));
       });
 
-      // Also capture partners from loan_contacts (name/email based)
+      // Also capture partners from loan_partners (name/email based)
       const contactBasedPartners = [];
       myLoans.forEach((loan) => {
-        const contacts = loan.loan_contacts || {};
+        const contacts = loan.loan_partners || {};
         Object.entries(contacts).forEach(([role, contact]) => {
           if (!contact || typeof contact !== 'object') return;
           if (!contact.name && !contact.email) return;

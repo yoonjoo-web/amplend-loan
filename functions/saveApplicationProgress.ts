@@ -42,7 +42,7 @@ function isUserOnApplicationTeam(application, user) {
   };
 
   if (matchesContact(application.referral_broker)) return true;
-  if (application.loan_contacts && matchesContact(application.loan_contacts.broker)) return true;
+  if (application.loan_partners && matchesContact(application.loan_partners.broker)) return true;
 
   return false;
 }
@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     if (application.referrer_ids && application.referrer_ids.length > 0) safeData.referrer_ids = application.referrer_ids;
     if (application.liaison_ids && application.liaison_ids.length > 0) safeData.liaison_ids = application.liaison_ids;
     if (application.referral_broker) safeData.referral_broker = application.referral_broker;
-    if (application.loan_contacts && Object.keys(application.loan_contacts).length > 0) safeData.loan_contacts = application.loan_contacts;
+    if (application.loan_partners && Object.keys(application.loan_partners).length > 0) safeData.loan_partners = application.loan_partners;
 
     await base44.asServiceRole.entities.LoanApplication.update(application_id, safeData);
 

@@ -11,9 +11,10 @@ import { Message } from "@/entities/all";
 
 import TeamManagementModal from "./TeamManagementModal";
 import VersionHistoryModal from "./VersionHistoryModal";
-import LoanContactsSection from "./LoanContactsSection";
 import ClosingScheduleSection from "./ClosingScheduleSection";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
+import AddBrokerModal from "../application-steps/AddBrokerModal";
+import AddLiaisonModal from "../application-steps/AddLiaisonModal";
 import { useToast } from "@/components/ui/use-toast";
 import { hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 import { normalizeAppRole } from "@/components/utils/appRoles";
@@ -123,6 +124,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const [messageRecipient, setMessageRecipient] = useState(null);
   const [messageText, setMessageText] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [showAddBrokerModal, setShowAddBrokerModal] = useState(false);
+  const [showAddLiaisonModal, setShowAddLiaisonModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -536,9 +539,26 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
 
   const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker', 'Title Company', 'Insurance Company', 'Servicer'];
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
+  const isBorrowerRole = normalizedRole === 'Borrower';
+  const isLiaisonRole = normalizedRole === 'Liaison';
+  const isBrokerRole = normalizedRole === 'Broker';
   const isRestrictedMessenger = currentUser && restrictedMessengerRoles.includes(normalizedRole);
-  const isBorrowerMessenger = ['Borrower', 'Liaison'].includes(normalizedRole);
+  const isBorrowerMessenger = isBorrowerRole || isLiaisonRole;
   const borrowerBrokerRestriction = isBorrowerMessenger && (borrowerInvitedByBroker || hasBrokerOnThisLoan);
+  const hasBrokerOnTeam = teamMembers.some((member) => member.role === 'Broker');
+  const hasLiaisonOnTeam = teamMembers.some((member) => member.role === 'Liaison');
+  const canShowSelfServeTeamButtons = !canManage && (isBorrowerRole || isLiaisonRole || isBrokerRole);
+  const showAddBrokerButton = canShowSelfServeTeamButtons && !hasBrokerOnTeam && (isBorrowerRole || isLiaisonRole);
+  const showAddLiaisonButton = canShowSelfServeTeamButtons && !hasLiaisonOnTeam && (isBorrowerRole || isBrokerRole);
+  const hasTeamActionButtons = showAddBrokerButton || showAddLiaisonButton;
+  const teamModalPermissions = {
+    isPlatformAdmin: currentUser?.role === 'admin',
+    isAdministrator: normalizedRole === 'Administrator',
+    isLoanOfficer: normalizedRole === 'Loan Officer',
+    isBroker: isBrokerRole,
+    borrowerAccessIds: Array.isArray(loan?.borrower_ids) ? loan.borrower_ids.filter(Boolean) : [],
+    loanPartnerAccessIds: [currentUser?.id].filter(Boolean)
+  };
 
   const canMessageMember = (member) => {
     if (!currentUser || !member?.messageUserId) return false;
@@ -647,6 +667,50 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     }
 
     setIsSendingMessage(false);
+  };
+
+  const getOverriddenFields = (fields) => {
+    return Array.from(new Set([...(loan?.overridden_fields || []), ...fields]));
+  };
+
+  const handleAddLiaison = async (liaisonId) => {
+    if (!liaisonId) return;
+    const normalizedId = String(liaisonId);
+    const nextLiaisonIds = Array.from(
+      new Set([...(Array.isArray(loan?.liaison_ids) ? loan.liaison_ids : []), normalizedId].filter(Boolean))
+    );
+
+    await onUpdate({
+      liaison_id: normalizedId,
+      liaison_ids: nextLiaisonIds,
+      overridden_fields: getOverriddenFields(['liaison_id', 'liaison_ids'])
+    });
+
+    if (onRefresh) {
+      await onRefresh();
+    }
+  };
+
+  const handleAddBroker = async (brokerId) => {
+    if (!brokerId) return;
+    const normalizedId = String(brokerId);
+    const nextBrokerIds = Array.from(
+      new Set([...(Array.isArray(loan?.broker_ids) ? loan.broker_ids : []), normalizedId].filter(Boolean))
+    );
+    const nextReferrerIds = Array.from(
+      new Set([...(Array.isArray(loan?.referrer_ids) ? loan.referrer_ids : []), normalizedId].filter(Boolean))
+    );
+
+    await onUpdate({
+      broker_id: normalizedId,
+      broker_ids: nextBrokerIds,
+      referrer_ids: nextReferrerIds,
+      overridden_fields: getOverriddenFields(['broker_id', 'broker_ids', 'referrer_ids'])
+    });
+
+    if (onRefresh) {
+      await onRefresh();
+    }
   };
 
   if (collapsed) {
@@ -804,6 +868,30 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                 <p className="text-sm text-slate-500">No team members found</p>
               )}
             </div>
+            {hasTeamActionButtons && (
+              <div className="pt-3 mt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                {showAddBrokerButton && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setShowAddBrokerModal(true)}
+                  >
+                    Add Broker
+                  </Button>
+                )}
+                {showAddLiaisonButton && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setShowAddLiaisonModal(true)}
+                  >
+                    Add Liaison
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -812,9 +900,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           onUpdate={onUpdate}
           currentUser={currentUser}
         />
-
-        {/* Loan Contacts */}
-        <LoanContactsSection loan={loan} onUpdate={onUpdate} readOnly={!canManage} />
 
         {/* Version History */}
         <Card className="border-0 shadow-sm">
@@ -941,6 +1026,23 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           </div>
         </DialogContent>
       </Dialog>
+
+      <AddBrokerModal
+        isOpen={showAddBrokerModal}
+        onClose={() => setShowAddBrokerModal(false)}
+        applicationData={loan}
+        onAddBroker={handleAddBroker}
+        permissions={teamModalPermissions}
+        currentUser={currentUser}
+      />
+
+      <AddLiaisonModal
+        isOpen={showAddLiaisonModal}
+        onClose={() => setShowAddLiaisonModal(false)}
+        applicationData={loan}
+        onAddLiaison={handleAddLiaison}
+        permissions={teamModalPermissions}
+      />
     </div>
   );
 }

@@ -454,7 +454,7 @@ export default function NewApplication() {
     });
 
     // Fields that must never be nulled out (they are identity/access fields)
-    const preserveFields = ['broker_id', 'referrer_id', 'liaison_id', 'broker_ids', 'referrer_ids', 'liaison_ids', 'referral_broker', 'loan_contacts'];
+    const preserveFields = ['broker_id', 'referrer_id', 'liaison_id', 'broker_ids', 'referrer_ids', 'liaison_ids', 'referral_broker', 'loan_partners'];
 
     Object.keys(cleanedData).forEach(key => {
       if (preserveFields.includes(key)) return;
@@ -1280,7 +1280,7 @@ export default function NewApplication() {
   const currentStepObj = visibleSteps.find(s => s.id === currentStep);
   const brokerDisplayName = formData?.referrer_name
     || formData?.referral_broker?.name
-    || formData?.loan_contacts?.broker?.name
+    || formData?.loan_partners?.broker?.name
     || formData?.referral_broker?.email
     || '';
   const assignedBrokerName = brokerPartnerName || brokerDisplayName;

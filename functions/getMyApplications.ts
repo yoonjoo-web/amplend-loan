@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       if (matchesReferrerId || matchesLiaisonId || matchesBrokerId) return true;
 
       const matchesReferralBroker = matchesContact(app.referral_broker, user, loanPartnerAccessIds);
-      const matchesLoanBroker = matchesContact(app.loan_contacts?.broker, user, loanPartnerAccessIds);
+      const matchesLoanBroker = matchesContact(app.loan_partners?.broker, user, loanPartnerAccessIds);
       if (matchesReferralBroker || matchesLoanBroker) return true;
 
       // Also check broker_id field (set when broker creates application)
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
         referrer_ids: app?.referrer_ids,
         liaison_ids: app?.liaison_ids,
         referral_broker: app?.referral_broker,
-        loan_contacts: app?.loan_contacts
+        loan_partners: app?.loan_partners
       }));
       console.log('[getMyApplications] user:', {
         id: userId,
