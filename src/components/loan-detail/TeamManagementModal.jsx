@@ -17,7 +17,7 @@ import { LOAN_PARTNER_ROLES, normalizeAppRole } from "@/components/utils/appRole
 const INTERNAL_TEAM_ROLES = ['Administrator', 'Loan Officer'];
 const ADDABLE_TEAM_ROLES = [...INTERNAL_TEAM_ROLES, ...LOAN_PARTNER_ROLES];
 
-export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, onRefresh }) {
+export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }) {
   const { toast } = useToast();
   const [allUsers, setAllUsers] = useState([]);
   const [allBorrowers, setAllBorrowers] = useState([]);
@@ -28,6 +28,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
   // Team member states
   const [borrowerIds, setBorrowerIds] = useState([]);
   const [loanOfficerIds, setLoanOfficerIds] = useState([]);
+  const [brokerIds, setBrokerIds] = useState([]);
   const [referrerIds, setReferrerIds] = useState([]);
   const [liaisonIds, setLiaisonIds] = useState([]);
   
@@ -46,6 +47,10 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     const borrowerIdsRaw = Array.isArray(loan?.borrower_ids) ? loan.borrower_ids : [];
     setBorrowerIds(borrowerIdsRaw.map(String));
     setLoanOfficerIds((Array.isArray(loan?.loan_officer_ids) ? loan.loan_officer_ids : []).map(String));
+    const brokerIdsRaw = Array.isArray(loan?.broker_ids)
+      ? loan.broker_ids
+      : (loan?.broker_id ? [loan.broker_id] : []);
+    setBrokerIds(brokerIdsRaw.map(String));
     setReferrerIds((Array.isArray(loan?.referrer_ids) ? loan.referrer_ids : []).map(String));
     setLiaisonIds((Array.isArray(loan?.liaison_ids) ? loan.liaison_ids : []).map(String));
   }, [isOpen, loan]);
@@ -103,12 +108,12 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       return 'Unknown Liaison';
     }
     
-    if (roleKey === 'partner') {
+    if (roleKey === 'broker' || roleKey === 'partner') {
       const partner = allLoanPartners.find(p => p.id === userId);
       if (partner && partner.name) {
         return partner.name;
       }
-      return 'Unknown Partner';
+      return roleKey === 'broker' ? 'Unknown Broker' : 'Unknown Partner';
     }
     
     // For others, look in users
@@ -130,9 +135,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       }
       return 'Liaison';
     }
-    if (roleKey === 'partner') {
+    if (roleKey === 'broker' || roleKey === 'partner') {
       const partner = allLoanPartners.find(p => p.id === userId);
-      return normalizeAppRole(partner?.app_role || partner?.type || 'Loan Partner');
+      return normalizeAppRole(partner?.app_role || partner?.type || (roleKey === 'broker' ? 'Broker' : 'Loan Partner'));
     }
     const user = allUsers.find(u => u.id === userId);
     return normalizeAppRole(user?.app_role || '');
@@ -152,6 +157,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'Liaison':
         if (!liaisonIds.includes(normalizedMemberId)) {
           setLiaisonIds([...liaisonIds, normalizedMemberId]);
+        }
+        break;
+      case 'Broker':
+        if (!brokerIds.includes(normalizedMemberId)) {
+          setBrokerIds([...brokerIds, normalizedMemberId]);
         }
         break;
       default:
@@ -176,6 +186,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       case 'partner':
         setReferrerIds(referrerIds.filter(id => id !== userId));
         break;
+      case 'broker':
+        setBrokerIds(brokerIds.filter(id => id !== userId));
+        break;
       case 'liaison':
         setLiaisonIds(liaisonIds.filter(id => id !== userId));
         break;
@@ -186,11 +199,16 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     const teamFieldKeys = [
       'borrower_ids',
       'loan_officer_ids',
+      'broker_ids',
+      'broker_id',
       'referrer_ids',
-      'liaison_ids'
+      'referrer_id',
+      'liaison_ids',
+      'liaison_id'
     ];
     let nextBorrowerIds = [...borrowerIds];
     let nextLoanOfficerIds = [...loanOfficerIds];
+    let nextBrokerIds = [...brokerIds];
     let nextReferrerIds = [...referrerIds];
     let nextLiaisonIds = [...liaisonIds];
 
@@ -204,6 +222,10 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
         if (!nextLiaisonIds.includes(normalizedMemberId)) {
           nextLiaisonIds.push(normalizedMemberId);
         }
+      } else if (newMemberRole === 'Broker') {
+        if (!nextBrokerIds.includes(normalizedMemberId)) {
+          nextBrokerIds.push(normalizedMemberId);
+        }
       } else if (!nextReferrerIds.includes(normalizedMemberId)) {
         nextReferrerIds.push(normalizedMemberId);
       }
@@ -211,14 +233,19 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
 
     const mergedBorrowerIds = Array.from(new Set(nextBorrowerIds.map(String).filter(Boolean)));
     const mergedLoanOfficerIds = Array.from(new Set(nextLoanOfficerIds.map(String).filter(Boolean)));
+    const mergedBrokerIds = Array.from(new Set(nextBrokerIds.map(String).filter(Boolean)));
     const mergedReferrerIds = Array.from(new Set(nextReferrerIds.map(String).filter(Boolean)));
     const mergedLiaisonIds = Array.from(new Set(nextLiaisonIds.map(String).filter(Boolean)));
 
     return {
       borrower_ids: mergedBorrowerIds,
       loan_officer_ids: mergedLoanOfficerIds,
+      broker_ids: mergedBrokerIds,
+      broker_id: mergedBrokerIds[0] || null,
       referrer_ids: mergedReferrerIds,
+      referrer_id: mergedReferrerIds[0] || null,
       liaison_ids: mergedLiaisonIds,
+      liaison_id: mergedLiaisonIds[0] || null,
       overridden_fields: Array.from(
         new Set([...(loan?.overridden_fields || []), ...teamFieldKeys])
       )
@@ -229,7 +256,14 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
     setIsSaving(true);
     try {
       const teamPayload = buildTeamPayload();
-      await onUpdate(teamPayload);
+      const response = await base44.functions.invoke('updateLoanTeam', {
+        loan_id: loan?.id,
+        ...teamPayload
+      });
+      const errorMessage = response?.error || response?.data?.error;
+      if (errorMessage) {
+        throw new Error(errorMessage);
+      }
       
       toast({
         title: "Team Updated",
@@ -268,6 +302,13 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
       existingIds = liaisonIds;
       return allLoanPartners.filter((p) =>
         normalizeAppRole(p.app_role || p.type) === 'Liaison' && !existingIds.includes(String(p.id))
+      );
+    }
+
+    if (newMemberRole === 'Broker') {
+      existingIds = brokerIds;
+      return allLoanPartners.filter((p) =>
+        normalizeAppRole(p.app_role || p.type) === 'Broker' && !existingIds.includes(String(p.id))
       );
     }
 
@@ -392,10 +433,11 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onUpdate, o
                 <h4 className="text-sm font-semibold text-slate-900">Current Team</h4>
                 {renderTeamSection('Borrowers', borrowerIds, 'borrower')}
                 {renderTeamSection('Loan Officers', loanOfficerIds, 'loan_officer')}
+                {renderTeamSection('Brokers', brokerIds, 'broker')}
                 {renderTeamSection('Liaisons', liaisonIds, 'liaison')}
                 {renderTeamSection('Loan Partners', referrerIds, 'partner')}
                 
-                {borrowerIds.length === 0 && loanOfficerIds.length === 0 && 
+                {borrowerIds.length === 0 && loanOfficerIds.length === 0 && brokerIds.length === 0 &&
                  liaisonIds.length === 0 && referrerIds.length === 0 && (
                   <p className="text-sm text-slate-500 text-center py-4">No team members added yet</p>
                 )}

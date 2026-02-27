@@ -1037,7 +1037,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         isOpen={showReassignModal}
         onClose={() => setShowReassignModal(false)}
         loan={loan}
-        onUpdate={onUpdate}
         onRefresh={onRefresh}
       />
 
