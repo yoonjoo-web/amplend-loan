@@ -476,7 +476,7 @@ export default function Dashboard() {
             className="flex gap-3"
             data-tour="quick-actions"
           >
-            {(isStaffUser || permissions.isBroker) && (
+            {(isStaffUser || permissions.isBroker || permissions.isBorrower) && (
               <Button className="bg-slate-700 hover:bg-slate-800" onClick={handleNewApplication}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Application
