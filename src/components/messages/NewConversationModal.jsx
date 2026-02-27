@@ -13,6 +13,7 @@ import { Loader2, User as UserIcon, Hash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
+import { hasBrokerOnApplication, hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 import {
   Command,
   CommandEmpty,
@@ -35,6 +36,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
   const [isCreating, setIsCreating] = useState(false);
   const [activeTab, setActiveTab] = useState("direct");
   const isBorrowerMessenger = ['Borrower', 'Liaison'].includes(normalizeAppRole(currentUser?.app_role));
+  const [hideLoanOfficersForBorrower, setHideLoanOfficersForBorrower] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +52,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       const normalizedRole = normalizeAppRole(currentUser?.app_role);
       const isBorrowerRole = ['Borrower', 'Liaison'].includes(normalizedRole);
       let partnerUserIds = new Set();
+      let shouldHideLoanOfficersForBorrower = false;
       
       // Try to load users - may fail for non-admin users
       try {
@@ -96,8 +99,11 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
         }
 
         let allLoanPartners = [];
+        let hasBroker = false;
         try {
           allLoanPartners = await base44.entities.LoanPartner.list();
+          hasBroker = allLoans.some((loan) => hasBrokerOnLoan(loan, allLoanPartners))
+            || allApplications.some((app) => hasBrokerOnApplication(app, allLoanPartners));
         } catch (error) {
           console.log('Cannot load loan partners:', error);
         }
@@ -146,6 +152,12 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
               partnerUserIds.add(String(partner.user_id));
             }
           });
+
+        const invitedByBroker = wasInvitedByBroker(borrowerRecord);
+        shouldHideLoanOfficersForBorrower = invitedByBroker || hasBroker;
+        setHideLoanOfficersForBorrower(shouldHideLoanOfficersForBorrower);
+      } else {
+        setHideLoanOfficersForBorrower(false);
       }
       
       // Rule 12: Filter users based on permissions
@@ -154,7 +166,9 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
       if (permissions.canMessageOnlyLoanOfficers) {
         if (isBorrowerRole) {
           filteredUsers = filteredUsers.filter(u =>
-            normalizeAppRole(u.app_role) === 'Loan Officer' || partnerUserIds.has(String(u.id))
+            shouldHideLoanOfficersForBorrower
+              ? (partnerUserIds.has(String(u.id)) && normalizeAppRole(u.app_role) !== 'Loan Officer')
+              : (normalizeAppRole(u.app_role) === 'Loan Officer' || partnerUserIds.has(String(u.id)))
           );
         } else {
           // Non-admin/non-LO users can only message loan officers
@@ -306,7 +320,9 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                 <Label>
                   {permissions.canMessageOnlyLoanOfficers
                     ? (isBorrowerMessenger
-                      ? 'Select a loan officer or partner to message:'
+                      ? (hideLoanOfficersForBorrower
+                        ? 'Select a partner to message:'
+                        : 'Select a loan officer or partner to message:')
                       : 'Select a loan officer to message:')
                     : 'Select a person to message:'}
                 </Label>
@@ -460,7 +476,9 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
               <Label>
                 {permissions.canMessageOnlyLoanOfficers
                   ? (isBorrowerMessenger
-                    ? 'Select a loan officer or partner to message:'
+                    ? (hideLoanOfficersForBorrower
+                      ? 'Select a partner to message:'
+                      : 'Select a loan officer or partner to message:')
                     : 'Select a loan officer to message:')
                   : 'Select a person to message:'}
               </Label>

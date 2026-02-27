@@ -889,7 +889,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                         <p className="font-semibold text-slate-900">{member.displayName}</p>
                         <Badge className="text-xs mt-1" variant="outline">{member.role}</Badge>
                       </div>
-                      {!(hideLoanOfficerDetails && member.role === 'Loan Officer') && (
+                      {!(hideLoanOfficerDetails && member.role === 'Loan Officer') &&
+                        String(member.messageUserId) !== String(currentUser?.id) && (
                         <Button
                           variant="ghost"
                           size="icon"

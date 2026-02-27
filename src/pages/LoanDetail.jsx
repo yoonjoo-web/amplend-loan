@@ -239,6 +239,7 @@ export default function LoanDetail() {
         title: "Error",
         description: "Failed to update loan.",
       });
+      throw error;
     }
   };
 
