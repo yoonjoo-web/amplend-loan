@@ -51,8 +51,14 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
       ? loan.broker_ids
       : (loan?.broker_id ? [loan.broker_id] : []);
     setBrokerIds(brokerIdsRaw.map(String));
-    setReferrerIds((Array.isArray(loan?.referrer_ids) ? loan.referrer_ids : []).map(String));
-    setLiaisonIds((Array.isArray(loan?.liaison_ids) ? loan.liaison_ids : []).map(String));
+    const referrerIdsRaw = Array.isArray(loan?.referrer_ids)
+      ? loan.referrer_ids
+      : (loan?.referrer_id ? [loan.referrer_id] : []);
+    const liaisonIdsRaw = Array.isArray(loan?.liaison_ids)
+      ? loan.liaison_ids
+      : (loan?.liaison_id ? [loan.liaison_id] : []);
+    setReferrerIds(referrerIdsRaw.map(String));
+    setLiaisonIds(liaisonIdsRaw.map(String));
   }, [isOpen, loan]);
 
   const loadUsers = async () => {
@@ -155,19 +161,13 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
         }
         break;
       case 'Liaison':
-        if (!liaisonIds.includes(normalizedMemberId)) {
-          setLiaisonIds([...liaisonIds, normalizedMemberId]);
-        }
+        setLiaisonIds([normalizedMemberId]);
         break;
       case 'Broker':
-        if (!brokerIds.includes(normalizedMemberId)) {
-          setBrokerIds([...brokerIds, normalizedMemberId]);
-        }
+        setBrokerIds([normalizedMemberId]);
         break;
       default:
-        if (!referrerIds.includes(normalizedMemberId)) {
-          setReferrerIds([...referrerIds, normalizedMemberId]);
-        }
+        setReferrerIds([normalizedMemberId]);
         break;
     }
     
@@ -199,11 +199,8 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
     const teamFieldKeys = [
       'borrower_ids',
       'loan_officer_ids',
-      'broker_ids',
       'broker_id',
-      'referrer_ids',
       'referrer_id',
-      'liaison_ids',
       'liaison_id'
     ];
     let nextBorrowerIds = [...borrowerIds];
@@ -233,18 +230,15 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
 
     const mergedBorrowerIds = Array.from(new Set(nextBorrowerIds.map(String).filter(Boolean)));
     const mergedLoanOfficerIds = Array.from(new Set(nextLoanOfficerIds.map(String).filter(Boolean)));
-    const mergedBrokerIds = Array.from(new Set(nextBrokerIds.map(String).filter(Boolean)));
-    const mergedReferrerIds = Array.from(new Set(nextReferrerIds.map(String).filter(Boolean)));
-    const mergedLiaisonIds = Array.from(new Set(nextLiaisonIds.map(String).filter(Boolean)));
+    const mergedBrokerIds = Array.from(new Set(nextBrokerIds.map(String).filter(Boolean))).slice(0, 1);
+    const mergedReferrerIds = Array.from(new Set(nextReferrerIds.map(String).filter(Boolean))).slice(0, 1);
+    const mergedLiaisonIds = Array.from(new Set(nextLiaisonIds.map(String).filter(Boolean))).slice(0, 1);
 
     return {
       borrower_ids: mergedBorrowerIds,
       loan_officer_ids: mergedLoanOfficerIds,
-      broker_ids: mergedBrokerIds,
       broker_id: mergedBrokerIds[0] || null,
-      referrer_ids: mergedReferrerIds,
       referrer_id: mergedReferrerIds[0] || null,
-      liaison_ids: mergedLiaisonIds,
       liaison_id: mergedLiaisonIds[0] || null,
       overridden_fields: Array.from(
         new Set([...(loan?.overridden_fields || []), ...teamFieldKeys])

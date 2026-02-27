@@ -12,6 +12,11 @@ const sameIdArray = (a: string[], b: string[]): boolean => {
   return as.every((value, index) => value === bs[index]);
 };
 
+const normalizeSingleId = (value: unknown): string | null => {
+  if (!value) return null;
+  return String(value);
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -28,7 +33,17 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { loan_id, borrower_ids, loan_officer_ids, referrer_ids, liaison_ids, broker_ids } = body || {};
+    const {
+      loan_id,
+      borrower_ids,
+      loan_officer_ids,
+      referrer_id,
+      liaison_id,
+      broker_id,
+      referrer_ids,
+      liaison_ids,
+      broker_ids
+    } = body || {};
 
     if (!loan_id) {
       return Response.json({ error: 'loan_id is required' }, { status: 400 });
@@ -41,11 +56,11 @@ Deno.serve(async (req) => {
 
     const nextBorrowerIds = normalizeIdArray(borrower_ids);
     const nextLoanOfficerIds = normalizeIdArray(loan_officer_ids);
-    const nextReferrerIds = normalizeIdArray(referrer_ids);
-    const nextLiaisonIds = normalizeIdArray(liaison_ids);
-    const nextBrokerIds = normalizeIdArray(broker_ids);
+    const nextReferrerId = normalizeSingleId(referrer_id) || normalizeIdArray(referrer_ids)[0] || null;
+    const nextLiaisonId = normalizeSingleId(liaison_id) || normalizeIdArray(liaison_ids)[0] || null;
+    const nextBrokerId = normalizeSingleId(broker_id) || normalizeIdArray(broker_ids)[0] || null;
 
-    const fieldsChanged = ['borrower_ids', 'loan_officer_ids', 'referrer_ids', 'liaison_ids', 'broker_ids', 'referrer_id', 'liaison_id', 'broker_id'];
+    const fieldsChanged = ['borrower_ids', 'loan_officer_ids', 'referrer_id', 'liaison_id', 'broker_id'];
     const userName = user.first_name && user.last_name
       ? `${user.first_name} ${user.last_name}`
       : user.full_name || user.email || 'Unknown User';
@@ -64,12 +79,9 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.Loan.update(loan_id, {
       borrower_ids: nextBorrowerIds,
       loan_officer_ids: nextLoanOfficerIds,
-      referrer_ids: nextReferrerIds,
-      liaison_ids: nextLiaisonIds,
-      broker_ids: nextBrokerIds,
-      referrer_id: nextReferrerIds[0] || null,
-      liaison_id: nextLiaisonIds[0] || null,
-      broker_id: nextBrokerIds[0] || null,
+      referrer_id: nextReferrerId,
+      liaison_id: nextLiaisonId,
+      broker_id: nextBrokerId,
       overridden_fields: Array.from(
         new Set([...(Array.isArray(loan.overridden_fields) ? loan.overridden_fields : []), ...fieldsChanged])
       ),
@@ -79,16 +91,16 @@ Deno.serve(async (req) => {
     const updatedLoan = await base44.asServiceRole.entities.Loan.get(loan_id);
     const savedBorrowerIds = normalizeIdArray(updatedLoan?.borrower_ids);
     const savedLoanOfficerIds = normalizeIdArray(updatedLoan?.loan_officer_ids);
-    const savedReferrerIds = normalizeIdArray(updatedLoan?.referrer_ids);
-    const savedLiaisonIds = normalizeIdArray(updatedLoan?.liaison_ids);
-    const savedBrokerIds = normalizeIdArray(updatedLoan?.broker_ids);
+    const savedReferrerId = normalizeSingleId(updatedLoan?.referrer_id);
+    const savedLiaisonId = normalizeSingleId(updatedLoan?.liaison_id);
+    const savedBrokerId = normalizeSingleId(updatedLoan?.broker_id);
 
     const verified =
       sameIdArray(savedBorrowerIds, nextBorrowerIds) &&
       sameIdArray(savedLoanOfficerIds, nextLoanOfficerIds) &&
-      sameIdArray(savedReferrerIds, nextReferrerIds) &&
-      sameIdArray(savedLiaisonIds, nextLiaisonIds) &&
-      sameIdArray(savedBrokerIds, nextBrokerIds);
+      savedReferrerId === nextReferrerId &&
+      savedLiaisonId === nextLiaisonId &&
+      savedBrokerId === nextBrokerId;
 
     if (!verified) {
       return Response.json(
@@ -97,16 +109,16 @@ Deno.serve(async (req) => {
           requested: {
             borrower_ids: nextBorrowerIds,
             loan_officer_ids: nextLoanOfficerIds,
-            referrer_ids: nextReferrerIds,
-            liaison_ids: nextLiaisonIds,
-            broker_ids: nextBrokerIds
+            referrer_id: nextReferrerId,
+            liaison_id: nextLiaisonId,
+            broker_id: nextBrokerId
           },
           saved: {
             borrower_ids: savedBorrowerIds,
             loan_officer_ids: savedLoanOfficerIds,
-            referrer_ids: savedReferrerIds,
-            liaison_ids: savedLiaisonIds,
-            broker_ids: savedBrokerIds
+            referrer_id: savedReferrerId,
+            liaison_id: savedLiaisonId,
+            broker_id: savedBrokerId
           }
         },
         { status: 409 }
@@ -119,9 +131,9 @@ Deno.serve(async (req) => {
       team: {
         borrower_ids: savedBorrowerIds,
         loan_officer_ids: savedLoanOfficerIds,
-        referrer_ids: savedReferrerIds,
-        liaison_ids: savedLiaisonIds,
-        broker_ids: savedBrokerIds
+        referrer_id: savedReferrerId,
+        liaison_id: savedLiaisonId,
+        broker_id: savedBrokerId
       }
     });
   } catch (error) {
