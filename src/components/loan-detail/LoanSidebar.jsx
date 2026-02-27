@@ -195,20 +195,19 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       let fallbackLoanOfficerUsers = [];
       
       try {
-        allUsers = await base44.entities.User.list();
+        const usersResponse = await base44.functions.invoke('getAllUsers');
+        const fullUsers = usersResponse?.data?.users || usersResponse?.users || [];
+        if (Array.isArray(fullUsers) && fullUsers.length > 0) {
+          allUsers = fullUsers;
+        } else {
+          allUsers = await base44.entities.User.list();
+        }
       } catch (error) {
-        console.error('LoanSidebar - Error fetching users:', error);
-      }
-
-      if (!canManage) {
+        console.error('LoanSidebar - Error fetching users via getAllUsers:', error);
         try {
-          const usersResponse = await base44.functions.invoke('getAllUsers');
-          const visibleUsers = usersResponse?.data?.users || usersResponse?.users || [];
-          if (Array.isArray(visibleUsers) && visibleUsers.length > 0) {
-            allUsers = visibleUsers;
-          }
-        } catch (error) {
-          console.error('LoanSidebar - Error fetching users via getAllUsers:', error);
+          allUsers = await base44.entities.User.list();
+        } catch (fallbackError) {
+          console.error('LoanSidebar - Error fetching users fallback list:', fallbackError);
         }
       }
       
