@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Loan, LoanDocument } from "@/entities/all";
+import { LoanDocument } from "@/entities/all";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, FileText, CheckSquare, Folder, TrendingUp } from "lucide-react";
@@ -101,7 +101,7 @@ export default function LoanDetail() {
         return;
       }
 
-      const loanData = await Loan.get(loanId);
+      const loanData = await base44.entities.Loan.get(loanId);
 
       if (!loanData) {
         toast({
@@ -225,7 +225,7 @@ export default function LoanDetail() {
         }
       }
 
-      await Loan.update(loan.id, dataToUpdate);
+      await base44.entities.Loan.update(loan.id, dataToUpdate);
       setLoan(prevLoan => ({ ...prevLoan, ...dataToUpdate }));
 
       toast({
