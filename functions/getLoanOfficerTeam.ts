@@ -33,6 +33,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Loan not found' }, { status: 404 });
     }
 
+    const normalizeEntityId = (value: unknown): string | null => {
+      if (!value) return null;
+      if (typeof value === 'string' || typeof value === 'number') return String(value);
+      if (typeof value === 'object') {
+        const record = value as { id?: string | number; user_id?: string | number; loan_officer_id?: string | number };
+        if (record.id) return String(record.id);
+        if (record.user_id) return String(record.user_id);
+        if (record.loan_officer_id) return String(record.loan_officer_id);
+      }
+      return null;
+    };
+
     const normalizedRole = normalizeAppRole(user.app_role);
     const userId = String(user.id);
     const toIdArray = (singleValue: unknown, legacyList: unknown): string[] => {
@@ -48,7 +60,9 @@ Deno.serve(async (req) => {
 
     const isAdmin = user.role === 'admin' || normalizedRole === 'Administrator';
     const isLoanOfficer = normalizedRole === 'Loan Officer';
-    const loanOfficerIds = Array.isArray(loan.loan_officer_ids) ? loan.loan_officer_ids.map(String) : [];
+    const loanOfficerIds = Array.isArray(loan.loan_officer_ids)
+      ? loan.loan_officer_ids.map(normalizeEntityId).filter(Boolean) as string[]
+      : [];
     const isAssignedOfficer = loanOfficerIds.includes(userId);
     let borrowerContactId = null;
     try {
@@ -96,8 +110,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const resolveOfficerUserId = async (id: string): Promise<string | null> => {
+      try {
+        const user = await base44.asServiceRole.entities.User.get(id);
+        if (user?.id) return String(user.id);
+      } catch (_error) {
+        // Fall through to queue lookup.
+      }
+
+      try {
+        const queueRecord = await base44.asServiceRole.entities.LoanOfficerQueue.get(id);
+        if (queueRecord?.loan_officer_id) return String(queueRecord.loan_officer_id);
+      } catch (_error) {
+        // Not a queue id either.
+      }
+
+      return null;
+    };
+
+    const resolvedOfficerUserIds = (
+      await Promise.all(loanOfficerIds.map((id) => resolveOfficerUserId(id)))
+    ).filter(Boolean) as string[];
+    const uniqueResolvedOfficerUserIds = Array.from(new Set(resolvedOfficerUserIds));
+
     const loanOfficers = await Promise.all(
-      loanOfficerIds.map(async (id) => {
+      uniqueResolvedOfficerUserIds.map(async (id) => {
         try {
           return await base44.asServiceRole.entities.User.get(id);
         } catch (error) {
@@ -108,7 +145,7 @@ Deno.serve(async (req) => {
     );
 
     return Response.json({
-      loan_officer_ids: loanOfficerIds,
+      loan_officer_ids: uniqueResolvedOfficerUserIds,
       loan_officers: loanOfficers.filter(Boolean)
     });
   } catch (error) {

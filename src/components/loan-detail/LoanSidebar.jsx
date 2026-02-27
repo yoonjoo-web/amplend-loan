@@ -249,6 +249,16 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       }
 
       const team = [];
+      const normalizeEntityId = (value) => {
+        if (!value) return null;
+        if (typeof value === 'string' || typeof value === 'number') return String(value);
+        if (typeof value === 'object') {
+          if (value.id) return String(value.id);
+          if (value.user_id) return String(value.user_id);
+          if (value.loan_officer_id) return String(value.loan_officer_id);
+        }
+        return null;
+      };
 
       const addBorrowerMember = (borrower) => {
         if (!borrower) return;
@@ -317,6 +327,21 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
           return await base44.entities.User.get(id);
         } catch (error) {
           console.error('LoanSidebar - Error fetching loan officer by id:', error);
+        }
+
+        // Some loans may store LoanOfficerQueue record ids instead of User ids.
+        try {
+          const queueRecord = await base44.entities.LoanOfficerQueue.get(normalizedId);
+          const queueUserId = queueRecord?.loan_officer_id ? String(queueRecord.loan_officer_id) : null;
+          if (!queueUserId) return null;
+          return (
+            allUsers.find(u => String(u.id) === queueUserId) ||
+            (allLoanOfficers || []).find(u => String(u.id) === queueUserId) ||
+            (fallbackLoanOfficerUsers || []).find(u => String(u.id) === queueUserId) ||
+            await base44.entities.User.get(queueUserId)
+          );
+        } catch (queueError) {
+          console.error('LoanSidebar - Error resolving loan officer via queue id:', queueError);
           return null;
         }
       };
@@ -377,10 +402,13 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       const nextLoanOfficerNameSet = new Set();
 
       // Add loan officers (look in users)
-      if (loan.loan_officer_ids && Array.isArray(loan.loan_officer_ids) && loan.loan_officer_ids.length > 0) {
-        console.log('Processing loan officers:', loan.loan_officer_ids);
+      const normalizedLoanOfficerIds = Array.isArray(loan.loan_officer_ids)
+        ? loan.loan_officer_ids.map(normalizeEntityId).filter(Boolean)
+        : [];
+      if (normalizedLoanOfficerIds.length > 0) {
+        console.log('Processing loan officers:', normalizedLoanOfficerIds);
         const loanOfficerUsers = await Promise.all(
-          loan.loan_officer_ids.map(id => resolveLoanOfficer(id))
+          normalizedLoanOfficerIds.map(id => resolveLoanOfficer(id))
         );
         loanOfficerUsers.forEach((user, index) => {
           if (user) {
@@ -393,7 +421,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             addLoanOfficerMember(user);
             return;
           }
-          const fallbackId = loan.loan_officer_ids[index];
+          const fallbackId = normalizedLoanOfficerIds[index];
           const alreadyAdded = team.some(member => member.id === fallbackId && member.role === 'Loan Officer');
           if (alreadyAdded) return;
           team.push({
