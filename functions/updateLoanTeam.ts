@@ -39,10 +39,7 @@ Deno.serve(async (req) => {
       loan_officer_ids,
       referrer_id,
       liaison_id,
-      broker_id,
-      referrer_ids,
-      liaison_ids,
-      broker_ids
+      broker_id
     } = body || {};
 
     if (!loan_id) {
@@ -56,9 +53,9 @@ Deno.serve(async (req) => {
 
     const nextBorrowerIds = normalizeIdArray(borrower_ids);
     const nextLoanOfficerIds = normalizeIdArray(loan_officer_ids);
-    const nextReferrerId = normalizeSingleId(referrer_id) || normalizeIdArray(referrer_ids)[0] || null;
-    const nextLiaisonId = normalizeSingleId(liaison_id) || normalizeIdArray(liaison_ids)[0] || null;
-    const nextBrokerId = normalizeSingleId(broker_id) || normalizeIdArray(broker_ids)[0] || null;
+    const nextReferrerId = normalizeSingleId(referrer_id);
+    const nextLiaisonId = normalizeSingleId(liaison_id);
+    const nextBrokerId = normalizeSingleId(broker_id);
 
     const fieldsChanged = ['borrower_ids', 'loan_officer_ids', 'referrer_id', 'liaison_id', 'broker_id'];
     const userName = user.first_name && user.last_name

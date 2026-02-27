@@ -136,11 +136,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     console.log('loan.borrower_ids:', loan.borrower_ids);
     console.log('loan.loan_officer_ids:', loan.loan_officer_ids);
     console.log('loan.broker_id:', loan.broker_id);
-    console.log('loan.broker_ids:', loan.broker_ids);
     console.log('loan.referrer_id:', loan.referrer_id);
-    console.log('loan.referrer_ids:', loan.referrer_ids);
     console.log('loan.liaison_id:', loan.liaison_id);
-    console.log('loan.liaison_ids:', loan.liaison_ids);
     loadTeamMembers();
     loadModificationHistory();
     loadFieldConfigs();
@@ -151,11 +148,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     loan.borrower_entity_name,
     loan.loan_officer_ids,
     loan.broker_id,
-    loan.broker_ids,
     loan.liaison_id,
-    loan.liaison_ids,
     loan.referrer_id,
-    loan.referrer_ids,
     loan.modification_history
   ]); // Added modification_history to dependencies to ensure history reloads
 
@@ -484,14 +478,8 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         });
       }
 
-      const toIdArray = (singleValue, legacyList) => {
-        if (singleValue) return [String(singleValue)];
-        if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
-        return [];
-      };
-
-      // Add liaisons (single or legacy list)
-      const liaisonIds = toIdArray(loan.liaison_id, loan.liaison_ids);
+      // Add liaison (single value)
+      const liaisonIds = loan.liaison_id ? [String(loan.liaison_id)] : [];
       if (liaisonIds.length > 0) {
         console.log('Processing liaisons:', liaisonIds);
         liaisonIds.forEach(id => {
@@ -500,14 +488,19 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
             addLiaisonMember(user);
             return;
           }
+          const partner = allLoanPartners.find(p => String(p.id) === String(id));
+          if (partner) {
+            addLiaisonMember(partner);
+            return;
+          }
           const borrower = allBorrowers.find(b => b.id === id || b.user_id === id);
           addLiaisonMember(borrower);
         });
       }
 
-      // Add loan partners (single or legacy list), including broker
-      const brokerIds = toIdArray(loan.broker_id, loan.broker_ids);
-      const referrerIds = toIdArray(loan.referrer_id, loan.referrer_ids);
+      // Add loan partners (single values), including broker
+      const brokerIds = loan.broker_id ? [String(loan.broker_id)] : [];
+      const referrerIds = loan.referrer_id ? [String(loan.referrer_id)] : [];
       const partnerIds = Array.from(new Set([...brokerIds, ...referrerIds]));
       if (partnerIds.length > 0) {
         console.log('Processing partners:', partnerIds);
@@ -775,14 +768,10 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const handleAddLiaison = async (liaisonId) => {
     if (!liaisonId) return;
     const normalizedId = String(liaisonId);
-    const nextLiaisonIds = Array.from(
-      new Set([...(Array.isArray(loan?.liaison_ids) ? loan.liaison_ids : []), normalizedId].filter(Boolean))
-    );
 
     await onUpdate({
       liaison_id: normalizedId,
-      liaison_ids: nextLiaisonIds,
-      overridden_fields: getOverriddenFields(['liaison_id', 'liaison_ids'])
+      overridden_fields: getOverriddenFields(['liaison_id'])
     });
 
     if (onRefresh) {
@@ -793,18 +782,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const handleAddBroker = async (brokerId) => {
     if (!brokerId) return;
     const normalizedId = String(brokerId);
-    const nextBrokerIds = Array.from(
-      new Set([...(Array.isArray(loan?.broker_ids) ? loan.broker_ids : []), normalizedId].filter(Boolean))
-    );
-    const nextReferrerIds = Array.from(
-      new Set([...(Array.isArray(loan?.referrer_ids) ? loan.referrer_ids : []), normalizedId].filter(Boolean))
-    );
 
     await onUpdate({
       broker_id: normalizedId,
-      broker_ids: nextBrokerIds,
-      referrer_ids: nextReferrerIds,
-      overridden_fields: getOverriddenFields(['broker_id', 'broker_ids', 'referrer_ids'])
+      referrer_id: normalizedId,
+      overridden_fields: getOverriddenFields(['broker_id', 'referrer_id'])
     });
 
     if (onRefresh) {

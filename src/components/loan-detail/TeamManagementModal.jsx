@@ -47,18 +47,9 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
     const borrowerIdsRaw = Array.isArray(loan?.borrower_ids) ? loan.borrower_ids : [];
     setBorrowerIds(borrowerIdsRaw.map(String));
     setLoanOfficerIds((Array.isArray(loan?.loan_officer_ids) ? loan.loan_officer_ids : []).map(String));
-    const brokerIdsRaw = Array.isArray(loan?.broker_ids)
-      ? loan.broker_ids
-      : (loan?.broker_id ? [loan.broker_id] : []);
-    setBrokerIds(brokerIdsRaw.map(String));
-    const referrerIdsRaw = Array.isArray(loan?.referrer_ids)
-      ? loan.referrer_ids
-      : (loan?.referrer_id ? [loan.referrer_id] : []);
-    const liaisonIdsRaw = Array.isArray(loan?.liaison_ids)
-      ? loan.liaison_ids
-      : (loan?.liaison_id ? [loan.liaison_id] : []);
-    setReferrerIds(referrerIdsRaw.map(String));
-    setLiaisonIds(liaisonIdsRaw.map(String));
+    setBrokerIds(loan?.broker_id ? [String(loan.broker_id)] : []);
+    setReferrerIds(loan?.referrer_id ? [String(loan.referrer_id)] : []);
+    setLiaisonIds(loan?.liaison_id ? [String(loan.liaison_id)] : []);
   }, [isOpen, loan]);
 
   const loadUsers = async () => {
