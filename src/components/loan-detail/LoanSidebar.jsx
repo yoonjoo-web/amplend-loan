@@ -869,11 +869,11 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
               )}
             </div>
             {hasTeamActionButtons && (
-              <div className="pt-3 mt-3 border-t border-slate-100 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {showAddBrokerButton && (
                   <Button
                     size="sm"
-                    className="h-7 px-2 text-xs bg-slate-900 hover:bg-slate-800 text-white"
+                    className="h-7 px-2 text-xs bg-slate-800 hover:bg-slate-900 text-white"
                     onClick={() => setShowAddBrokerModal(true)}
                   >
                     + Add Broker
@@ -882,7 +882,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                 {showAddLiaisonButton && (
                   <Button
                     size="sm"
-                    className="h-7 px-2 text-xs bg-slate-900 hover:bg-slate-800 text-white"
+                    className="h-7 px-2 text-xs bg-slate-800 hover:bg-slate-900 text-white"
                     onClick={() => setShowAddLiaisonModal(true)}
                   >
                     + Add Liaison
