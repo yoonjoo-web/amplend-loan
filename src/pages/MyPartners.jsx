@@ -1,12 +1,16 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePermissions } from "@/components/hooks/usePermissions";
+import { motion } from "framer-motion";
+import { Search } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function MyPartners() {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
   const [loading, setLoading] = useState(true);
   const [partners, setPartners] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (!permissionsLoading && currentUser && permissions.canViewMyPartners) {
@@ -114,6 +118,22 @@ export default function MyPartners() {
     setLoading(false);
   };
 
+  const filteredPartners = useMemo(() => {
+    const normalize = (value) => String(value || "").toLowerCase().trim();
+    const needle = normalize(searchTerm);
+    if (!needle) return partners;
+    return (partners || []).filter((partner) =>
+      [
+        partner.name,
+        partner.app_role,
+        partner.email,
+        partner.phone,
+        partner.company,
+        partner.contact_person
+      ].some((field) => normalize(field).includes(needle))
+    );
+  }, [partners, searchTerm]);
+
   if (permissionsLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -141,35 +161,69 @@ export default function MyPartners() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Partners</h1>
+      <div className="max-w-7xl mx-auto space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+        >
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Partners</h1>
+        </motion.div>
 
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            {partners.length === 0 ? (
-              <div className="text-sm text-slate-500 py-2">No partners found for your applications or loans.</div>
-            ) : (
-              <div className="divide-y divide-slate-200">
-                <div className="grid grid-cols-12 gap-2 px-2 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <div className="col-span-3">Name</div>
-                  <div className="col-span-2">Role</div>
-                  <div className="col-span-3">Email</div>
-                  <div className="col-span-2">Phone</div>
-                  <div className="col-span-2">Company</div>
-                </div>
-                {partners.map((partner) => (
-                  <div
-                    key={partner.id}
-                    className="grid grid-cols-12 gap-2 px-2 py-3 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <div className="col-span-3 font-medium text-slate-900">{partner.name || '-'}</div>
-                    <div className="col-span-2">{partner.app_role || '-'}</div>
-                    <div className="col-span-3">{partner.email || '-'}</div>
-                    <div className="col-span-2">{partner.phone || '-'}</div>
-                    <div className="col-span-2">{partner.company || partner.contact_person || '-'}</div>
-                  </div>
-                ))}
+          <CardHeader className="pb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="relative" data-tour="search">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search partners..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
+                />
               </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-7">
+            {filteredPartners.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500 mb-4">No partners found for your applications or loans.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Company</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPartners.map((partner) => (
+                    <TableRow key={partner.id} className="hover:bg-slate-50">
+                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-900">
+                        {partner.name || '-'}
+                      </TableCell>
+                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        {partner.app_role || '-'}
+                      </TableCell>
+                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        {partner.email || '-'}
+                      </TableCell>
+                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        {partner.phone || '-'}
+                      </TableCell>
+                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        {partner.company || partner.contact_person || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
