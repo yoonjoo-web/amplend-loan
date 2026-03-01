@@ -29,7 +29,20 @@ export default function UniversalHeader({ currentUser }) {
   const location = useLocation();
   const queryClient = useQueryClient();
   const [messageCount, setMessageCount] = useState(0);
-  const [hideBranding, setHideBranding] = useState(false);
+  const [hideBranding, setHideBranding] = useState(() => {
+    const role = currentUser?.app_role;
+    const isBorrowerContext = role === 'Borrower' || role === 'Liaison';
+    if (!isBorrowerContext) return false;
+    try {
+      const cachedValue = sessionStorage.getItem(`hide-branding:${currentUser.id}`);
+      if (cachedValue === 'true') return true;
+      if (cachedValue === 'false') return false;
+    } catch (error) {
+      console.warn('Unable to read branding visibility cache:', error);
+    }
+    // Strict default to prevent logo flash before affiliation checks complete.
+    return true;
+  });
 
   // Fetch unread messages
   const { data: messages = [] } = useQuery({
@@ -104,10 +117,24 @@ export default function UniversalHeader({ currentUser }) {
 
   useEffect(() => {
     let isMounted = true;
+    const role = currentUser?.app_role;
+    const isBorrowerContext = role === 'Borrower' || role === 'Liaison';
+    const cacheKey = currentUser?.id ? `hide-branding:${currentUser.id}` : null;
+
+    const persistHideBranding = (value) => {
+      if (!isMounted) return;
+      setHideBranding(value);
+      if (!cacheKey) return;
+      try {
+        sessionStorage.setItem(cacheKey, value ? 'true' : 'false');
+      } catch (error) {
+        console.warn('Unable to persist branding visibility cache:', error);
+      }
+    };
 
     const resolveBrandingVisibility = async () => {
-      if (!currentUser || currentUser.app_role !== 'Borrower') {
-        if (isMounted) setHideBranding(false);
+      if (!currentUser || !isBorrowerContext) {
+        persistHideBranding(false);
         return;
       }
 
@@ -140,7 +167,7 @@ export default function UniversalHeader({ currentUser }) {
           const loanPartners = await base44.entities.LoanPartner.list();
           if (!isMounted) return;
           const hasBroker = hasBrokerOnApplication(application, loanPartners);
-          setHideBranding(invitedByBroker || hasBroker);
+          persistHideBranding(invitedByBroker || hasBroker);
           return;
         }
 
@@ -149,7 +176,7 @@ export default function UniversalHeader({ currentUser }) {
           const loan = await base44.entities.Loan.get(id);
           if (!isMounted) return;
           const hasBroker = hasBrokerOnLoan(loan, loanPartners);
-          setHideBranding(invitedByBroker || hasBroker);
+          persistHideBranding(invitedByBroker || hasBroker);
           return;
         }
 
@@ -190,10 +217,15 @@ export default function UniversalHeader({ currentUser }) {
         if (!isMounted) return;
         const hasBroker = myLoans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
           || myApplications.some((app) => hasBrokerOnApplication(app, loanPartners));
-        setHideBranding(invitedByBroker || hasBroker);
+        persistHideBranding(invitedByBroker || hasBroker);
       } catch (error) {
         console.error('Error resolving branding visibility:', error);
-        if (isMounted) setHideBranding(false);
+        // Fail closed for borrower context so branding does not appear incorrectly.
+        if (isBorrowerContext) {
+          persistHideBranding(true);
+        } else {
+          persistHideBranding(false);
+        }
       }
     };
 
