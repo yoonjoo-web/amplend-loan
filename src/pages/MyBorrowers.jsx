@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Borrower, Loan } from "@/entities/all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { usePermissions } from "@/components/hooks/usePermissions";
@@ -9,7 +8,8 @@ import { normalizeAppRole } from "@/components/utils/appRoles";
 import { isUserOnLoanTeam } from "@/components/utils/teamAccess";
 import { Button } from "@/components/ui/button";
 import InviteBorrowerModal from "@/components/dashboard/InviteBorrowerModal";
-import { Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function MyBorrowers() {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
@@ -156,12 +156,12 @@ export default function MyBorrowers() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+          transition={{ duration: 0.5 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
         >
           <div>
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
@@ -186,62 +186,70 @@ export default function MyBorrowers() {
         </motion.div>
 
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex-1">
-                <Input
+          <CardHeader className="pb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="relative" data-tour="search">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search borrowers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search borrowers by name, email, or phone"
+                  className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
+          </CardHeader>
+          <CardContent className="px-7">
             {(() => {
               const list = filteredOnboardedBorrowers;
               if (!list.length) {
-                return <div className="text-sm text-slate-500">No borrowers found.</div>;
+                return (
+                  <div className="text-center py-12">
+                    <p className="text-slate-500 mb-4">No borrowers found</p>
+                  </div>
+                );
               }
 
               return (
-                <div className="divide-y divide-slate-200" data-tour="borrowers-table">
-                  <div className="grid grid-cols-1 gap-2 px-2 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 md:grid-cols-12">
-                    <div className="md:col-span-4">Borrower</div>
-                    <div className="md:col-span-3">Email</div>
-                    <div className="md:col-span-2">Phone</div>
-                    <div className="md:col-span-1">Loans</div>
-                    <div className="md:col-span-2">Last Activity</div>
-                  </div>
+                <Table data-tour="borrowers-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Borrower</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Loans</TableHead>
+                      <TableHead>Last Activity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {list.map((borrower) => {
                     const lastActivity = getBorrowerLastActivity(borrower);
                     return (
-                      <div
+                      <TableRow
                         key={borrower.id}
-                        className="grid grid-cols-1 gap-2 px-2 py-3 text-sm text-slate-700 hover:bg-slate-50 md:grid-cols-12"
+                        className="hover:bg-slate-50"
                       >
-                        <div className="font-medium text-slate-900 md:col-span-4">
+                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-900">
                           {getBorrowerName(borrower)}
-                        </div>
-                        <div className="md:col-span-3">
+                        </TableCell>
+                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {borrower.email || '-'}
-                        </div>
-                        <div className="md:col-span-2">
+                        </TableCell>
+                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {borrower.phone || '-'}
-                        </div>
-                        <div className="md:col-span-1">
+                        </TableCell>
+                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {getBorrowerLoanCount(borrower)}
-                        </div>
-                        <div className="md:col-span-2">
+                        </TableCell>
+                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {lastActivity ? format(lastActivity, 'MMM d, yyyy') : 'N/A'}
-                        </div>
-                      </div>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </div>
+                  </TableBody>
+                </Table>
               );
             })()}
           </CardContent>
