@@ -6,21 +6,17 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
-import { base44 } from "@/api/base44Client";
 import { isUserOnLoanTeam } from "@/components/utils/teamAccess";
 import { Button } from "@/components/ui/button";
 import InviteBorrowerModal from "@/components/dashboard/InviteBorrowerModal";
 import { Users } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function MyBorrowers() {
   const { currentUser, permissions, isLoading: permissionsLoading } = usePermissions();
   const [borrowers, setBorrowers] = useState([]);
   const [loans, setLoans] = useState([]);
-  const [inviteRequests, setInviteRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [requestsView, setRequestsView] = useState('none');
   const [showInviteBorrowerModal, setShowInviteBorrowerModal] = useState(false);
 
   const normalizedRole = normalizeAppRole(currentUser?.app_role || currentUser?.role || '');
@@ -41,16 +37,12 @@ export default function MyBorrowers() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [borrowersData, loansData, inviteRequestsData] = await Promise.all([
+      const [borrowersData, loansData] = await Promise.all([
         Borrower.list('-created_date').catch(() => []),
-        Loan.list('-created_date').catch(() => []),
-        isBroker
-          ? base44.entities.BorrowerInviteRequest.list('-created_date').catch(() => [])
-          : Promise.resolve([])
+        Loan.list('-created_date').catch(() => [])
       ]);
       setBorrowers(borrowersData || []);
       setLoans(loansData || []);
-      setInviteRequests(inviteRequestsData || []);
     } catch (error) {
       console.error('Error loading borrowers data:', error);
     }
@@ -88,13 +80,6 @@ export default function MyBorrowers() {
     return Array.from(uniqueBorrowers.values());
   }, [loansOnTeam, borrowerMap]);
 
-  const brokerRequests = useMemo(() => {
-    if (!isBroker) return [];
-    return (inviteRequests || []).filter(
-      (req) => req.source === 'broker' && req.requested_by_user_id === currentUser?.id
-    );
-  }, [inviteRequests, isBroker, currentUser?.id]);
-
   const onboardedBorrowers = useMemo(() => {
     if (!isBroker) return teamBorrowers;
     const invitedOnboarded = (borrowers || []).filter((borrower) => {
@@ -108,23 +93,6 @@ export default function MyBorrowers() {
     });
     return Array.from(onboardedMap.values());
   }, [borrowers, currentUser?.id, isBroker, teamBorrowers]);
-
-  const onboardedIds = useMemo(() => new Set(onboardedBorrowers.map((b) => b.id)), [onboardedBorrowers]);
-
-  const invitedRequests = useMemo(() => {
-    if (!isBroker) return [];
-    return brokerRequests.filter((req) => {
-      const status = (req.status || 'pending').toLowerCase();
-      if (status === 'rejected') return false;
-      if (req.borrower_id && onboardedIds.has(req.borrower_id)) return false;
-      return true;
-    });
-  }, [brokerRequests, isBroker, onboardedIds]);
-
-  const rejectedRequests = useMemo(() => {
-    if (!isBroker) return [];
-    return brokerRequests.filter((req) => (req.status || '').toLowerCase() === 'rejected');
-  }, [brokerRequests, isBroker]);
 
   const getBorrowerName = (borrower) => {
     if (!borrower) return 'Unknown Borrower';
@@ -159,14 +127,6 @@ export default function MyBorrowers() {
 
   const filteredOnboardedBorrowers = onboardedBorrowers.filter((borrower) =>
     matchesSearch([getBorrowerName(borrower), borrower.email, borrower.phone])
-  );
-
-  const filteredInvitedRequests = invitedRequests.filter((req) =>
-    matchesSearch([req.requested_first_name, req.requested_last_name, req.requested_email])
-  );
-
-  const filteredRejectedRequests = rejectedRequests.filter((req) =>
-    matchesSearch([req.requested_first_name, req.requested_last_name, req.requested_email])
   );
 
   if (permissionsLoading || loading) {
@@ -235,22 +195,6 @@ export default function MyBorrowers() {
                   placeholder="Search borrowers by name, email, or phone"
                 />
               </div>
-              {isBroker && (
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={requestsView === 'invited' ? "default" : "outline"}
-                    onClick={() => setRequestsView(requestsView === 'invited' ? 'none' : 'invited')}
-                  >
-                    View Invite Requests
-                  </Button>
-                  <Button
-                    variant={requestsView === 'rejected' ? "default" : "outline"}
-                    onClick={() => setRequestsView(requestsView === 'rejected' ? 'none' : 'rejected')}
-                  >
-                    View Rejected Invite Requests
-                  </Button>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -303,85 +247,6 @@ export default function MyBorrowers() {
           </CardContent>
         </Card>
 
-        {isBroker && requestsView !== 'none' && (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="text-lg font-bold text-slate-900">
-                {requestsView === 'invited' ? "Invite Requests" : "Rejected Invite Requests Archive"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              {requestsView === 'invited' ? (
-                filteredInvitedRequests.length ? (
-                  <Table data-tour="borrower-invite-requests">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Borrower</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Invited On</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredInvitedRequests.map((req) => {
-                        const displayName = `${req.requested_first_name || ''} ${req.requested_last_name || ''}`.trim() || req.requested_email || 'Unknown';
-                        const status = (req.status || 'pending').toLowerCase();
-                        return (
-                          <TableRow key={req.id} className="hover:bg-slate-50">
-                            <TableCell className="px-2 py-3 font-medium text-slate-900">
-                              {displayName}
-                            </TableCell>
-                            <TableCell className="px-2 py-3 text-slate-700">
-                              {req.requested_email || '-'}
-                            </TableCell>
-                            <TableCell className="px-2 py-3 text-slate-700 capitalize">
-                              {status}
-                            </TableCell>
-                            <TableCell className="px-2 py-3 text-slate-700">
-                              {req.created_date ? format(new Date(req.created_date), 'MMM d, yyyy') : 'N/A'}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-sm text-slate-500">No invite requests found.</div>
-                )
-              ) : filteredRejectedRequests.length ? (
-                <Table data-tour="borrower-rejected-requests">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Borrower</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Rejected On</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRejectedRequests.map((req) => {
-                      const displayName = `${req.requested_first_name || ''} ${req.requested_last_name || ''}`.trim() || req.requested_email || 'Unknown';
-                      return (
-                        <TableRow key={req.id} className="hover:bg-slate-50">
-                          <TableCell className="px-2 py-3 font-medium text-slate-900">
-                            {displayName}
-                          </TableCell>
-                          <TableCell className="px-2 py-3 text-slate-700">
-                            {req.requested_email || '-'}
-                          </TableCell>
-                          <TableCell className="px-2 py-3 text-slate-700">
-                            {req.rejected_at ? format(new Date(req.rejected_at), 'MMM d, yyyy') : 'N/A'}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-sm text-slate-500">No rejected invite requests found.</div>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
       <InviteBorrowerModal
         isOpen={showInviteBorrowerModal}

@@ -169,7 +169,7 @@ export const usePermissions = () => {
         }
 
         // --- My Profile (Rules 6, 7, 8, 9) ---
-        if (p.isBorrower || p.isLoanPartner) {
+        if (p.isBorrower || (p.isLoanPartner && !p.isBroker)) {
           p.canViewMyProfile = true;
           p.canEditMyProfile = false;
           p.canEditMyEmailPreferences = true;
@@ -195,6 +195,11 @@ export const usePermissions = () => {
           p.canManageUsers = false;
           p.canManageNotifications = false; // Loan officers cannot access notifications tab
           p.canManageChecklist = true;
+        } else if (p.isBroker) {
+          p.canAccessSettings = true;
+          p.canManageUsers = false;
+          p.canManageNotifications = false;
+          p.canManageChecklist = false;
         }
 
         // --- Messaging (Rule 12) ---

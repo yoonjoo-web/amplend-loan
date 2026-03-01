@@ -65,6 +65,8 @@ export default function Settings() {
       if (activeTab === null) {
         if (permissions.canManageUsers) {
           setActiveTab('users');
+        } else if (permissions.isBroker) {
+          setActiveTab('invites');
         } else if (permissions.canManageChecklists) {
           setActiveTab('checklist');
         } else if (permissions.isPlatformAdmin || permissions.isAdministrator) {
@@ -216,7 +218,7 @@ export default function Settings() {
               Notifications
             </button>
           )}
-          {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+          {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer || permissions.isBroker) && (
             <button
               onClick={() => setActiveTab('invites')}
               className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
@@ -338,7 +340,7 @@ export default function Settings() {
         )}
 
         {/* Manage Invites Tab */}
-        {activeTab === 'invites' && (permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer) && (
+        {activeTab === 'invites' && (permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer || permissions.isBroker) && (
           <ManageInvitesTab currentUser={currentUser} />
         )}
 

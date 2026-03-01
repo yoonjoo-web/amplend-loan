@@ -185,20 +185,29 @@ export default function ManageInvitesTab({ currentUser }) {
   const [page, setPage] = useState(1);
   const [deletingInviteId, setDeletingInviteId] = useState(null);
   const [rejectingInviteId, setRejectingInviteId] = useState(null);
+  const normalizedViewerRole = normalizeAppRole(currentUser?.app_role || currentUser?.role || "");
+  const isBrokerViewer = normalizedViewerRole === "Broker";
 
   const normalizeEmail = (email) => (email || "").trim().toLowerCase();
 
   const canDeleteInvite = (request) => {
     if (!request || typeof request.id !== "string") return false;
     if (request.id.startsWith("borrower-")) return false; // synthetic row, not a request record
-    if (!isInternalRequest(request)) return false; // only admin / loan officer invites
     const status = (request.status || "").toLowerCase();
     if (["activated", "rejected", "deleted"].includes(status)) return false;
     if (request._onboarded || request._token_used) return false;
+
+    if (isBrokerViewer) {
+      const isOwnBrokerInvite = request.source === "broker" && request.requested_by_user_id === currentUser?.id;
+      return isOwnBrokerInvite && ["pending", "sent", ""].includes(status);
+    }
+
+    if (!isInternalRequest(request)) return false; // only admin / loan officer invites
     return ["pending", "sent", ""].includes(status);
   };
 
   const canRejectInvite = (request) => {
+    if (isBrokerViewer) return false;
     if (!request || typeof request.id !== "string") return false;
     if (request.id.startsWith("borrower-")) return false; // synthetic row, not a request record
     if (request.source !== "broker") return false; // reject action is only for broker-made invites
@@ -423,8 +432,13 @@ export default function ManageInvitesTab({ currentUser }) {
         .filter(Boolean);
 
       const allRequests = [...normalizedRequests, ...derivedBorrowerInvites];
+      const visibleRequests = isBrokerViewer
+        ? allRequests.filter(
+            (request) => request?.source === "broker" && request?.requested_by_user_id === currentUser?.id
+          )
+        : allRequests;
 
-      setRequests(allRequests);
+      setRequests(visibleRequests);
     } catch (error) {
       console.error("Error loading borrower invite requests:", error);
       setRequests([]);
@@ -436,7 +450,7 @@ export default function ManageInvitesTab({ currentUser }) {
     if (currentUser) {
       loadRequests();
     }
-  }, [currentUser]);
+  }, [currentUser, isBrokerViewer]);
 
   const normalizedRequests = useMemo(() => {
     const ensureStatus = (request) => ({
@@ -483,26 +497,30 @@ export default function ManageInvitesTab({ currentUser }) {
       <CardHeader>
         <CardTitle>Manage Invites</CardTitle>
         <CardDescription>
-          Review invitations sent from across the platform.
+          {isBrokerViewer
+            ? "Review and manage your borrower invites."
+            : "Review invitations sent from across the platform."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
-            <div className="w-full md:w-56">
-              <Select value={senderFilter} onValueChange={setSenderFilter}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Who sent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SENDER_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>
-                      {filter.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!isBrokerViewer && (
+              <div className="w-full md:w-56">
+                <Select value={senderFilter} onValueChange={setSenderFilter}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Who sent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SENDER_FILTERS.map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="w-full md:w-48">
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger className="h-10">
