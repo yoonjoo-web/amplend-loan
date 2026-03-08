@@ -10,6 +10,8 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Briefcase,
   MessageSquare,
   UserCircle,
