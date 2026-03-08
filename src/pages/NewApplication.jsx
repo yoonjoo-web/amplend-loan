@@ -1295,6 +1295,7 @@ export default function NewApplication() {
     permissions?.isLoanOfficer ||
     ['Borrower', 'Broker', 'Administrator', 'Loan Officer'].includes(normalizedRole)
   );
+  const canManagePartnerAssignments = canShowPartnerActionButtons && !permissions?.isBroker;
 
   return (
     <>
@@ -1388,7 +1389,7 @@ export default function NewApplication() {
                   <span className="flex items-center gap-1">
                     <span className="text-slate-500 font-medium">Broker:</span>
                     <span>{assignedBrokerName || 'Broker'}</span>
-                    {canShowPartnerActionButtons && (
+                    {canManagePartnerAssignments && (
                       <button
                         onClick={() => setShowAddBrokerModal(true)}
                         className="ml-0.5 text-slate-400 hover:text-slate-700 transition-colors"
@@ -1400,7 +1401,7 @@ export default function NewApplication() {
                   </span>
                 )}
                 {/* Add Broker button if no broker assigned */}
-                {!showBrokerName && !formData?.broker_id && !assignedBrokerName && canShowPartnerActionButtons && (
+                {!showBrokerName && !formData?.broker_id && !assignedBrokerName && canManagePartnerAssignments && (
                   <button
                     onClick={() => setShowAddBrokerModal(true)}
                     className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
@@ -1416,7 +1417,7 @@ export default function NewApplication() {
                   <span className="flex items-center gap-1">
                     <span className="text-slate-500 font-medium">Liaison:</span>
                     <span>{liaisonPartners.join(', ')}</span>
-                    {canShowPartnerActionButtons && (
+                    {canManagePartnerAssignments && (
                       <button
                         onClick={() => setShowAddLiaisonModal(true)}
                         className="ml-0.5 text-slate-400 hover:text-slate-700 transition-colors"
@@ -1428,7 +1429,7 @@ export default function NewApplication() {
                   </span>
                 )}
                 {/* Add Liaison button if none assigned */}
-                {liaisonPartners.length === 0 && canShowPartnerActionButtons && (
+                {liaisonPartners.length === 0 && canManagePartnerAssignments && (
                   <button
                     onClick={() => setShowAddLiaisonModal(true)}
                     className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
