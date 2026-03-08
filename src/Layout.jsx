@@ -10,6 +10,8 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Briefcase,
   MessageSquare,
   UserCircle,
@@ -231,9 +233,9 @@ export default function Layout({ children, currentPageName }) {
                   title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                   {sidebarCollapsed ? (
-                    <ChevronRight className="w-4 h-4" />
+                    <PanelLeftOpen className="w-4 h-4" />
                   ) : (
-                    <ChevronLeft className="w-4 h-4" />
+                    <PanelLeftClose className="w-4 h-4" />
                   )}
                 </Button>
               </div>
