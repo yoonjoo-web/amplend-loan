@@ -184,6 +184,12 @@ export default function Layout({ children, currentPageName }) {
       show: permissions.canViewMyProfile, // Rule 6
     },
     {
+      title: "Toorak Evaluation",
+      url: createPageUrl("ToorakEvaluation"),
+      icon: FlaskConical,
+      show: permissions.isAdministrator || permissions.isLoanOfficer || permissions.isPlatformAdmin,
+    },
+    {
       title: "Settings",
       url: createPageUrl("Settings"),
       icon: Settings,
