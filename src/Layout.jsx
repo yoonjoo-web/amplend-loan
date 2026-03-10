@@ -184,10 +184,17 @@ export default function Layout({ children, currentPageName }) {
       show: permissions.canViewMyProfile, // Rule 6
     },
     {
-      title: "Toorak Evaluation",
-      url: createPageUrl("ToorakEvaluation"),
-      icon: FlaskConical,
+      title: "Quotes",
+      url: createPageUrl("Quotes"),
+      icon: FileText,
       show: permissions.isAdministrator || permissions.isLoanOfficer || permissions.isPlatformAdmin,
+      submenu: [
+        {
+          title: "Toorak Evaluation",
+          url: createPageUrl("ToorakEvaluation"),
+          icon: FlaskConical,
+        },
+      ],
     },
     {
       title: "Settings",
@@ -345,7 +352,9 @@ export default function Layout({ children, currentPageName }) {
                            key={subitem.title}
                            href={subitem.url}
                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors font-medium ${
-                             location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?',''))
+                             (new URL(subitem.url, window.location.origin).search
+                               ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
+                               : location.pathname === new URL(subitem.url, window.location.origin).pathname)
                                ? 'bg-slate-700 text-white shadow-lg'
                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                            }`}

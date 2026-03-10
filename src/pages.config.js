@@ -65,6 +65,7 @@ import MyProfile from './pages/MyProfile';
 import MyTasks from './pages/MyTasks';
 import NewApplication from './pages/NewApplication';
 import Onboarding from './pages/Onboarding';
+import Quotes from './pages/Quotes';
 import Settings from './pages/Settings';
 import ToorakEvaluation from './pages/ToorakEvaluation';
 import __Layout from './Layout.jsx';
@@ -89,6 +90,7 @@ export const PAGES = {
     "MyTasks": MyTasks,
     "NewApplication": NewApplication,
     "Onboarding": Onboarding,
+    "Quotes": Quotes,
     "Settings": Settings,
     "ToorakEvaluation": ToorakEvaluation,
 }
