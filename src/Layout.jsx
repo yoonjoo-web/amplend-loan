@@ -18,7 +18,8 @@ import {
   UserCheck,
   UserRound,
   Handshake,
-  Building2
+  Building2,
+  FlaskConical
 } from "lucide-react";
 import {
   SidebarProvider,
