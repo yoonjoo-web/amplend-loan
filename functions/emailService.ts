@@ -15,8 +15,49 @@ Deno.serve(async (req) => {
       recipient_email,
       recipient_name,
       data = {},
-      skip_invite_log = false
+      skip_invite_log = false,
+      scheduled_at,
+      cancel_message_id
     } = body;
+
+    if (cancel_message_id) {
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      if (!RESEND_API_KEY) {
+        return Response.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
+      }
+
+      const cancelResponse = await fetch(`https://api.resend.com/emails/${cancel_message_id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!cancelResponse.ok) {
+        const errorText = await cancelResponse.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        console.error('[emailService] Resend cancel API error:', errorData);
+        return Response.json({
+          error: 'Failed to cancel email via Resend',
+          details: errorData,
+          status: cancelResponse.status
+        }, { status: 500 });
+      }
+
+      const cancelResult = await cancelResponse.json();
+      return Response.json({
+        success: true,
+        message: 'Email canceled successfully',
+        message_id: cancelResult.id,
+        details: cancelResult
+      });
+    }
 
     if (!email_type || !recipient_email) {
       return Response.json({ 
@@ -502,13 +543,17 @@ This is an automated message.
       return Response.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 });
     }
 
-    const resendPayload = {
+    const resendPayload: Record<string, unknown> = {
       from: 'Amplend Loan <loan-notification@amplend.net>',
       to: [recipient_email],
       subject: template.subject,
       html: htmlBody,
       text: textBody
     };
+
+    if (scheduled_at) {
+      resendPayload.scheduledAt = scheduled_at;
+    }
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -607,6 +652,7 @@ This is an automated message.
       details: {
         recipient: recipient_email,
         type: email_type,
+        scheduled_at: scheduled_at || null,
         invite_token: generatedInviteToken || data?.invite_token || null,
         invite_token_id: generatedInviteTokenId || null
       }

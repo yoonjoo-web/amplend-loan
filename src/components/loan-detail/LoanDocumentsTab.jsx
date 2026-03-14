@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import {
   ArrowUpDown,
   Bell,
@@ -14,6 +14,7 @@ import { base44 } from "@/api/base44Client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "./DocumentViewer";
 import { ACTION_ITEM_CHECKLIST_ITEMS, DOCUMENT_CHECKLIST_ITEMS } from "./checklistData";
@@ -57,6 +59,8 @@ const DOC_VALUE_TO_TAB = {
 };
 
 const REQUEST_ACTIVITY_TYPE = "document_requested";
+const FOLLOWUP_ACTIVITY_TYPE = "document_request_followup";
+const REQUEST_CADENCE_DAYS = 2;
 const ALLOWED_FILE_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif";
 const SORT_OPTIONS = [
   { value: "latest", label: "Latest" },
@@ -138,72 +142,107 @@ const resolveDateLabel = (value) => {
   }
 };
 
-const getLastRequestTimestamp = (activityHistory) => {
+const resolveDateTimeLabel = (value) => {
+  if (!value) return "Not available";
+
+  try {
+    return new Date(value).toLocaleString();
+  } catch (error) {
+    return "Not available";
+  }
+};
+
+const getAssignedUserIds = (checklistItem) => {
+  if (Array.isArray(checklistItem?.assigned_to)) {
+    return checklistItem.assigned_to.filter(Boolean).map(String);
+  }
+
+  if (checklistItem?.assigned_to) {
+    return [String(checklistItem.assigned_to)];
+  }
+
+  return [];
+};
+
+const isMatchingActivityType = (entry, type) =>
+  entry?.type === type || entry?.action === type || entry?.activity_type === type;
+
+const getSortedRequestEntries = (activityHistory, type) => {
+  if (!Array.isArray(activityHistory)) {
+    return [];
+  }
+
+  return [...activityHistory]
+    .filter((entry) => isMatchingActivityType(entry, type))
+    .sort((a, b) => new Date(a?.timestamp || 0).getTime() - new Date(b?.timestamp || 0).getTime());
+};
+
+const getLatestRequestRelatedEntry = (activityHistory) => {
   if (!Array.isArray(activityHistory) || activityHistory.length === 0) {
     return null;
   }
 
-  const requestEntries = activityHistory
+  return [...activityHistory]
     .filter(
       (entry) =>
-        entry?.type === REQUEST_ACTIVITY_TYPE ||
-        entry?.action === REQUEST_ACTIVITY_TYPE ||
-        entry?.activity_type === REQUEST_ACTIVITY_TYPE
+        isMatchingActivityType(entry, REQUEST_ACTIVITY_TYPE) ||
+        isMatchingActivityType(entry, FOLLOWUP_ACTIVITY_TYPE)
     )
-    .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-
-  return requestEntries[0]?.timestamp || null;
+    .sort((a, b) => new Date(b?.timestamp || 0).getTime() - new Date(a?.timestamp || 0).getTime())[0] || null;
 };
 
-const getRowProviderLabel = ({ loan, template, checklistItem, directory }) => {
-  const assignedNames = Array.isArray(checklistItem?.assigned_to)
-    ? checklistItem.assigned_to
-        .map((id) => directory[String(id)])
-        .filter(Boolean)
-        .join(", ")
-    : "";
-
-  if (assignedNames) {
-    return assignedNames;
+const getLatestPendingScheduledReminder = (activityHistory) => {
+  if (!Array.isArray(activityHistory) || activityHistory.length === 0) {
+    return null;
   }
 
-  if (!template?.provider) {
-    const loanOfficerNames = (loan?.loan_officer_ids || [])
-      .map((id) => directory[String(id)])
-      .filter(Boolean)
-      .join(", ");
-    return loanOfficerNames || "Amplend";
+  return [...activityHistory]
+    .filter(
+      (entry) =>
+        (isMatchingActivityType(entry, REQUEST_ACTIVITY_TYPE) ||
+          isMatchingActivityType(entry, FOLLOWUP_ACTIVITY_TYPE)) &&
+        entry?.scheduled_email_id &&
+        !entry?.canceled_at
+    )
+    .sort((a, b) => new Date(b?.timestamp || 0).getTime() - new Date(a?.timestamp || 0).getTime())[0] || null;
+};
+
+const getRowProviderLabel = ({ checklistItem, directory }) => {
+  const assignedNames = getAssignedUserIds(checklistItem)
+    .map((id) => directory[id])
+    .filter(Boolean)
+    .join(", ");
+
+  return assignedNames;
+};
+
+const getRequestActivitySummary = (row) => {
+  const activityHistory = row?.checklistItem?.activity_history;
+  const initialRequest = getSortedRequestEntries(activityHistory, REQUEST_ACTIVITY_TYPE)[0] || null;
+  const followups = getSortedRequestEntries(activityHistory, FOLLOWUP_ACTIVITY_TYPE);
+
+  if (!initialRequest) {
+    return null;
   }
 
-  if (template.provider === "Borrower") {
-    const borrowerNames = (loan?.borrower_ids || [])
-      .map((id) => directory[String(id)])
-      .filter(Boolean)
-      .join(", ");
-    return loan?.borrower_entity_name || borrowerNames || "Borrower";
-  }
+  const desiredDueAt =
+    initialRequest.desired_due_at ||
+    addDays(new Date(initialRequest.timestamp || Date.now()), REQUEST_CADENCE_DAYS).toISOString();
+  const firstFollowupAt =
+    followups[0]?.timestamp || addDays(new Date(desiredDueAt), REQUEST_CADENCE_DAYS).toISOString();
+  const lastFollowupAt = followups.length > 0 ? followups[followups.length - 1].timestamp : null;
+  const overdue = !row?.hasFile && new Date().getTime() > new Date(desiredDueAt).getTime();
 
-  if (template.provider === "Amplend") {
-    const loanOfficerNames = (loan?.loan_officer_ids || [])
-      .map((id) => directory[String(id)])
-      .filter(Boolean)
-      .join(", ");
-    return loanOfficerNames || "Amplend";
-  }
-
-  if (template.provider === "Title Company") {
-    const titleCompanyNames = (loan?.title_company_ids || [])
-      .map((id) => directory[String(id)])
-      .filter(Boolean)
-      .join(", ");
-    return titleCompanyNames || "Title Company";
-  }
-
-  return template.provider;
+  return {
+    initialRequest,
+    desiredDueAt,
+    firstFollowupAt,
+    lastFollowupAt,
+    overdue,
+  };
 };
 
 const createRowFromTemplate = ({
-  loan,
   template,
   rowType,
   tabValue,
@@ -212,7 +251,8 @@ const createRowFromTemplate = ({
   directory,
 }) => {
   const uploadedAt = getDocumentDate(document);
-  const requestTimestamp = getLastRequestTimestamp(checklistItem?.activity_history);
+  const latestRequestRelatedEntry = getLatestRequestRelatedEntry(checklistItem?.activity_history);
+  const requestTimestamp = latestRequestRelatedEntry?.timestamp || null;
   const hasActiveRequest =
     Boolean(requestTimestamp) &&
     (!uploadedAt || new Date(requestTimestamp).getTime() > new Date(uploadedAt).getTime());
@@ -222,17 +262,20 @@ const createRowFromTemplate = ({
     title: template.item,
     tabValue,
     rowType,
-    providerLabel: getRowProviderLabel({ loan, template, checklistItem, directory }),
+    providerLabel: getRowProviderLabel({ checklistItem, directory }),
     uploadedAt,
     uploadedDateLabel: resolveDateLabel(uploadedAt),
     hasFile: Boolean(document),
     hasActiveRequest,
     document,
     template,
+    checklistItem,
     checklistItemId: checklistItem?.id || null,
     loanDocumentCategory:
       DOC_CATEGORY_LABEL_TO_VALUE[template.category] ||
-      DOC_CATEGORY_LABEL_TO_VALUE[tabValue === "post_closing" ? "Post-Closing Document" : "Closing Document"],
+      DOC_CATEGORY_LABEL_TO_VALUE[
+        tabValue === "post_closing" ? "Post-Closing Document" : "Closing Document"
+      ],
   };
 };
 
@@ -252,18 +295,67 @@ const createRowFromUploadedDocument = ({ document, directory }) => {
     hasActiveRequest: false,
     document,
     template: null,
+    checklistItem: null,
     checklistItemId: document?.checklist_item_id || null,
     loanDocumentCategory: document.category,
   };
 };
 
+const buildLinkedUserOptions = (loan, directory, userIdByLinkedId) => {
+  const rawIds = [
+    ...(loan?.borrower_ids || []),
+    ...(loan?.loan_officer_ids || []),
+    ...(loan?.title_company_ids || []),
+    ...(loan?.referrer_id ? [loan.referrer_id] : []),
+    ...(loan?.referrer_ids || []),
+  ]
+    .filter(Boolean)
+    .map(String);
+
+  const deduped = new Map();
+
+  rawIds.forEach((linkedId) => {
+    const recipientUserId = String(userIdByLinkedId[linkedId] || linkedId);
+    const label = directory[linkedId] || directory[recipientUserId] || "Unknown user";
+
+    if (!deduped.has(recipientUserId)) {
+      deduped.set(recipientUserId, {
+        value: recipientUserId,
+        label,
+      });
+    }
+  });
+
+  return [...deduped.values()].sort((a, b) => a.label.localeCompare(b.label));
+};
+
+const triggerDocumentDownload = (document) => {
+  const url = document?.file_url || document?.document_url || document?.url || document?.fileUrl;
+
+  if (!url) {
+    return false;
+  }
+
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = document.document_name || "document";
+  link.target = "_blank";
+  window.document.body.appendChild(link);
+  link.click();
+  window.document.body.removeChild(link);
+  return true;
+};
+
 export default function LoanDocumentsTab({ loan, currentUser }) {
   const { toast } = useToast();
   const hiddenFileInputRef = useRef(null);
+  const sectionRef = useRef(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [checklistItems, setChecklistItems] = useState([]);
+  const [directory, setDirectory] = useState({});
+  const [userIdByLinkedId, setUserIdByLinkedId] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [providerFilter, setProviderFilter] = useState("all");
@@ -272,10 +364,16 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingUploads, setPendingUploads] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isRequestingId, setIsRequestingId] = useState(null);
+  const [requestRow, setRequestRow] = useState(null);
+  const [selectedRecipientId, setSelectedRecipientId] = useState("");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [activityRow, setActivityRow] = useState(null);
+  const [isDownloadMode, setIsDownloadMode] = useState(false);
+  const [selectedDownloadRowIds, setSelectedDownloadRowIds] = useState([]);
 
   const loadDirectory = async () => {
-    const nextDirectory = {};
+    const namesById = {};
+    const nextUserIdByLinkedId = {};
 
     const [allUsers, borrowers, loanPartners] = await Promise.all([
       (async () => {
@@ -302,45 +400,57 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     ]);
 
     allUsers.forEach((user) => {
+      const userId = String(user.id);
       const label =
         user.first_name || user.last_name
           ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
           : user.full_name || user.email;
 
       if (label) {
-        nextDirectory[String(user.id)] = label;
+        namesById[userId] = label;
+        nextUserIdByLinkedId[userId] = userId;
       }
     });
 
     borrowers.forEach((borrower) => {
+      const borrowerId = String(borrower.id);
+      const linkedUserId = borrower.user_id ? String(borrower.user_id) : borrowerId;
       const label =
         borrower.first_name || borrower.last_name
           ? `${borrower.first_name || ""} ${borrower.last_name || ""}`.trim()
           : borrower.name || borrower.email;
 
       if (label) {
-        nextDirectory[String(borrower.id)] = label;
-        if (borrower.user_id) {
-          nextDirectory[String(borrower.user_id)] = label;
-        }
+        namesById[borrowerId] = label;
+        namesById[linkedUserId] = namesById[linkedUserId] || label;
       }
+
+      nextUserIdByLinkedId[borrowerId] = linkedUserId;
+      nextUserIdByLinkedId[linkedUserId] = linkedUserId;
     });
 
     loanPartners.forEach((partner) => {
+      const partnerId = String(partner.id);
+      const linkedUserId = partner.user_id ? String(partner.user_id) : partnerId;
       const label = partner.name || partner.contact_person || partner.email;
 
       if (label) {
-        nextDirectory[String(partner.id)] = label;
-        if (partner.user_id) {
-          nextDirectory[String(partner.user_id)] = label;
-        }
+        namesById[partnerId] = label;
+        namesById[linkedUserId] = namesById[linkedUserId] || label;
       }
+
+      nextUserIdByLinkedId[partnerId] = linkedUserId;
+      nextUserIdByLinkedId[linkedUserId] = linkedUserId;
     });
 
-    return nextDirectory;
+    return { namesById, userIdByLinkedId: nextUserIdByLinkedId };
   };
 
-  const buildRows = ({ checklistItems: allChecklistItems, allDocuments, directory: nameDirectory }) => {
+  const buildRows = ({
+    checklistItems: allChecklistItems,
+    allDocuments,
+    directory: nameDirectory,
+  }) => {
     const loanTypeFilters = getLoanTypeFilters(loan);
     const checklistByKey = new Map();
     const checklistIdsUsedByTemplate = new Set();
@@ -348,7 +458,8 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     const latestDocumentByChecklistId = new Map();
     const latestDocumentByKey = new Map();
     const sortedDocuments = [...allDocuments].sort(
-      (a, b) => new Date(getDocumentDate(b) || 0).getTime() - new Date(getDocumentDate(a) || 0).getTime()
+      (a, b) =>
+        new Date(getDocumentDate(b) || 0).getTime() - new Date(getDocumentDate(a) || 0).getTime()
     );
 
     allChecklistItems.forEach((item) => {
@@ -402,7 +513,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
         templateRows.push(
           createRowFromTemplate({
-            loan,
             template,
             rowType: "document",
             tabValue,
@@ -436,7 +546,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
       templateRows.push(
         createRowFromTemplate({
-          loan,
           template,
           rowType: "action",
           tabValue,
@@ -481,7 +590,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     setIsLoading(true);
 
     try {
-      const [allDocuments, allChecklistItems, nameDirectory] = await Promise.all([
+      const [allDocuments, allChecklistItems, directoryData] = await Promise.all([
         base44.entities.LoanDocument.filter({ loan_id: loan.id }).catch((error) => {
           console.error("Error loading loan documents:", error);
           return [];
@@ -496,11 +605,13 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       const nextRows = buildRows({
         checklistItems: allChecklistItems,
         allDocuments,
-        directory: nameDirectory,
+        directory: directoryData.namesById,
       });
 
       setChecklistItems(allChecklistItems);
       setRows(nextRows);
+      setDirectory(directoryData.namesById);
+      setUserIdByLinkedId(directoryData.userIdByLinkedId);
     } catch (error) {
       console.error("Error loading document workspace:", error);
       toast({
@@ -517,6 +628,35 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     loadWorkspace();
   }, [loan.id]);
 
+  const exitDownloadMode = () => {
+    setIsDownloadMode(false);
+    setSelectedDownloadRowIds([]);
+  };
+
+  useEffect(() => {
+    if (!isDownloadMode) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      if (
+        showUploadDialog ||
+        requestRow ||
+        activityRow ||
+        viewingDocument ||
+        !sectionRef.current ||
+        sectionRef.current.contains(event.target)
+      ) {
+        return;
+      }
+
+      exitDownloadMode();
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [activityRow, isDownloadMode, requestRow, showUploadDialog, viewingDocument]);
+
   const providerOptions = Array.from(
     new Set(
       rows
@@ -527,12 +667,13 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   ).sort((a, b) => a.localeCompare(b));
 
   let visibleRows = rows.filter((row) => {
+    const providerLabel = row.providerLabel || "";
     const matchesTab = activeTab === "all" || row.tabValue === activeTab;
     const matchesSearch =
       !searchTerm ||
       row.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.providerLabel.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesProvider = providerFilter === "all" || row.providerLabel === providerFilter;
+      providerLabel.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesProvider = providerFilter === "all" || providerLabel === providerFilter;
 
     return matchesTab && matchesSearch && matchesProvider;
   });
@@ -555,6 +696,36 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
     return sortOrder === "latest" ? rightTime - leftTime : leftTime - rightTime;
   });
+
+  if (isDownloadMode) {
+    const downloadableRows = visibleRows.filter((row) => row.hasFile);
+    const requestOnlyRows = visibleRows.filter((row) => !row.hasFile);
+    visibleRows = [...downloadableRows, ...requestOnlyRows];
+  }
+
+  useEffect(() => {
+    if (!isDownloadMode) {
+      return;
+    }
+
+    const visibleDownloadableIds = new Set(
+      visibleRows.filter((row) => row.hasFile).map((row) => row.id)
+    );
+
+    setSelectedDownloadRowIds((currentIds) => {
+      const nextIds = currentIds.filter((rowId) => visibleDownloadableIds.has(rowId));
+      if (
+        nextIds.length === currentIds.length &&
+        nextIds.every((rowId, index) => rowId === currentIds[index])
+      ) {
+        return currentIds;
+      }
+
+      return nextIds;
+    });
+  }, [isDownloadMode, visibleRows]);
+
+  const linkedUserOptions = buildLinkedUserOptions(loan, directory, userIdByLinkedId);
 
   const rowOptions = rows
     .filter((row) => row.rowType !== "uploaded")
@@ -585,6 +756,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       applicable_loan_types: row.template.loan_types || [],
       document_category: row.template.document_category || "",
       status: row.rowType === "action" ? "not_started" : "pending",
+      assigned_to: [],
       activity_history: [],
     });
 
@@ -609,6 +781,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       category: defaultCategory,
       linkedRowId: "none",
       checklistItemId: null,
+      comment: "",
     }));
 
     setPendingUploads(nextUploads);
@@ -662,10 +835,25 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         const checklistItemId =
           upload.checklistItemId ||
           (linkedRow ? await ensureChecklistItem(linkedRow) : null);
+        const linkedChecklistItem =
+          (checklistItemId && checklistItems.find((item) => item.id === checklistItemId)) ||
+          linkedRow?.checklistItem ||
+          null;
 
         const { file_url: fileUrl } = await base44.integrations.Core.UploadFile({
           file: upload.file,
         });
+
+        const initialComments = upload.comment.trim()
+          ? [
+              {
+                id: `comment-${Date.now()}-${upload.id}`,
+                text: upload.comment.trim(),
+                author: getCurrentUserName(currentUser),
+                timestamp: new Date().toISOString(),
+              },
+            ]
+          : [];
 
         await base44.entities.LoanDocument.create({
           loan_id: loan.id,
@@ -687,7 +875,24 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
           uploaded_by: currentUser?.id,
           uploaded_date: new Date().toISOString(),
           checklist_item_id: checklistItemId,
+          comments: initialComments,
         });
+
+        const pendingReminder = getLatestPendingScheduledReminder(
+          linkedChecklistItem?.activity_history
+        );
+
+        if (checklistItemId && pendingReminder) {
+          try {
+            await base44.functions.invoke("cancelDocumentRequestFollowup", {
+              checklist_item_id: checklistItemId,
+              canceled_reason: "linked_document_uploaded",
+              canceled_at: new Date().toISOString(),
+            });
+          } catch (cancelError) {
+            console.error("Error canceling scheduled document followup:", cancelError);
+          }
+        }
       }
 
       setShowUploadDialog(false);
@@ -709,17 +914,53 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     }
   };
 
-  const handleRequestDocument = async (row) => {
-    setIsRequestingId(row.id);
+  const handleOpenRequestModal = (row) => {
+    setRequestRow(row);
+    setSelectedRecipientId(getAssignedUserIds(row.checklistItem)[0] || linkedUserOptions[0]?.value || "");
+  };
+
+  const handleSendRequest = async () => {
+    if (!requestRow) {
+      return;
+    }
+
+    if (!selectedRecipientId) {
+      toast({
+        variant: "destructive",
+        title: "Recipient required",
+        description: "Select a recipient before sending the request.",
+      });
+      return;
+    }
+
+    setIsSubmittingRequest(true);
 
     try {
-      const checklistItemId = await ensureChecklistItem(row);
+      const checklistItemId = await ensureChecklistItem(requestRow);
       if (!checklistItemId) {
         throw new Error("This row is not linked to a requestable checklist item.");
       }
 
-      const checklistItem = checklistItems.find((item) => item.id === checklistItemId);
+      const recipientOption = linkedUserOptions.find((option) => option.value === selectedRecipientId);
+      const recipientName =
+        recipientOption?.label || directory[selectedRecipientId] || "Selected recipient";
       const timestamp = new Date().toISOString();
+      const desiredDueAt = addDays(new Date(timestamp), REQUEST_CADENCE_DAYS).toISOString();
+
+      const notificationResult = await base44.functions.invoke("sendDocumentRequestNotification", {
+        loan_id: loan.id,
+        checklist_item_id: checklistItemId,
+        document_title: requestRow.title,
+        recipient_user_id: selectedRecipientId,
+        recipient_name: recipientName,
+        mode: "request",
+        actor_user_id: currentUser?.id || "",
+        actor_user_name: getCurrentUserName(currentUser),
+        link_url: `/LoanDetail?id=${loan.id}&tab=documents`,
+      });
+
+      const checklistItem =
+        checklistItems.find((item) => item.id === checklistItemId) || requestRow.checklistItem;
       const activityHistory = Array.isArray(checklistItem?.activity_history)
         ? [...checklistItem.activity_history]
         : [];
@@ -729,33 +970,27 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         timestamp,
         user_id: currentUser?.id || "",
         user_name: getCurrentUserName(currentUser),
-        label: `Requested ${row.title}`,
+        label: `Requested ${requestRow.title} from ${recipientName}`,
+        recipient_user_id: selectedRecipientId,
+        recipient_name: recipientName,
+        desired_due_at: desiredDueAt,
+        cadence_days: REQUEST_CADENCE_DAYS,
+        scheduled_email_id: notificationResult?.scheduled_followup_email_id || null,
+        scheduled_for: notificationResult?.scheduled_followup_at || null,
+        source: "loan_documents_tab",
       });
 
       await base44.entities.ChecklistItem.update(checklistItemId, {
+        assigned_to: [selectedRecipientId],
         activity_history: activityHistory,
-        due_date: checklistItem?.due_date || timestamp.split("T")[0],
+        due_date: desiredDueAt.split("T")[0],
       });
 
-      if (row.template?.provider === "Borrower" && Array.isArray(loan.borrower_ids) && loan.borrower_ids.length > 0) {
-        try {
-          await base44.functions.invoke("createNotification", {
-            user_ids: loan.borrower_ids,
-            message: `Document requested: ${row.title}`,
-            type: "document_request",
-            entity_type: "Loan",
-            entity_id: loan.id,
-            link_url: `/LoanDetail?id=${loan.id}&tab=documents`,
-            priority: "medium",
-          });
-        } catch (notificationError) {
-          console.error("Error creating borrower document request notification:", notificationError);
-        }
-      }
-
+      setRequestRow(null);
+      setSelectedRecipientId("");
       toast({
-        title: "Request logged",
-        description: `${row.title} has been marked as requested.`,
+        title: "Request sent",
+        description: `${requestRow.title} was requested from ${recipientName}.`,
       });
 
       await loadWorkspace();
@@ -764,39 +999,67 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       toast({
         variant: "destructive",
         title: "Request failed",
-        description: error.message || "The request could not be saved.",
+        description: error.message || "The request could not be sent.",
       });
     } finally {
-      setIsRequestingId(null);
+      setIsSubmittingRequest(false);
     }
   };
 
-  const handleExport = () => {
-    const header = ["Title", "Provider", "Uploaded date", "Action"];
-    const body = visibleRows.map((row) => [
-      row.title,
-      row.providerLabel,
-      row.uploadedDateLabel,
-      row.hasFile ? "View file" : "Request document",
-    ]);
+  const visibleDownloadableRows = visibleRows.filter((row) => row.hasFile);
+  const allVisibleDownloadableIds = visibleDownloadableRows.map((row) => row.id);
+  const allVisibleDownloadableSelected =
+    allVisibleDownloadableIds.length > 0 &&
+    allVisibleDownloadableIds.every((rowId) => selectedDownloadRowIds.includes(rowId));
+  const someVisibleDownloadableSelected =
+    !allVisibleDownloadableSelected &&
+    allVisibleDownloadableIds.some((rowId) => selectedDownloadRowIds.includes(rowId));
 
-    const csv = [header, ...body]
-      .map((columns) =>
-        columns
-          .map((value) => `"${String(value || "").replace(/"/g, '""')}"`)
-          .join(",")
-      )
-      .join("\n");
+  const handleToggleAllDownloadable = (checked) => {
+    if (checked) {
+      setSelectedDownloadRowIds(allVisibleDownloadableIds);
+      return;
+    }
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = window.URL.createObjectURL(blob);
-    const link = window.document.createElement("a");
-    link.href = url;
-    link.download = `${loan.loan_number || loan.primary_loan_id || "loan"}-documents.csv`;
-    window.document.body.appendChild(link);
-    link.click();
-    window.document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    setSelectedDownloadRowIds([]);
+  };
+
+  const handleToggleDownloadRow = (rowId, checked) => {
+    setSelectedDownloadRowIds((currentIds) =>
+      checked
+        ? currentIds.includes(rowId)
+          ? currentIds
+          : [...currentIds, rowId]
+        : currentIds.filter((id) => id !== rowId)
+    );
+  };
+
+  const handleDownloadSelected = () => {
+    const selectedRows = visibleRows.filter(
+      (row) => row.hasFile && selectedDownloadRowIds.includes(row.id)
+    );
+
+    if (selectedRows.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No files selected",
+        description: "Select at least one uploaded document to download.",
+      });
+      return;
+    }
+
+    let downloadedCount = 0;
+    selectedRows.forEach((row) => {
+      if (triggerDocumentDownload(row.document)) {
+        downloadedCount += 1;
+      }
+    });
+
+    exitDownloadMode();
+    toast({
+      title: "Download started",
+      description: `${downloadedCount} file${downloadedCount === 1 ? "" : "s"} queued for download.`,
+    });
   };
 
   if (isLoading) {
@@ -809,7 +1072,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
   return (
     <>
-      <section className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
+      <section ref={sectionRef} className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
         <header className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-2xl font-semibold tracking-[-0.5px] text-[#171717]">
@@ -893,10 +1156,21 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-w-28 rounded-lg border-0 bg-[#e5e5ea] text-black hover:bg-[#d9d9df]"
-              onClick={handleExport}
+              className={cn(
+                "h-11 rounded-lg border-0 bg-[#e5e5ea] text-black hover:bg-[#d9d9df]",
+                isDownloadMode ? "min-w-[220px] justify-between px-4" : "min-w-28"
+              )}
+              onClick={isDownloadMode ? handleDownloadSelected : () => setIsDownloadMode(true)}
             >
-              <Download className="h-4 w-4" />
+              <span className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                <span>Download</span>
+              </span>
+              {isDownloadMode ? (
+                <span className="text-sm text-[#4a4a50]">
+                  {selectedDownloadRowIds.length} selected
+                </span>
+              ) : null}
             </Button>
 
             <input
@@ -907,15 +1181,17 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
               className="hidden"
               onChange={handleFileSelection}
             />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 min-w-32 rounded-lg border-2 border-[#3463dd] bg-white text-black hover:bg-[#f4f7ff]"
-              onClick={handleOpenUploadDialog}
-            >
-              Upload
-              <Upload className="ml-2 h-4 w-4" />
-            </Button>
+            {!isDownloadMode ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 min-w-32 rounded-lg border-2 border-[#3463dd] bg-white text-black hover:bg-[#f4f7ff]"
+                onClick={handleOpenUploadDialog}
+              >
+                Upload
+                <Upload className="ml-2 h-4 w-4" />
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -926,7 +1202,21 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 <tr className="border-b-2 border-[#e5e5e5]">
                   <th className="px-6 py-3 text-left align-middle font-normal text-[#171717]">
                     <div className="flex items-center gap-4">
-                      <MoveRight className="h-5 w-5" />
+                      {isDownloadMode ? (
+                        <Checkbox
+                          checked={
+                            allVisibleDownloadableSelected
+                              ? true
+                              : someVisibleDownloadableSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={handleToggleAllDownloadable}
+                          aria-label="Select all downloadable rows"
+                        />
+                      ) : (
+                        <MoveRight className="h-5 w-5" />
+                      )}
                       <span className="text-lg">Title</span>
                     </div>
                   </th>
@@ -948,7 +1238,19 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 {visibleRows.map((row) => (
                   <tr key={row.id} className="border-b border-[#ededed] last:border-b-0">
                     <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
-                      {row.title}
+                      <div className="flex items-center gap-4">
+                        {isDownloadMode ? (
+                          <Checkbox
+                            checked={selectedDownloadRowIds.includes(row.id)}
+                            onCheckedChange={(checked) =>
+                              handleToggleDownloadRow(row.id, Boolean(checked))
+                            }
+                            disabled={!row.hasFile}
+                            aria-label={`Select ${row.title} for download`}
+                          />
+                        ) : null}
+                        <span>{row.title}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
                       {row.providerLabel}
@@ -975,26 +1277,27 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                           <Button
                             type="button"
                             variant="outline"
-                            disabled={isRequestingId === row.id}
+                            disabled={row.hasActiveRequest || isSubmittingRequest}
                             className={cn(
                               "h-10 min-w-[120px] rounded-lg border-2 bg-white text-black hover:bg-slate-50",
                               row.hasActiveRequest ? "border-[#8e8e93] text-[#8e8e93]" : "border-[#3463dd]"
                             )}
-                            onClick={() => handleRequestDocument(row)}
+                            onClick={() => handleOpenRequestModal(row)}
                           >
-                            {isRequestingId === row.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              "Request document"
-                            )}
+                            {row.hasActiveRequest ? "Request sent" : "Request document"}
                           </Button>
                         )}
 
                         <div className="flex h-6 w-6 items-center justify-center">
                           {row.hasActiveRequest && !row.hasFile ? (
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white">
+                            <button
+                              type="button"
+                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
+                              onClick={() => setActivityRow(row)}
+                              aria-label={`View request activity for ${row.title}`}
+                            >
                               <Bell className="h-3.5 w-3.5 fill-current" />
-                            </span>
+                            </button>
                           ) : null}
                         </div>
                       </div>
@@ -1092,6 +1395,18 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Comment</Label>
+                    <Textarea
+                      value={upload.comment}
+                      onChange={(event) =>
+                        updatePendingUpload(upload.id, "comment", event.target.value)
+                      }
+                      placeholder="Optional comment for the document viewer sidebar"
+                      rows={3}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -1119,6 +1434,139 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(requestRow)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRequestRow(null);
+            setSelectedRecipientId("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request document</DialogTitle>
+            <DialogDescription>
+              Choose who should receive the request for {requestRow?.title || "this document"}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Recipient</Label>
+              <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a recipient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {linkedUserOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRequestRow(null);
+                setSelectedRecipientId("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSendRequest}
+              disabled={isSubmittingRequest || !selectedRecipientId}
+            >
+              {isSubmittingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending
+                </>
+              ) : (
+                "Send request"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(activityRow)} onOpenChange={(open) => !open && setActivityRow(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Request activity</DialogTitle>
+            <DialogDescription>
+              Reminder sent every 2 days until the requested document is uploaded.
+            </DialogDescription>
+          </DialogHeader>
+
+          {activityRow ? (
+            <div className="space-y-4">
+              <div className="rounded-xl bg-[#f6f7fb] p-4">
+                <p className="text-sm text-slate-500">Document</p>
+                <p className="text-base font-medium text-[#171717]">{activityRow.title}</p>
+              </div>
+
+              {(() => {
+                const summary = getRequestActivitySummary(activityRow);
+                return summary ? (
+                  <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">Requested from</span>
+                      <span className="text-right text-sm font-medium text-[#171717]">
+                        {summary.initialRequest.recipient_name || activityRow.providerLabel || "Unknown"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">Desired due date</span>
+                      <span className="text-right text-sm font-medium text-[#171717]">
+                        {resolveDateTimeLabel(summary.desiredDueAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">First document followup date</span>
+                      <span className="text-right text-sm font-medium text-[#171717]">
+                        {resolveDateTimeLabel(summary.firstFollowupAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">Last document followup date</span>
+                      <span className="text-right text-sm font-medium text-[#171717]">
+                        {summary.lastFollowupAt
+                          ? resolveDateTimeLabel(summary.lastFollowupAt)
+                          : "Not sent yet"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">Due date is past</span>
+                      <span
+                        className={cn(
+                          "text-right text-sm font-medium",
+                          summary.overdue ? "text-[#b3261e]" : "text-[#171717]"
+                        )}
+                      >
+                        {summary.overdue ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+                    No request activity is available for this row yet.
+                  </div>
+                );
+              })()}
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
 
