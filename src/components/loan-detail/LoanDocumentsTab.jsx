@@ -349,7 +349,7 @@ const triggerDocumentDownload = (document) => {
 export default function LoanDocumentsTab({ loan, currentUser }) {
   const { toast } = useToast();
   const hiddenFileInputRef = useRef(null);
-  const sectionRef = useRef(null);
+  const downloadZoneRef = useRef(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [rows, setRows] = useState([]);
@@ -639,13 +639,15 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     }
 
     const handlePointerDown = (event) => {
+      const target = event.target;
+
       if (
         showUploadDialog ||
         requestRow ||
         activityRow ||
         viewingDocument ||
-        !sectionRef.current ||
-        sectionRef.current.contains(event.target)
+        !downloadZoneRef.current ||
+        downloadZoneRef.current.contains(target)
       ) {
         return;
       }
@@ -653,8 +655,8 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       exitDownloadMode();
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    document.addEventListener("mousedown", handlePointerDown, true);
+    return () => document.removeEventListener("mousedown", handlePointerDown, true);
   }, [activityRow, isDownloadMode, requestRow, showUploadDialog, viewingDocument]);
 
   const providerOptions = Array.from(
@@ -698,6 +700,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   });
 
   if (isDownloadMode) {
+    // Keep download mode scoped to the table by surfacing downloadable rows first.
     const downloadableRows = visibleRows.filter((row) => row.hasFile);
     const requestOnlyRows = visibleRows.filter((row) => !row.hasFile);
     visibleRows = [...downloadableRows, ...requestOnlyRows];
@@ -1072,7 +1075,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
   return (
     <>
-      <section ref={sectionRef} className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
+      <section className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
         <header className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-2xl font-semibold tracking-[-0.5px] text-[#171717]">
@@ -1114,206 +1117,210 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-          <div className="grid flex-1 gap-4 md:grid-cols-2">
-            <div className="flex items-center gap-3">
-              <Label className="shrink-0 text-base font-normal text-[#171717]">Provider</Label>
-              <Select value={providerFilter} onValueChange={setProviderFilter}>
-                <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {providerOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div ref={downloadZoneRef} className="space-y-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="grid flex-1 gap-4 md:grid-cols-2">
+              <div className="flex items-center gap-3">
+                <Label className="shrink-0 text-base font-normal text-[#171717]">Provider</Label>
+                <Select value={providerFilter} onValueChange={setProviderFilter}>
+                  <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {providerOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Label className="shrink-0 text-base font-normal text-[#171717]">
+                  Uploaded date
+                </Label>
+                <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Label className="shrink-0 text-base font-normal text-[#171717]">
-                Uploaded date
-              </Label>
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              className={cn(
-                "h-11 rounded-lg border-0 bg-[#e5e5ea] text-black hover:bg-[#d9d9df]",
-                isDownloadMode ? "min-w-[220px] justify-between px-4" : "min-w-28"
-              )}
-              onClick={isDownloadMode ? handleDownloadSelected : () => setIsDownloadMode(true)}
-            >
-              <span className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                <span>Download</span>
-              </span>
-              {isDownloadMode ? (
-                <span className="text-sm text-[#4a4a50]">
-                  {selectedDownloadRowIds.length} selected
-                </span>
-              ) : null}
-            </Button>
-
-            <input
-              ref={hiddenFileInputRef}
-              type="file"
-              multiple
-              accept={ALLOWED_FILE_TYPES}
-              className="hidden"
-              onChange={handleFileSelection}
-            />
-            {!isDownloadMode ? (
+            <div className="flex items-center gap-4">
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 min-w-32 rounded-lg border-2 border-[#3463dd] bg-white text-black hover:bg-[#f4f7ff]"
-                onClick={handleOpenUploadDialog}
+                className={cn(
+                  "h-11 rounded-lg border-0 bg-[#e5e5ea] text-black hover:bg-[#d9d9df]",
+                  isDownloadMode ? "min-w-[220px] justify-between px-4" : "min-w-28"
+                )}
+                onClick={isDownloadMode ? handleDownloadSelected : () => setIsDownloadMode(true)}
               >
-                Upload
-                <Upload className="ml-2 h-4 w-4" />
+                <span className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  <span>Download</span>
+                </span>
+                {isDownloadMode ? (
+                  <span className="text-sm text-[#4a4a50]">
+                    {selectedDownloadRowIds.length} selected
+                  </span>
+                ) : null}
               </Button>
-            ) : null}
-          </div>
-        </div>
 
-        <div className="overflow-hidden rounded-lg border border-[#e5e5e5] bg-white">
-          <div className="overflow-x-auto">
-            <table className="min-w-[920px] w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-[#e5e5e5]">
-                  <th className="px-6 py-3 text-left align-middle font-normal text-[#171717]">
-                    <div className="flex items-center gap-4">
-                      {isDownloadMode ? (
-                        <Checkbox
-                          checked={
-                            allVisibleDownloadableSelected
-                              ? true
-                              : someVisibleDownloadableSelected
-                                ? "indeterminate"
-                                : false
-                          }
-                          onCheckedChange={handleToggleAllDownloadable}
-                          aria-label="Select all downloadable rows"
-                        />
-                      ) : (
-                        <MoveRight className="h-5 w-5" />
-                      )}
-                      <span className="text-lg">Title</span>
-                    </div>
-                  </th>
-                  <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
-                    Provider
-                  </th>
-                  <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
-                    Uploaded date
-                  </th>
-                  <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1">Action</span>
-                      <ArrowUpDown className="h-4 w-4" />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleRows.map((row) => (
-                  <tr key={row.id} className="border-b border-[#ededed] last:border-b-0">
-                    <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
+              <input
+                ref={hiddenFileInputRef}
+                type="file"
+                multiple
+                accept={ALLOWED_FILE_TYPES}
+                className="hidden"
+                onChange={handleFileSelection}
+              />
+              {!isDownloadMode ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 min-w-32 rounded-lg border-2 border-[#3463dd] bg-white text-black hover:bg-[#f4f7ff]"
+                  onClick={handleOpenUploadDialog}
+                >
+                  Upload
+                  <Upload className="ml-2 h-4 w-4" />
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-[#e5e5e5] bg-white">
+            <div className="overflow-x-auto">
+              <table className="min-w-[920px] w-full border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-[#e5e5e5]">
+                    <th className="px-6 py-3 text-left align-middle font-normal text-[#171717]">
                       <div className="flex items-center gap-4">
                         {isDownloadMode ? (
                           <Checkbox
-                            checked={selectedDownloadRowIds.includes(row.id)}
-                            onCheckedChange={(checked) =>
-                              handleToggleDownloadRow(row.id, Boolean(checked))
+                            checked={
+                              allVisibleDownloadableSelected
+                                ? true
+                                : someVisibleDownloadableSelected
+                                  ? "indeterminate"
+                                  : false
                             }
-                            disabled={!row.hasFile}
-                            aria-label={`Select ${row.title} for download`}
+                            onCheckedChange={handleToggleAllDownloadable}
+                            aria-label="Select all downloadable rows"
                           />
-                        ) : null}
-                        <span>{row.title}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
-                      {row.providerLabel}
-                    </td>
-                    <td
-                      className={cn(
-                        "px-6 py-4 text-[17px] tracking-[-0.3px]",
-                        row.hasFile ? "text-[#171717]" : "text-[#8e8e93]"
-                      )}
-                    >
-                      {row.uploadedDateLabel}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        {row.hasFile ? (
-                          <Button
-                            type="button"
-                            className="h-10 min-w-[120px] rounded-lg bg-[#3463dd] text-white hover:bg-[#2850ba]"
-                            onClick={() => setViewingDocument(row.document)}
-                          >
-                            View file
-                          </Button>
                         ) : (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            disabled={row.hasActiveRequest || isSubmittingRequest}
-                            className={cn(
-                              "h-10 min-w-[120px] rounded-lg border-2 bg-white text-black hover:bg-slate-50",
-                              row.hasActiveRequest ? "border-[#8e8e93] text-[#8e8e93]" : "border-[#3463dd]"
-                            )}
-                            onClick={() => handleOpenRequestModal(row)}
-                          >
-                            {row.hasActiveRequest ? "Request sent" : "Request document"}
-                          </Button>
+                          <MoveRight className="h-5 w-5" />
                         )}
-
-                        <div className="flex h-6 w-6 items-center justify-center">
-                          {row.hasActiveRequest && !row.hasFile ? (
-                            <button
-                              type="button"
-                              className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
-                              onClick={() => setActivityRow(row)}
-                              aria-label={`View request activity for ${row.title}`}
-                            >
-                              <Bell className="h-3.5 w-3.5 fill-current" />
-                            </button>
-                          ) : null}
-                        </div>
+                        <span className="text-lg">Title</span>
                       </div>
-                    </td>
+                    </th>
+                    <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
+                      Provider
+                    </th>
+                    <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
+                      Uploaded date
+                    </th>
+                    <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-1">Action</span>
+                        <ArrowUpDown className="h-4 w-4" />
+                      </div>
+                    </th>
                   </tr>
-                ))}
+                </thead>
+                <tbody>
+                  {visibleRows.map((row) => (
+                    <tr key={row.id} className="border-b border-[#ededed] last:border-b-0">
+                      <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
+                        <div className="flex items-center gap-4">
+                          {isDownloadMode ? (
+                            <Checkbox
+                              checked={selectedDownloadRowIds.includes(row.id)}
+                              onCheckedChange={(checked) =>
+                                handleToggleDownloadRow(row.id, Boolean(checked))
+                              }
+                              disabled={!row.hasFile}
+                              aria-label={`Select ${row.title} for download`}
+                            />
+                          ) : null}
+                          <span>{row.title}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
+                        {row.providerLabel}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-6 py-4 text-[17px] tracking-[-0.3px]",
+                          row.hasFile ? "text-[#171717]" : "text-[#8e8e93]"
+                        )}
+                      >
+                        {row.uploadedDateLabel}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          {row.hasFile ? (
+                            <Button
+                              type="button"
+                              className="h-10 min-w-[120px] rounded-lg bg-[#3463dd] text-white hover:bg-[#2850ba]"
+                              onClick={() => setViewingDocument(row.document)}
+                            >
+                              View file
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              disabled={row.hasActiveRequest || isSubmittingRequest}
+                              className={cn(
+                                "h-10 min-w-[120px] rounded-lg border-2 bg-white text-black hover:bg-slate-50",
+                                row.hasActiveRequest
+                                  ? "border-[#8e8e93] text-[#8e8e93]"
+                                  : "border-[#3463dd]"
+                              )}
+                              onClick={() => handleOpenRequestModal(row)}
+                            >
+                              {row.hasActiveRequest ? "Request sent" : "Request document"}
+                            </Button>
+                          )}
 
-                {visibleRows.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-16 text-center text-base text-slate-500">
-                      No document rows match the current filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                          <div className="flex h-6 w-6 items-center justify-center">
+                            {row.hasActiveRequest && !row.hasFile ? (
+                              <button
+                                type="button"
+                                className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
+                                onClick={() => setActivityRow(row)}
+                                aria-label={`View request activity for ${row.title}`}
+                              >
+                                <Bell className="h-3.5 w-3.5 fill-current" />
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {visibleRows.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-16 text-center text-base text-slate-500">
+                        No document rows match the current filters.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
