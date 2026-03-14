@@ -38,7 +38,7 @@ export const loanDetailSubpages = [
     title: "Documents",
     description: "Review uploaded files and document activity.",
     icon: Folder,
-    isPlaceholder: true,
+    isPlaceholder: false,
   },
   {
     key: "details",

@@ -10,6 +10,7 @@ import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
 import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
+import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
 import LoanDetailPlaceholderView from "../components/loan-detail/LoanDetailPlaceholderView";
@@ -295,6 +296,11 @@ export default function LoanDetail() {
                       onLoanChange={() => {}}
                     />
                   </>
+                ) : activeTab === 'documents' ? (
+                  <LoanDocumentsTab
+                    loan={loan}
+                    currentUser={currentUser}
+                  />
                 ) : (
                   <LoanDetailPlaceholderView
                     title={activeSubpage.title}
