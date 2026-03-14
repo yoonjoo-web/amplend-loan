@@ -33,6 +33,11 @@ import {
 } from "@/components/ui/tooltip";
 import UniversalHeader from "../components/shared/UniversalHeader";
 import ProductTour from "../components/shared/ProductTour";
+import {
+  DEFAULT_LOAN_DETAIL_TAB,
+  getLoanDetailTabUrl,
+  loanDetailSubpages,
+} from "@/components/loan-detail/loanDetailSubpages";
 
 // Hook to shield input fields from global key handlers (capture + bubble, all targets)
 function useInputShield() {
@@ -86,6 +91,9 @@ export default function Layout({ children, currentPageName }) {
   
   const location = useLocation();
   const { currentUser, permissions, isLoading } = usePermissions();
+  const searchParams = new URLSearchParams(location.search);
+  const currentLoanId = searchParams.get('id');
+  const isOnLoanDetailPage = location.pathname === createPageUrl("LoanDetail") && !!currentLoanId;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
     return saved === 'true';
@@ -129,6 +137,14 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Loans"),
       icon: FileText,
       show: true, // Everyone can see loans (filtered by permissions)
+      ...(isOnLoanDetailPage ? {
+        defaultUrl: getLoanDetailTabUrl(currentLoanId, DEFAULT_LOAN_DETAIL_TAB),
+        submenu: loanDetailSubpages.map((subpage) => ({
+          title: subpage.title,
+          url: getLoanDetailTabUrl(currentLoanId, subpage.key),
+          icon: subpage.icon,
+        })),
+      } : {}),
     },
     {
       title: "My Borrowers",
@@ -211,6 +227,26 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const filteredNavItems = navigationItems.filter(item => item.show);
+  const loansNavItem = filteredNavItems.find((item) => item.title === "Loans");
+
+  useEffect(() => {
+    if (
+      isOnLoanDetailPage &&
+      loansNavItem &&
+      !sidebarCollapsed &&
+      (
+        activeSubmenu?.title !== "Loans" ||
+        activeSubmenu?.submenu?.[0]?.url !== loansNavItem.submenu?.[0]?.url
+      )
+    ) {
+      setActiveSubmenu(loansNavItem);
+      return;
+    }
+
+    if (!isOnLoanDetailPage && activeSubmenu?.title === "Loans") {
+      setActiveSubmenu(null);
+    }
+  }, [activeSubmenu?.title, isOnLoanDetailPage, loansNavItem, sidebarCollapsed]);
 
   // Show loading state while checking onboarding or loading permissions
   if (isCheckingOnboarding || isLoading) {
@@ -266,8 +302,12 @@ export default function Layout({ children, currentPageName }) {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <a
-                                href={item.url + "?tab=all"}
-                                className="flex items-center justify-center w-12 h-12 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
+                                href={item.defaultUrl || item.url + "?tab=all"}
+                                className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
+                                  location.pathname === new URL(item.url, window.location.origin).pathname
+                                    ? 'bg-slate-700 text-white shadow-lg'
+                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                }`}
                               >
                                 <item.icon className="w-5 h-5" />
                               </a>
@@ -279,7 +319,11 @@ export default function Layout({ children, currentPageName }) {
                         ) : (
                           <button
                             onClick={() => setActiveSubmenu(item)}
-                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors font-medium ${
+                              location.pathname === new URL(item.url, window.location.origin).pathname
+                                ? 'bg-slate-100 text-slate-900'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
                           >
                             <div className="flex items-center gap-3">
                               <item.icon className="w-5 h-5" />

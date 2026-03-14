@@ -8,8 +8,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
 import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
@@ -20,7 +18,6 @@ import {
   getLoanDetailSubpage,
   getLoanDetailTabUrl,
   isValidLoanDetailTab,
-  loanDetailSubpages,
 } from "../components/loan-detail/loanDetailSubpages";
 
 
@@ -35,6 +32,7 @@ export default function LoanDetail() {
   const fallbackTab = openTask ? 'checklist' : DEFAULT_LOAN_DETAIL_TAB;
   const activeTab = isValidLoanDetailTab(requestedTab) ? requestedTab : fallbackTab;
   const activeSubpage = getLoanDetailSubpage(activeTab);
+  const showLoanSidebar = activeTab === 'overview';
   const [loan, setLoan] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -256,8 +254,10 @@ export default function LoanDetail() {
         <div 
           className="flex-1 transition-all duration-300"
           style={{ 
-            marginRight: sidebarCollapsed ? '64px' : '320px',
-            width: sidebarCollapsed ? 'calc(100% - 64px)' : 'calc(100% - 320px)'
+            marginRight: showLoanSidebar ? (sidebarCollapsed ? '64px' : '320px') : '0px',
+            width: showLoanSidebar
+              ? (sidebarCollapsed ? 'calc(100% - 64px)' : 'calc(100% - 320px)')
+              : '100%'
           }}
         >
           <div className="p-6">
@@ -281,92 +281,54 @@ export default function LoanDetail() {
                 </h1>
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-[249px_minmax(0,1fr)]">
-                <aside>
-                  <Card className="overflow-hidden border-0 bg-white/90 shadow-xl shadow-slate-200/70 backdrop-blur-sm">
-                    <div className="border-b border-slate-100 px-5 py-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                        Loan Workspace
-                      </p>
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
-                        {loan.loan_number || loan.primary_loan_id || 'Loan'}
-                      </p>
+              <section className="min-w-0 space-y-6" data-tour="loan-tabs">
+                {activeTab === 'overview' ? (
+                  <>
+                    <div>
+                      <LoanSummaryHeader loan={loan} />
                     </div>
-
-                    <div className="p-3" data-tour="loan-tabs">
-                      {loanDetailSubpages.map((subpage) => {
-                        const Icon = subpage.icon;
-                        const isActive = subpage.key === activeTab;
-
-                        return (
-                          <button
-                            key={subpage.key}
-                            type="button"
-                            onClick={() => navigate(getLoanDetailTabUrl(loan.id, subpage.key, openTask ? { openTask } : {}))}
-                            className={cn(
-                              "flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-[15px] font-medium transition-all",
-                              isActive
-                                ? "bg-slate-700 text-white shadow-lg shadow-slate-300/80"
-                                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                            )}
-                          >
-                            <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-slate-900")} />
-                            <span>{subpage.title}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </Card>
-                </aside>
-
-                <section className="min-w-0 space-y-6">
-                  {activeTab === 'overview' ? (
-                    <>
-                      <div>
-                        <LoanSummaryHeader loan={loan} />
-                      </div>
-                      <LoanOverviewTab 
-                        loan={loan} 
-                        onUpdate={handleLoanUpdate}
-                        currentUser={currentUser}
-                        allLoanOfficers={allLoanOfficers}
-                        onLoanChange={() => {}}
-                      />
-                    </>
-                  ) : (
-                    <LoanDetailPlaceholderView
-                      title={activeSubpage.title}
-                      description={activeSubpage.description}
-                      icon={activeSubpage.icon}
+                    <LoanOverviewTab 
+                      loan={loan} 
+                      onUpdate={handleLoanUpdate}
+                      currentUser={currentUser}
+                      allLoanOfficers={allLoanOfficers}
+                      onLoanChange={() => {}}
                     />
-                  )}
-                </section>
-              </div>
+                  </>
+                ) : (
+                  <LoanDetailPlaceholderView
+                    title={activeSubpage.title}
+                    description={activeSubpage.description}
+                    icon={activeSubpage.icon}
+                  />
+                )}
+              </section>
             </motion.div>
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div 
-          data-tour="loan-sidebar"
-          className="fixed right-0 transition-all duration-300 bg-white border-l border-slate-200 shadow-lg"
-          style={{ 
-            width: sidebarCollapsed ? '64px' : '320px',
-            top: '64px',
-            height: 'calc(100vh - 64px)',
-            zIndex: 10
-          }}
-        >
-          <LoanSidebar 
-            loan={loan}
-            onUpdate={handleLoanUpdate}
-            currentUser={currentUser}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-            onRefresh={loadLoan}
-            allLoanOfficers={allLoanOfficers}
-          />
-        </div>
+        {showLoanSidebar && (
+          <div 
+            data-tour="loan-sidebar"
+            className="fixed right-0 transition-all duration-300 bg-white border-l border-slate-200 shadow-lg"
+            style={{ 
+              width: sidebarCollapsed ? '64px' : '320px',
+              top: '64px',
+              height: 'calc(100vh - 64px)',
+              zIndex: 10
+            }}
+          >
+            <LoanSidebar 
+              loan={loan}
+              onUpdate={handleLoanUpdate}
+              currentUser={currentUser}
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+              onRefresh={loadLoan}
+              allLoanOfficers={allLoanOfficers}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
