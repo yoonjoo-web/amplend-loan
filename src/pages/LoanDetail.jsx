@@ -1,41 +1,45 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LoanDocument } from "@/entities/all";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FileText, CheckSquare, Folder, TrendingUp } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
-import { normalizeAppRole } from "@/components/utils/appRoles";
 import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
 import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
-import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
-import LoanChecklistTab from "../components/loan-detail/LoanChecklistTab";
-import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
+import LoanDetailPlaceholderView from "../components/loan-detail/LoanDetailPlaceholderView";
+import {
+  DEFAULT_LOAN_DETAIL_TAB,
+  getLoanDetailSubpage,
+  getLoanDetailTabUrl,
+  isValidLoanDetailTab,
+  loanDetailSubpages,
+} from "../components/loan-detail/loanDetailSubpages";
 
 
 export default function LoanDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const searchParams = new URLSearchParams(location.search);
+  const loanId = searchParams.get('id');
+  const requestedTab = searchParams.get('tab');
+  const openTask = searchParams.get('openTask');
+  const fallbackTab = openTask ? 'checklist' : DEFAULT_LOAN_DETAIL_TAB;
+  const activeTab = isValidLoanDetailTab(requestedTab) ? requestedTab : fallbackTab;
+  const activeSubpage = getLoanDetailSubpage(activeTab);
   const [loan, setLoan] = useState(null);
-  const [documents, setDocuments] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [borrowerAccessIds, setBorrowerAccessIds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [allLoanOfficers, setAllLoanOfficers] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [openTaskId, setOpenTaskId] = useState(null);
-  const [isLoanPartner, setIsLoanPartner] = useState(false);
 
   const normalizeDateValue = (value) => {
     if (!value) return '';
@@ -54,24 +58,25 @@ export default function LoanDetail() {
     return () => {
       delete window.refreshLoanDocuments;
     };
-  }, []);
+  }, [loanId]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const taskId = params.get('openTask');
-    if (taskId) {
-      setActiveTab('checklist');
-      setOpenTaskId(taskId);
+    if (!loanId) {
+      return;
     }
-  }, [location.search]);
+
+    if (requestedTab !== activeTab) {
+      navigate(getLoanDetailTabUrl(loanId, activeTab, openTask ? { openTask } : {}), {
+        replace: true,
+      });
+    }
+  }, [activeTab, loanId, navigate, openTask, requestedTab]);
 
   const loadLoan = async () => {
     setIsLoading(true);
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
-      const normalizedRole = normalizeAppRole(user.app_role);
-      setIsLoanPartner(['Broker', 'Referral Partner', 'Title Company', 'Insurance Company', 'Servicer'].includes(normalizedRole));
 
       // Only fetch loan officers if user has permission (admins and loan officers)
       if (user.role === 'admin' || user.app_role === 'Administrator' || user.app_role === 'Loan Officer') {
@@ -87,9 +92,6 @@ export default function LoanDetail() {
       } else {
         setAllLoanOfficers([]);
       }
-
-      const params = new URLSearchParams(location.search);
-      const loanId = params.get('id');
 
       if (!loanId) {
         toast({
@@ -115,7 +117,6 @@ export default function LoanDetail() {
 
       const resolvedBorrowerAccessIds = await getBorrowerAccessIds(base44, user);
       const resolvedLoanPartnerAccessIds = await getLoanPartnerAccessIds(base44, user);
-      setBorrowerAccessIds(resolvedBorrowerAccessIds);
 
       const toIdArray = (singleValue, legacyList) => {
         if (singleValue) return [String(singleValue)];
@@ -147,9 +148,6 @@ export default function LoanDetail() {
       }
 
       setLoan(loanData);
-
-      const loanDocuments = await LoanDocument.filter({ loan_id: loanId });
-      setDocuments(loanDocuments || []);
     } catch (error) {
       console.error('Error loading loan:', error);
       toast({
@@ -243,19 +241,6 @@ export default function LoanDetail() {
     }
   };
 
-  const handleSaveLoan = async () => {
-    if (!hasUnsavedChanges) return;
-    
-    setIsSaving(true);
-    try {
-      await handleLoanUpdate(loan);
-      setHasUnsavedChanges(false);
-    } catch (error) {
-      console.error('Error saving loan:', error);
-    }
-    setIsSaving(false);
-  };
-
   if (isLoading || !loan) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -296,77 +281,67 @@ export default function LoanDetail() {
                 </h1>
               </div>
 
-              {/* Summary Header */}
-              <div className="mb-6">
-                <LoanSummaryHeader loan={loan} />
-              </div>
+              <div className="grid gap-6 xl:grid-cols-[249px_minmax(0,1fr)]">
+                <aside>
+                  <Card className="overflow-hidden border-0 bg-white/90 shadow-xl shadow-slate-200/70 backdrop-blur-sm">
+                    <div className="border-b border-slate-100 px-5 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                        Loan Workspace
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">
+                        {loan.loan_number || loan.primary_loan_id || 'Loan'}
+                      </p>
+                    </div>
 
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList data-tour="loan-tabs" className={isLoanPartner ? "grid w-full grid-cols-1 lg:w-auto lg:inline-grid" : "grid w-full grid-cols-4 lg:w-auto lg:inline-grid"}>
-                  <TabsTrigger value="overview" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Overview
-                  </TabsTrigger>
-                  {!isLoanPartner && (
+                    <div className="p-3" data-tour="loan-tabs">
+                      {loanDetailSubpages.map((subpage) => {
+                        const Icon = subpage.icon;
+                        const isActive = subpage.key === activeTab;
+
+                        return (
+                          <button
+                            key={subpage.key}
+                            type="button"
+                            onClick={() => navigate(getLoanDetailTabUrl(loan.id, subpage.key, openTask ? { openTask } : {}))}
+                            className={cn(
+                              "flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-[15px] font-medium transition-all",
+                              isActive
+                                ? "bg-slate-700 text-white shadow-lg shadow-slate-300/80"
+                                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                            )}
+                          >
+                            <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-slate-900")} />
+                            <span>{subpage.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </aside>
+
+                <section className="min-w-0 space-y-6">
+                  {activeTab === 'overview' ? (
                     <>
-                      <TabsTrigger value="documents" className="flex items-center gap-2">
-                        <Folder className="w-4 h-4" />
-                        Documents
-                      </TabsTrigger>
-                      <TabsTrigger value="checklist" className="flex items-center gap-2">
-                        <CheckSquare className="w-4 h-4" />
-                        Document Checklist
-                      </TabsTrigger>
-                      <TabsTrigger value="draws" className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Draws
-                      </TabsTrigger>
+                      <div>
+                        <LoanSummaryHeader loan={loan} />
+                      </div>
+                      <LoanOverviewTab 
+                        loan={loan} 
+                        onUpdate={handleLoanUpdate}
+                        currentUser={currentUser}
+                        allLoanOfficers={allLoanOfficers}
+                        onLoanChange={() => {}}
+                      />
                     </>
+                  ) : (
+                    <LoanDetailPlaceholderView
+                      title={activeSubpage.title}
+                      description={activeSubpage.description}
+                      icon={activeSubpage.icon}
+                    />
                   )}
-                </TabsList>
-
-                <TabsContent value="overview" className="space-y-6">
-                  <LoanOverviewTab 
-                    loan={loan} 
-                    onUpdate={handleLoanUpdate}
-                    currentUser={currentUser}
-                    allLoanOfficers={allLoanOfficers}
-                    onLoanChange={() => setHasUnsavedChanges(true)}
-                  />
-                </TabsContent>
-
-                {!isLoanPartner && (
-                  <>
-                    <TabsContent value="documents" className="space-y-6">
-                      <LoanDocumentsTab 
-                        loanId={loan.id}
-                        documents={documents}
-                        onDocumentsChange={loadLoan}
-                        currentUser={currentUser}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="checklist" className="space-y-6">
-                      <LoanChecklistTab 
-                        loan={loan}
-                        onUpdate={handleLoanUpdate}
-                        openTaskId={openTaskId}
-                        onTaskOpened={() => setOpenTaskId(null)}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="draws" className="space-y-6">
-                      <LoanDrawsTab 
-                        loan={loan}
-                        onUpdate={handleLoanUpdate}
-                        currentUser={currentUser}
-                        borrowerAccessIds={borrowerAccessIds}
-                      />
-                    </TabsContent>
-                    
-                  </>
-                )}
-              </Tabs>
+                </section>
+              </div>
             </motion.div>
           </div>
         </div>
