@@ -951,8 +951,12 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   };
 
   const handleOpenRequestModal = (row) => {
+    const assignedRecipientId = getAssignedUserIds(row.checklistItem)
+      .map((id) => String(userIdByLinkedId[id] || id))
+      .find((id) => linkedUserOptions.some((option) => option.value === id));
+
     setRequestRow(row);
-    setSelectedRecipientId(getAssignedUserIds(row.checklistItem)[0] || linkedUserOptions[0]?.value || "");
+    setSelectedRecipientId(assignedRecipientId || linkedUserOptions[0]?.value || "");
   };
 
   const handleSendRequest = async () => {
@@ -978,6 +982,12 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       }
 
       const recipientOption = linkedUserOptions.find((option) => option.value === selectedRecipientId);
+      if (!recipientOption) {
+        throw new Error(
+          "Select a linked borrower, loan officer, broker, or liaison before sending the request."
+        );
+      }
+
       const recipientName =
         recipientOption?.label || directory[selectedRecipientId] || "Selected recipient";
       const timestamp = new Date().toISOString();
