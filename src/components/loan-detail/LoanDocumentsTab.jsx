@@ -304,7 +304,13 @@ const createRowFromUploadedDocument = ({ document, directory }) => {
 
 const REQUESTABLE_RECIPIENT_ROLES = new Set(["Borrower", "Loan Officer", "Broker", "Liaison"]);
 
-const buildLinkedUserOptions = (loan, directory, userIdByLinkedId, roleByLinkedId) => {
+const buildLinkedUserOptions = (
+  loan,
+  directory,
+  userIdByLinkedId,
+  roleByLinkedId,
+  activeUserIds
+) => {
   const rawIds = [
     ...(loan?.borrower_ids || []),
     ...(loan?.loan_officer_ids || []),
@@ -323,6 +329,10 @@ const buildLinkedUserOptions = (loan, directory, userIdByLinkedId, roleByLinkedI
     const normalizedRole = normalizeAppRole(roleByLinkedId[linkedId] || roleByLinkedId[recipientUserId] || "");
 
     if (!REQUESTABLE_RECIPIENT_ROLES.has(normalizedRole)) {
+      return;
+    }
+
+    if (!activeUserIds.has(recipientUserId)) {
       return;
     }
 
@@ -367,6 +377,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [directory, setDirectory] = useState({});
   const [userIdByLinkedId, setUserIdByLinkedId] = useState({});
   const [roleByLinkedId, setRoleByLinkedId] = useState({});
+  const [activeUserIds, setActiveUserIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [providerFilter, setProviderFilter] = useState("all");
@@ -386,6 +397,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     const namesById = {};
     const nextUserIdByLinkedId = {};
     const nextRoleByLinkedId = {};
+    const nextActiveUserIds = new Set();
 
     const [allUsers, borrowers, loanPartners] = await Promise.all([
       (async () => {
@@ -426,6 +438,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       if (role) {
         nextRoleByLinkedId[userId] = role;
       }
+      nextActiveUserIds.add(userId);
     });
 
     borrowers.forEach((borrower) => {
@@ -470,6 +483,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       namesById,
       userIdByLinkedId: nextUserIdByLinkedId,
       roleByLinkedId: nextRoleByLinkedId,
+      activeUserIds: nextActiveUserIds,
     };
   };
 
@@ -640,6 +654,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       setDirectory(directoryData.namesById);
       setUserIdByLinkedId(directoryData.userIdByLinkedId);
       setRoleByLinkedId(directoryData.roleByLinkedId);
+      setActiveUserIds(directoryData.activeUserIds);
     } catch (error) {
       console.error("Error loading document workspace:", error);
       toast({
@@ -760,7 +775,8 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     loan,
     directory,
     userIdByLinkedId,
-    roleByLinkedId
+    roleByLinkedId,
+    activeUserIds
   );
 
   const rowOptions = rows
