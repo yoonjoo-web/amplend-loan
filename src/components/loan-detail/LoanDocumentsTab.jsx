@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "./DocumentViewer";
 import { ACTION_ITEM_CHECKLIST_ITEMS, DOCUMENT_CHECKLIST_ITEMS } from "./checklistData";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const CATEGORY_TABS = [
   { value: "all", label: "All documents" },
@@ -301,13 +302,16 @@ const createRowFromUploadedDocument = ({ document, directory }) => {
   };
 };
 
-const buildLinkedUserOptions = (loan, directory, userIdByLinkedId) => {
+const REQUESTABLE_RECIPIENT_ROLES = new Set(["Borrower", "Loan Officer", "Broker", "Liaison"]);
+
+const buildLinkedUserOptions = (loan, directory, userIdByLinkedId, roleByLinkedId) => {
   const rawIds = [
     ...(loan?.borrower_ids || []),
     ...(loan?.loan_officer_ids || []),
-    ...(loan?.title_company_ids || []),
-    ...(loan?.referrer_id ? [loan.referrer_id] : []),
-    ...(loan?.referrer_ids || []),
+    ...(loan?.broker_id ? [loan.broker_id] : []),
+    ...(loan?.broker_ids || []),
+    ...(loan?.liaison_id ? [loan.liaison_id] : []),
+    ...(loan?.liaison_ids || []),
   ]
     .filter(Boolean)
     .map(String);
@@ -316,6 +320,12 @@ const buildLinkedUserOptions = (loan, directory, userIdByLinkedId) => {
 
   rawIds.forEach((linkedId) => {
     const recipientUserId = String(userIdByLinkedId[linkedId] || linkedId);
+    const normalizedRole = normalizeAppRole(roleByLinkedId[linkedId] || roleByLinkedId[recipientUserId] || "");
+
+    if (!REQUESTABLE_RECIPIENT_ROLES.has(normalizedRole)) {
+      return;
+    }
+
     const label = directory[linkedId] || directory[recipientUserId] || "Unknown user";
 
     if (!deduped.has(recipientUserId)) {
@@ -356,6 +366,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [checklistItems, setChecklistItems] = useState([]);
   const [directory, setDirectory] = useState({});
   const [userIdByLinkedId, setUserIdByLinkedId] = useState({});
+  const [roleByLinkedId, setRoleByLinkedId] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [providerFilter, setProviderFilter] = useState("all");
@@ -374,6 +385,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const loadDirectory = async () => {
     const namesById = {};
     const nextUserIdByLinkedId = {};
+    const nextRoleByLinkedId = {};
 
     const [allUsers, borrowers, loanPartners] = await Promise.all([
       (async () => {
@@ -401,6 +413,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
     allUsers.forEach((user) => {
       const userId = String(user.id);
+      const role = normalizeAppRole(user.app_role || user.role || "");
       const label =
         user.first_name || user.last_name
           ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
@@ -409,6 +422,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       if (label) {
         namesById[userId] = label;
         nextUserIdByLinkedId[userId] = userId;
+      }
+      if (role) {
+        nextRoleByLinkedId[userId] = role;
       }
     });
 
@@ -427,11 +443,14 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
       nextUserIdByLinkedId[borrowerId] = linkedUserId;
       nextUserIdByLinkedId[linkedUserId] = linkedUserId;
+      nextRoleByLinkedId[borrowerId] = "Borrower";
+      nextRoleByLinkedId[linkedUserId] = "Borrower";
     });
 
     loanPartners.forEach((partner) => {
       const partnerId = String(partner.id);
       const linkedUserId = partner.user_id ? String(partner.user_id) : partnerId;
+      const role = normalizeAppRole(partner.app_role || partner.type || "");
       const label = partner.name || partner.contact_person || partner.email;
 
       if (label) {
@@ -441,9 +460,17 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
       nextUserIdByLinkedId[partnerId] = linkedUserId;
       nextUserIdByLinkedId[linkedUserId] = linkedUserId;
+      if (role) {
+        nextRoleByLinkedId[partnerId] = role;
+        nextRoleByLinkedId[linkedUserId] = role;
+      }
     });
 
-    return { namesById, userIdByLinkedId: nextUserIdByLinkedId };
+    return {
+      namesById,
+      userIdByLinkedId: nextUserIdByLinkedId,
+      roleByLinkedId: nextRoleByLinkedId,
+    };
   };
 
   const buildRows = ({
@@ -612,6 +639,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       setRows(nextRows);
       setDirectory(directoryData.namesById);
       setUserIdByLinkedId(directoryData.userIdByLinkedId);
+      setRoleByLinkedId(directoryData.roleByLinkedId);
     } catch (error) {
       console.error("Error loading document workspace:", error);
       toast({
@@ -728,7 +756,12 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     });
   }, [isDownloadMode, visibleRows]);
 
-  const linkedUserOptions = buildLinkedUserOptions(loan, directory, userIdByLinkedId);
+  const linkedUserOptions = buildLinkedUserOptions(
+    loan,
+    directory,
+    userIdByLinkedId,
+    roleByLinkedId
+  );
 
   const rowOptions = rows
     .filter((row) => row.rowType !== "uploaded")
