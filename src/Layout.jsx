@@ -99,6 +99,7 @@ export default function Layout({ children, currentPageName }) {
     return saved === 'true';
   });
   const [activeSubmenu, setActiveSubmenu] = useState(null); // holds the nav item with submenu
+  const [autoOpenedLoanSubmenuKey, setAutoOpenedLoanSubmenuKey] = useState(null);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
   useEffect(() => {
@@ -230,23 +231,21 @@ export default function Layout({ children, currentPageName }) {
   const loansNavItem = filteredNavItems.find((item) => item.title === "Loans");
 
   useEffect(() => {
-    if (
-      isOnLoanDetailPage &&
-      loansNavItem &&
-      !sidebarCollapsed &&
-      (
-        activeSubmenu?.title !== "Loans" ||
-        activeSubmenu?.submenu?.[0]?.url !== loansNavItem.submenu?.[0]?.url
-      )
-    ) {
+    if (isOnLoanDetailPage && loansNavItem && autoOpenedLoanSubmenuKey !== currentLoanId) {
       setActiveSubmenu(loansNavItem);
+      setAutoOpenedLoanSubmenuKey(currentLoanId);
       return;
     }
 
-    if (!isOnLoanDetailPage && activeSubmenu?.title === "Loans") {
-      setActiveSubmenu(null);
+    if (!isOnLoanDetailPage) {
+      if (activeSubmenu?.title === "Loans") {
+        setActiveSubmenu(null);
+      }
+      if (autoOpenedLoanSubmenuKey !== null) {
+        setAutoOpenedLoanSubmenuKey(null);
+      }
     }
-  }, [activeSubmenu?.title, isOnLoanDetailPage, loansNavItem, sidebarCollapsed]);
+  }, [activeSubmenu?.title, autoOpenedLoanSubmenuKey, currentLoanId, isOnLoanDetailPage, loansNavItem]);
 
   // Show loading state while checking onboarding or loading permissions
   if (isCheckingOnboarding || isLoading) {
@@ -293,7 +292,7 @@ export default function Layout({ children, currentPageName }) {
               <div className={`flex-1 overflow-hidden ${sidebarCollapsed ? 'py-2' : ''} relative`}>
                 {/* Top-level nav */}
                 <div
-                  className={`space-y-1 p-2 ${sidebarCollapsed ? 'flex flex-col items-center' : ''} transition-transform duration-300 absolute inset-0 overflow-y-auto ${activeSubmenu && !sidebarCollapsed ? '-translate-x-full pointer-events-none' : 'translate-x-0'}`}
+                  className={`space-y-1 p-2 ${sidebarCollapsed ? 'flex flex-col items-center' : ''} transition-transform duration-300 absolute inset-0 overflow-y-auto ${activeSubmenu ? '-translate-x-full pointer-events-none' : 'translate-x-0'}`}
                 >
                   {filteredNavItems.map((item) => (
                     <React.Fragment key={item.title}>
@@ -368,6 +367,49 @@ export default function Layout({ children, currentPageName }) {
                     </React.Fragment>
                   ))}
                 </div>
+
+                {/* Collapsed submenu panel */}
+                {sidebarCollapsed && (
+                  <div
+                    className={`transition-transform duration-300 absolute inset-0 p-2 space-y-1 overflow-y-auto ${activeSubmenu ? 'translate-x-0' : 'translate-x-full pointer-events-none'}`}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setActiveSubmenu(null)}
+                          className="flex items-center justify-center w-12 h-12 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>Back</p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {activeSubmenu?.submenu?.map((subitem) => (
+                      <Tooltip key={subitem.title}>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={subitem.url}
+                            className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
+                              (new URL(subitem.url, window.location.origin).search
+                                ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
+                                : location.pathname === new URL(subitem.url, window.location.origin).pathname)
+                                ? 'bg-slate-700 text-white shadow-lg'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                          >
+                            {subitem.icon && <subitem.icon className="w-5 h-5" />}
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{subitem.title}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                )}
 
                 {/* Drill-down submenu panel */}
                 {!sidebarCollapsed && (
