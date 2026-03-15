@@ -289,7 +289,11 @@ const createRowFromTemplate = ({
   const uploadedAt = getDocumentDate(document);
   const latestRequestRelatedEntry = getLatestRequestRelatedEntry(checklistItem?.activity_history);
   const requestTimestamp = latestRequestRelatedEntry?.timestamp || null;
+  const latestPendingReminder = getLatestPendingScheduledReminder(checklistItem?.activity_history);
+  const hasOutstandingAssignment = getAssignedUserIds(checklistItem).length > 0;
   const hasActiveRequest =
+    Boolean(latestPendingReminder) ||
+    hasOutstandingAssignment ||
     Boolean(requestTimestamp) &&
     (!uploadedAt || new Date(requestTimestamp).getTime() > new Date(uploadedAt).getTime());
 
