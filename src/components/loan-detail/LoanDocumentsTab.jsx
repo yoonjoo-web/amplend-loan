@@ -5,7 +5,6 @@ import {
   Bell,
   Download,
   Loader2,
-  MoveRight,
   Search,
   Upload,
 } from "lucide-react";
@@ -214,7 +213,7 @@ const getRowProviderLabel = ({ checklistItem, directory }) => {
     .filter(Boolean)
     .join(", ");
 
-  return assignedNames;
+  return assignedNames || "Not Assigned";
 };
 
 const getRequestActivitySummary = (row) => {
@@ -1278,9 +1277,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                             onCheckedChange={handleToggleAllDownloadable}
                             aria-label="Select all downloadable rows"
                           />
-                        ) : (
-                          <MoveRight className="h-5 w-5" />
-                        )}
+                        ) : null}
                         <span className="text-lg">Title</span>
                       </div>
                     </th>
@@ -1316,7 +1313,12 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                           <span>{row.title}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
+                      <td
+                        className={cn(
+                          "px-6 py-4 text-[17px] tracking-[-0.3px]",
+                          row.providerLabel === "Not Assigned" ? "text-[#8e8e93]" : "text-[#171717]"
+                        )}
+                      >
                         {row.providerLabel}
                       </td>
                       <td
@@ -1343,14 +1345,14 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                               variant="outline"
                               disabled={row.hasActiveRequest || isSubmittingRequest}
                               className={cn(
-                                "h-10 min-w-[120px] rounded-lg border-2 bg-white text-black hover:bg-slate-50",
+                                "h-10 min-w-[120px] rounded-lg border-2",
                                 row.hasActiveRequest
-                                  ? "border-[#8e8e93] text-[#8e8e93]"
-                                  : "border-[#3463dd]"
+                                  ? "border-[#d1d5db] bg-[#e5e7eb] text-[#6b7280] hover:bg-[#e5e7eb] hover:text-[#6b7280]"
+                                  : "border-[#3463dd] bg-white text-black hover:bg-slate-50"
                               )}
                               onClick={() => handleOpenRequestModal(row)}
                             >
-                              {row.hasActiveRequest ? "Request sent" : "Request document"}
+                              {row.hasActiveRequest ? "Request Sent" : "Request document"}
                             </Button>
                           )}
 
