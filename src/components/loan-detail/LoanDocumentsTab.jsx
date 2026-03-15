@@ -1668,11 +1668,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
           {activityRow ? (
             <div className="space-y-4">
-              <div className="rounded-xl bg-[#f6f7fb] p-4">
-                <p className="text-sm text-slate-500">Document</p>
-                <p className="text-base font-medium text-[#171717]">{activityRow.title}</p>
-              </div>
-
               {(() => {
                 const summary = getRequestActivitySummary(activityRow);
                 return (
