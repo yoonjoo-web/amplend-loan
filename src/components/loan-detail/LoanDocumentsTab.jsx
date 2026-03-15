@@ -143,16 +143,6 @@ const resolveDateLabel = (value) => {
   }
 };
 
-const resolveDateTimeLabel = (value) => {
-  if (!value) return "Not available";
-
-  try {
-    return new Date(value).toLocaleString();
-  } catch (error) {
-    return "Not available";
-  }
-};
-
 const toIsoStringOrNull = (value) => {
   if (!value) return null;
 
@@ -1690,37 +1680,33 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-slate-500">First requested date</span>
                       <span className="text-right text-sm font-medium text-[#171717]">
-                        {resolveDateTimeLabel(summary.firstRequestedAt)}
+                        {resolveDateLabel(summary.firstRequestedAt)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-slate-500">Desired due date</span>
                       <span className="text-right text-sm font-medium text-[#171717]">
-                        {resolveDateTimeLabel(summary.desiredDueAt)}
+                        {resolveDateLabel(summary.desiredDueAt)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-slate-500">Last document followup date</span>
                       <span className="text-right text-sm font-medium text-[#171717]">
                         {summary.lastFollowupAt
-                          ? resolveDateTimeLabel(summary.lastFollowupAt)
+                          ? resolveDateLabel(summary.lastFollowupAt)
                           : "Not sent yet"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-500">Due date is past</span>
+                    {summary.overdue ? (
+                      <div className="flex justify-end">
                       <Badge
                         variant="outline"
-                        className={cn(
-                          "border px-2.5 py-1 text-xs font-medium",
-                          summary.overdue
-                            ? "border-[#f3c7c3] bg-[#fdecec] text-[#b3261e]"
-                            : "border-[#d1d5db] bg-[#f3f4f6] text-[#4b5563]"
-                        )}
+                        className="border border-[#f3c7c3] bg-[#fdecec] px-2.5 py-1 text-xs font-medium text-[#b3261e]"
                       >
-                        {summary.overdue ? "Yes" : "No"}
+                        Due date is past
                       </Badge>
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
                 );
               })()}
