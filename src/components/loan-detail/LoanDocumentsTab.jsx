@@ -153,6 +153,17 @@ const resolveDateTimeLabel = (value) => {
   }
 };
 
+const toIsoStringOrNull = (value) => {
+  if (!value) return null;
+
+  try {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  } catch (error) {
+    return null;
+  }
+};
+
 const getAssignedUserIds = (checklistItem) => {
   if (Array.isArray(checklistItem?.assigned_to)) {
     return checklistItem.assigned_to.filter(Boolean).map(String);
@@ -222,21 +233,34 @@ const getRequestActivitySummary = (row) => {
   const initialRequest = getSortedRequestEntries(activityHistory, REQUEST_ACTIVITY_TYPE)[0] || null;
   const followups = getSortedRequestEntries(activityHistory, FOLLOWUP_ACTIVITY_TYPE);
 
-  if (!initialRequest) {
-    return null;
-  }
+  const fallbackDueDate = toIsoStringOrNull(row?.checklistItem?.due_date);
+  const fallbackRecipientIds = getAssignedUserIds(row?.checklistItem);
+  const fallbackRequestedAt =
+    initialRequest?.timestamp ||
+    row?.checklistItem?.updated_date ||
+    row?.checklistItem?.created_date ||
+    null;
 
   const desiredDueAt =
-    initialRequest.desired_due_at ||
-    addDays(new Date(initialRequest.timestamp || Date.now()), REQUEST_CADENCE_DAYS).toISOString();
+    initialRequest?.desired_due_at ||
+    fallbackDueDate ||
+    (fallbackRequestedAt
+      ? addDays(new Date(fallbackRequestedAt), REQUEST_CADENCE_DAYS).toISOString()
+      : null);
   const lastFollowupAt = followups.length > 0 ? followups[followups.length - 1].timestamp : null;
-  const overdue = !row?.hasFile && new Date().getTime() > new Date(desiredDueAt).getTime();
+  const overdue =
+    Boolean(desiredDueAt) &&
+    !row?.hasFile &&
+    new Date().getTime() > new Date(desiredDueAt).getTime();
 
   return {
     initialRequest,
+    firstRequestedAt: fallbackRequestedAt,
     desiredDueAt,
     lastFollowupAt,
     overdue,
+    hasRequestData:
+      Boolean(initialRequest) || Boolean(fallbackDueDate) || fallbackRecipientIds.length > 0,
   };
 };
 
@@ -1661,12 +1685,12 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
               {(() => {
                 const summary = getRequestActivitySummary(activityRow);
-                return summary ? (
+                return (
                   <div className="space-y-3 rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-slate-500">First requested date</span>
                       <span className="text-right text-sm font-medium text-[#171717]">
-                        {resolveDateTimeLabel(summary.initialRequest.timestamp)}
+                        {resolveDateTimeLabel(summary.firstRequestedAt)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
@@ -1697,10 +1721,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                         {summary.overdue ? "Yes" : "No"}
                       </Badge>
                     </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
-                    No request activity is available for this row yet.
                   </div>
                 );
               })()}
