@@ -552,7 +552,8 @@ This is an automated message.
     };
 
     if (scheduled_at) {
-      resendPayload.scheduledAt = scheduled_at;
+      // Resend's REST API expects snake_case even though SDK examples use scheduledAt.
+      resendPayload.scheduled_at = scheduled_at;
     }
 
     const response = await fetch('https://api.resend.com/emails', {
