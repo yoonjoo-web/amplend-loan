@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
       checklist_item_id,
       document_title,
       recipient_user_id,
+      desired_due_at,
       recipient_name,
       mode,
       actor_user_id,
@@ -189,7 +190,15 @@ Deno.serve(async (req) => {
         ? `${effectiveActorName} sent a reminder for ${document_title}.`
         : `${effectiveActorName} requested ${document_title}.`;
 
-    const followupScheduledAt = addDaysIso(new Date().toISOString(), REQUEST_CADENCE_DAYS);
+    const desiredDueAt =
+      asIsoString(desired_due_at) ||
+      latestRequest?.desired_due_at ||
+      asIsoString(checklistItem?.due_date) ||
+      addDaysIso(requestCycleStart, REQUEST_CADENCE_DAYS);
+    const followupScheduledAt =
+      mode === 'request'
+        ? desiredDueAt
+        : addDaysIso(new Date().toISOString(), REQUEST_CADENCE_DAYS);
     const priorScheduledEntryIndex = getCurrentScheduledEntryIndex(activityHistory);
     const priorScheduledEntry =
       priorScheduledEntryIndex >= 0 ? activityHistory[priorScheduledEntryIndex] : null;
@@ -264,10 +273,6 @@ Deno.serve(async (req) => {
 
     if (mode === 'followup') {
       const followupTimestamp = new Date().toISOString();
-      const desiredDueAt =
-        latestRequest?.desired_due_at ||
-        asIsoString(checklistItem?.due_date) ||
-        addDaysIso(requestCycleStart, REQUEST_CADENCE_DAYS);
 
       if (priorScheduledEntryIndex >= 0) {
         activityHistory[priorScheduledEntryIndex] = {

@@ -230,7 +230,7 @@ const getRequestActivitySummary = (row) => {
     initialRequest.desired_due_at ||
     addDays(new Date(initialRequest.timestamp || Date.now()), REQUEST_CADENCE_DAYS).toISOString();
   const firstFollowupAt =
-    followups[0]?.timestamp || addDays(new Date(desiredDueAt), REQUEST_CADENCE_DAYS).toISOString();
+    followups[0]?.timestamp || desiredDueAt;
   const lastFollowupAt = followups.length > 0 ? followups[followups.length - 1].timestamp : null;
   const overdue = !row?.hasFile && new Date().getTime() > new Date(desiredDueAt).getTime();
 
@@ -1014,6 +1014,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         checklist_item_id: checklistItemId,
         document_title: requestRow.title,
         recipient_user_id: selectedRecipientId,
+        desired_due_at: desiredDueAt,
         recipient_name: recipientName,
         mode: "request",
         actor_user_id: currentUser?.id || "",
