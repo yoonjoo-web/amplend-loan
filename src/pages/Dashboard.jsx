@@ -94,7 +94,7 @@ const LoanApplicationItem = ({ item, type }) => {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-xs font-mono text-slate-500">
+            <span className="text-xs text-slate-500">
               {isLoan ? item.loan_number : item.application_number}
             </span>
             {item.status && (

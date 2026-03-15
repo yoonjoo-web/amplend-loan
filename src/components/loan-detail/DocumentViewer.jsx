@@ -109,7 +109,7 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
             
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
               <p className="font-semibold text-sm text-slate-700 mb-2">Document Information:</p>
-              <div className="space-y-1 text-xs font-mono text-slate-600">
+              <div className="space-y-1 text-xs text-slate-600">
                 <p><span className="font-semibold">Document Name:</span> {document.document_name}</p>
                 <p><span className="font-semibold">Category:</span> {document.category}</p>
                 <p><span className="font-semibold">Status:</span> {document.status}</p>

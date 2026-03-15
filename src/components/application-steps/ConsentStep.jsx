@@ -479,7 +479,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               value={esignature}
               onChange={handleEsignatureChange}
               disabled={(isReadOnly && !canManage) || !canSignApplication}
-              className="font-serif text-lg" />
+              className="font-sans text-lg" />
 
             {signatureError && <p className="text-red-500 text-sm">{signatureError}</p>}
           </div>
@@ -491,7 +491,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
                 <span className="font-semibold">Electronically signed</span>
               </div>
               <p className="text-sm text-emerald-700">
-                Signature: <span className="font-serif text-base">{esignature}</span>
+                Signature: <span className="font-sans text-base">{esignature}</span>
               </p>
               {esignatureDate &&
             <p className="text-xs text-emerald-600 mt-1">

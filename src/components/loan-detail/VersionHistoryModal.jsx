@@ -158,7 +158,7 @@ export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOff
                                 <div className="flex-1 min-w-0">
                                   <p className="text-xs font-medium text-slate-500 mb-2">Previous Value</p>
                                   <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                                    <p className="text-sm text-slate-900 whitespace-pre-wrap break-words font-mono">
+                                    <p className="text-sm text-slate-900 whitespace-pre-wrap break-words">
                                       {formatValue(change.old_value)}
                                     </p>
                                   </div>
@@ -169,7 +169,7 @@ export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOff
                                 <div className="flex-1 min-w-0">
                                   <p className="text-xs font-medium text-slate-500 mb-2">New Value</p>
                                   <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                                    <p className="text-sm text-slate-900 whitespace-pre-wrap break-words font-mono">
+                                    <p className="text-sm text-slate-900 whitespace-pre-wrap break-words">
                                       {formatValue(change.new_value)}
                                     </p>
                                   </div>
