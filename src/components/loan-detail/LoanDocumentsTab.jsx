@@ -31,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 
 import DocumentViewer from "./DocumentViewer";
 import { ACTION_ITEM_CHECKLIST_ITEMS, DOCUMENT_CHECKLIST_ITEMS } from "./checklistData";
@@ -1658,50 +1657,61 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       </Dialog>
 
       <Dialog open={Boolean(activityRow)} onOpenChange={(open) => !open && setActivityRow(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[560px] rounded-[4px] px-6 pb-12 pt-8">
           <DialogHeader>
-            <DialogTitle>Request activity</DialogTitle>
-            <DialogDescription>
-              Reminder sent every 2 days until the requested document is uploaded.
-            </DialogDescription>
+            <DialogTitle className="text-base font-bold tracking-[-0.5px] text-black">
+              Request document activity
+            </DialogTitle>
           </DialogHeader>
 
           {activityRow ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {(() => {
                 const summary = getRequestActivitySummary(activityRow);
                 return (
-                  <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+                  <div className="space-y-6">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-500">First requested date</span>
-                      <span className="text-right text-sm font-medium text-[#171717]">
-                        {resolveDateLabel(summary.firstRequestedAt)}
+                      <span className="text-base tracking-[-0.5px] text-black">
+                        First document followup date
+                      </span>
+                      <span className="text-right text-base tracking-[-0.5px] text-black">
+                        {summary.firstRequestedAt
+                          ? resolveDateLabel(summary.firstRequestedAt)
+                          : "Not available"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-500">Desired due date</span>
-                      <span className="text-right text-sm font-medium text-[#171717]">
-                        {resolveDateLabel(summary.desiredDueAt)}
+                      <div className="flex flex-col items-start justify-center">
+                        <span className="text-base tracking-[-0.5px] text-black">
+                          Desired due date
+                        </span>
+                        {summary.overdue ? (
+                          <span className="text-xs leading-none text-[#b3261e]">
+                            Due date is past
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="text-right text-base tracking-[-0.5px] text-black">
+                        {summary.desiredDueAt
+                          ? resolveDateLabel(summary.desiredDueAt)
+                          : "Not available"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-500">Last document followup date</span>
-                      <span className="text-right text-sm font-medium text-[#171717]">
+                      <div className="flex flex-col items-start justify-center">
+                        <span className="text-base tracking-[-0.5px] text-black">
+                          Last document followup date
+                        </span>
+                        <span className="text-xs leading-none text-black">
+                          Reminder sent every 2 days
+                        </span>
+                      </div>
+                      <span className="text-right text-base tracking-[-0.5px] text-black">
                         {summary.lastFollowupAt
                           ? resolveDateLabel(summary.lastFollowupAt)
                           : "Not sent yet"}
                       </span>
                     </div>
-                    {summary.overdue ? (
-                      <div className="flex justify-end">
-                      <Badge
-                        variant="outline"
-                        className="border border-[#f3c7c3] bg-[#fdecec] px-2.5 py-1 text-xs font-medium text-[#b3261e]"
-                      >
-                        Due date is past
-                      </Badge>
-                      </div>
-                    ) : null}
                   </div>
                 );
               })()}
