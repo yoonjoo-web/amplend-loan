@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 import DocumentViewer from "./DocumentViewer";
 import { ACTION_ITEM_CHECKLIST_ITEMS, DOCUMENT_CHECKLIST_ITEMS } from "./checklistData";
@@ -228,15 +229,12 @@ const getRequestActivitySummary = (row) => {
   const desiredDueAt =
     initialRequest.desired_due_at ||
     addDays(new Date(initialRequest.timestamp || Date.now()), REQUEST_CADENCE_DAYS).toISOString();
-  const firstFollowupAt =
-    followups[0]?.timestamp || desiredDueAt;
   const lastFollowupAt = followups.length > 0 ? followups[followups.length - 1].timestamp : null;
   const overdue = !row?.hasFile && new Date().getTime() > new Date(desiredDueAt).getTime();
 
   return {
     initialRequest,
     desiredDueAt,
-    firstFollowupAt,
     lastFollowupAt,
     overdue,
   };
@@ -1666,21 +1664,15 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 return summary ? (
                   <div className="space-y-3 rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-500">Requested from</span>
+                      <span className="text-sm text-slate-500">First requested date</span>
                       <span className="text-right text-sm font-medium text-[#171717]">
-                        {summary.initialRequest.recipient_name || activityRow.providerLabel || "Unknown"}
+                        {resolveDateTimeLabel(summary.initialRequest.timestamp)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-slate-500">Desired due date</span>
                       <span className="text-right text-sm font-medium text-[#171717]">
                         {resolveDateTimeLabel(summary.desiredDueAt)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-500">First document followup date</span>
-                      <span className="text-right text-sm font-medium text-[#171717]">
-                        {resolveDateTimeLabel(summary.firstFollowupAt)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
@@ -1693,14 +1685,17 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm text-slate-500">Due date is past</span>
-                      <span
+                      <Badge
+                        variant="outline"
                         className={cn(
-                          "text-right text-sm font-medium",
-                          summary.overdue ? "text-[#b3261e]" : "text-[#171717]"
+                          "border px-2.5 py-1 text-xs font-medium",
+                          summary.overdue
+                            ? "border-[#f3c7c3] bg-[#fdecec] text-[#b3261e]"
+                            : "border-[#d1d5db] bg-[#f3f4f6] text-[#4b5563]"
                         )}
                       >
                         {summary.overdue ? "Yes" : "No"}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 ) : (
