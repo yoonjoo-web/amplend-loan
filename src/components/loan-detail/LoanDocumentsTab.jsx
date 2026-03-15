@@ -242,6 +242,42 @@ const getRequestActivitySummary = (row) => {
   };
 };
 
+const shouldPreferChecklistItem = (currentItem, nextItem) => {
+  if (!currentItem) {
+    return true;
+  }
+
+  const currentRequestAt = getLatestRequestRelatedEntry(currentItem?.activity_history)?.timestamp;
+  const nextRequestAt = getLatestRequestRelatedEntry(nextItem?.activity_history)?.timestamp;
+
+  if (Boolean(nextRequestAt) !== Boolean(currentRequestAt)) {
+    return Boolean(nextRequestAt);
+  }
+
+  const currentAssignedCount = getAssignedUserIds(currentItem).length;
+  const nextAssignedCount = getAssignedUserIds(nextItem).length;
+  if (currentAssignedCount !== nextAssignedCount) {
+    return nextAssignedCount > currentAssignedCount;
+  }
+
+  const currentTime = new Date(
+    currentRequestAt ||
+      currentItem?.updated_date ||
+      currentItem?.created_date ||
+      currentItem?.due_date ||
+      0
+  ).getTime();
+  const nextTime = new Date(
+    nextRequestAt ||
+      nextItem?.updated_date ||
+      nextItem?.created_date ||
+      nextItem?.due_date ||
+      0
+  ).getTime();
+
+  return nextTime > currentTime;
+};
+
 const createRowFromTemplate = ({
   template,
   rowType,
@@ -504,7 +540,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
     allChecklistItems.forEach((item) => {
       const key = buildTemplateKey(item.category, item.item_name);
-      if (!checklistByKey.has(key)) {
+      if (shouldPreferChecklistItem(checklistByKey.get(key), item)) {
         checklistByKey.set(key, item);
       }
     });
@@ -1047,6 +1083,41 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         activity_history: activityHistory,
         due_date: desiredDueAt.split("T")[0],
       });
+
+      const updatedChecklistItem = {
+        ...(checklistItems.find((item) => item.id === checklistItemId) || requestRow.checklistItem || {}),
+        id: checklistItemId,
+        assigned_to: [selectedRecipientId],
+        activity_history: activityHistory,
+        due_date: desiredDueAt.split("T")[0],
+      };
+
+      setChecklistItems((currentItems) => {
+        const existingIndex = currentItems.findIndex((item) => item.id === checklistItemId);
+        if (existingIndex === -1) {
+          return [...currentItems, updatedChecklistItem];
+        }
+
+        const nextItems = [...currentItems];
+        nextItems[existingIndex] = updatedChecklistItem;
+        return nextItems;
+      });
+
+      setRows((currentRows) =>
+        currentRows.map((row) => {
+          if (row.id !== requestRow.id) {
+            return row;
+          }
+
+          return {
+            ...row,
+            checklistItem: updatedChecklistItem,
+            checklistItemId,
+            providerLabel: recipientName,
+            hasActiveRequest: true,
+          };
+        })
+      );
 
       setRequestRow(null);
       setSelectedRecipientId("");
