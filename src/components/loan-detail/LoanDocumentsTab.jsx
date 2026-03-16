@@ -435,6 +435,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [viewingDocument, setViewingDocument] = useState(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingUploads, setPendingUploads] = useState([]);
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [requestRow, setRequestRow] = useState(null);
   const [selectedRecipientId, setSelectedRecipientId] = useState("");
@@ -865,8 +866,30 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     return createdItem?.id || null;
   };
 
+  const createPendingUploads = (files) => {
+    const defaultCategory = activeTab === "all" ? "borrower" : activeTab;
+
+    return files.map((file, index) => ({
+      id: `${Date.now()}-${index}-${file.name}`,
+      file,
+      title: stripFileExtension(file.name),
+      category: defaultCategory,
+      linkedRowId: "none",
+      checklistItemId: null,
+      comment: "",
+    }));
+  };
+
+  const appendPendingUploads = (files) => {
+    if (!files.length) {
+      return;
+    }
+
+    setPendingUploads((currentUploads) => [...currentUploads, ...createPendingUploads(files)]);
+  };
+
   const handleOpenUploadDialog = () => {
-    hiddenFileInputRef.current?.click();
+    setShowUploadDialog(true);
   };
 
   const handleFileSelection = (event) => {
@@ -875,20 +898,39 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       return;
     }
 
-    const defaultCategory = activeTab === "all" ? "borrower" : activeTab;
-    const nextUploads = files.map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      file,
-      title: stripFileExtension(file.name),
-      category: defaultCategory,
-      linkedRowId: "none",
-      checklistItemId: null,
-      comment: "",
-    }));
-
-    setPendingUploads(nextUploads);
+    appendPendingUploads(files);
     setShowUploadDialog(true);
     event.target.value = "";
+  };
+
+  const handleUploadDragEnter = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingUpload(true);
+  };
+
+  const handleUploadDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.currentTarget === event.target) {
+      setIsDraggingUpload(false);
+    }
+  };
+
+  const handleUploadDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleUploadDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingUpload(false);
+
+    const files = Array.from(event.dataTransfer.files || []);
+    appendPendingUploads(files);
+    setShowUploadDialog(true);
   };
 
   const updatePendingUpload = (uploadId, field, value) => {
@@ -999,6 +1041,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
       setShowUploadDialog(false);
       setPendingUploads([]);
+      setIsDraggingUpload(false);
       toast({
         title: "Documents uploaded",
         description: "The selected files have been attached to this loan.",
@@ -1473,121 +1516,169 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         </div>
       </section>
 
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Upload documents</DialogTitle>
-            <DialogDescription>
-              Match each file to a document row when possible so the page can keep request state in sync.
-            </DialogDescription>
-          </DialogHeader>
+      <Dialog
+        open={showUploadDialog}
+        onOpenChange={(open) => {
+          setShowUploadDialog(open);
+          if (!open) {
+            setIsDraggingUpload(false);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-hidden p-0">
+          <div className="flex max-h-[calc(100vh-2rem)] flex-col">
+            <div className="shrink-0 px-6 pb-4 pt-6">
+              <DialogHeader>
+                <DialogTitle>Upload documents</DialogTitle>
+                <DialogDescription>
+                  Match each file to a document row when possible so the page can keep request state in sync.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
 
-          <div className="space-y-4">
-            {pendingUploads.map((upload) => (
-              <div key={upload.id} className="rounded-xl border border-slate-200 p-4">
-                <div className="mb-4">
-                  <p className=" text-slate-900">{upload.file.name}</p>
-                  <p className="text-sm text-slate-500">
-                    {(upload.file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Document title</Label>
-                    <Input
-                      value={upload.title}
-                      onChange={(event) =>
-                        updatePendingUpload(upload.id, "title", event.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select
-                      value={upload.category}
-                      onValueChange={(value) =>
-                        updatePendingUpload(upload.id, "category", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_TABS.filter((tab) => tab.value !== "all").map((tab) => (
-                          <SelectItem key={tab.value} value={tab.value}>
-                            {tab.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Match to document row</Label>
-                    <Select
-                      value={upload.linkedRowId}
-                      onValueChange={(value) =>
-                        updatePendingUpload(upload.id, "linkedRowId", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Optional" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No linked row</SelectItem>
-                        {rowOptions
-                          .filter(
-                            (option) =>
-                              upload.category === "all" || option.category === upload.category
-                          )
-                          .map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Comment</Label>
-                    <Textarea
-                      value={upload.comment}
-                      onChange={(event) =>
-                        updatePendingUpload(upload.id, "comment", event.target.value)
-                      }
-                      placeholder="Optional comment for the document viewer sidebar"
-                      rows={3}
-                    />
-                  </div>
-                </div>
+            <div className="flex-1 overflow-y-auto px-6 pb-4">
+              <div
+                className={cn(
+                  "rounded-xl border-2 border-dashed p-6 text-center transition-colors",
+                  isDraggingUpload
+                    ? "border-[#3463dd] bg-[#f4f7ff]"
+                    : "border-slate-300 bg-slate-50"
+                )}
+                onDragEnter={handleUploadDragEnter}
+                onDragLeave={handleUploadDragLeave}
+                onDragOver={handleUploadDragOver}
+                onDrop={handleUploadDrop}
+              >
+                <Upload className="mx-auto h-8 w-8 text-[#3463dd]" />
+                <p className="mt-3 text-sm text-slate-700">Drag and drop files here</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  PDF, Word, Excel, and image files are supported.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => hiddenFileInputRef.current?.click()}
+                >
+                  Choose files
+                </Button>
               </div>
-            ))}
-          </div>
 
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowUploadDialog(false);
-                setPendingUploads([]);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleUploadDocuments} disabled={isUploading}>
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading
-                </>
-              ) : (
-                "Upload files"
-              )}
-            </Button>
+              <div className="mt-4 space-y-4">
+                {pendingUploads.length === 0 ? (
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                    No files selected yet.
+                  </div>
+                ) : (
+                  pendingUploads.map((upload) => (
+                    <div key={upload.id} className="rounded-xl border border-slate-200 p-4">
+                      <div className="mb-4">
+                        <p className=" text-slate-900">{upload.file.name}</p>
+                        <p className="text-sm text-slate-500">
+                          {(upload.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Document title</Label>
+                          <Input
+                            value={upload.title}
+                            onChange={(event) =>
+                              updatePendingUpload(upload.id, "title", event.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Category</Label>
+                          <Select
+                            value={upload.category}
+                            onValueChange={(value) =>
+                              updatePendingUpload(upload.id, "category", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CATEGORY_TABS.filter((tab) => tab.value !== "all").map((tab) => (
+                                <SelectItem key={tab.value} value={tab.value}>
+                                  {tab.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Match to document row</Label>
+                          <Select
+                            value={upload.linkedRowId}
+                            onValueChange={(value) =>
+                              updatePendingUpload(upload.id, "linkedRowId", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Optional" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No linked row</SelectItem>
+                              {rowOptions
+                                .filter(
+                                  (option) =>
+                                    upload.category === "all" || option.category === upload.category
+                                )
+                                .map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Comment</Label>
+                          <Textarea
+                            value={upload.comment}
+                            onChange={(event) =>
+                              updatePendingUpload(upload.id, "comment", event.target.value)
+                            }
+                            placeholder="Optional comment for the document viewer sidebar"
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 px-6 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowUploadDialog(false);
+                  setPendingUploads([]);
+                  setIsDraggingUpload(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleUploadDocuments} disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading
+                  </>
+                ) : (
+                  "Upload files"
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
