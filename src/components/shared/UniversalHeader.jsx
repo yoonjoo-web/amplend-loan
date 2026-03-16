@@ -324,9 +324,15 @@ export function HeaderActionControls({ currentUser, className = "", isVertical =
 }
 
 export default function UniversalHeader({ currentUser }) {
+  const headerName = currentUser?.first_name || currentUser?.full_name?.split(" ")[0] || "there";
+
   return (
     <div className="w-full bg-slate-50">
-      <div className="flex h-16 items-center justify-end px-6">
+      <div className="flex h-16 items-center justify-between px-6">
+        <div className="min-w-0">
+          <p className="text-sm text-slate-500">Welcome back,</p>
+          <p className="truncate text-base text-slate-900">{headerName}</p>
+        </div>
         <HeaderActionControls currentUser={currentUser} />
       </div>
     </div>
