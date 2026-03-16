@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -268,15 +266,6 @@ export default function LoanDetail() {
               transition={{ duration: 0.5 }}
             >
               <div className="mb-6">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(createPageUrl("Loans"))}
-                  className="flex items-center gap-2 mb-4"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Loans
-                </Button>
-                
                 <h1 className="text-3xl  text-slate-900">
                   {loan.loan_number || loan.primary_loan_id || 'Loan Details'}
                 </h1>
