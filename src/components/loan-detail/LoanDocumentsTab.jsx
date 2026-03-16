@@ -1464,7 +1464,16 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                             <Button
                               type="button"
                               className="h-10 min-w-[120px] rounded-lg bg-[#3463dd] text-white hover:bg-[#2850ba]"
-                              onClick={() => setViewingDocument(row.document)}
+                              onClick={() =>
+                                setViewingDocument(
+                                  row.document
+                                    ? {
+                                        ...row.document,
+                                        uploader_name: row.providerLabel,
+                                      }
+                                    : null
+                                )
+                              }
                             >
                               View file
                             </Button>

@@ -15,6 +15,24 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
 
+  const uploadedAt = document?.uploaded_date || document?.updated_date || document?.created_date || null;
+  const uploadedBy =
+    document?.uploader_name ||
+    document?.uploaded_by_name ||
+    document?.uploaded_by ||
+    document?.created_by ||
+    "Unknown";
+
+  const uploadedAtLabel = (() => {
+    if (!uploadedAt) return "Unknown";
+
+    try {
+      return new Date(uploadedAt).toLocaleString();
+    } catch (error) {
+      return "Unknown";
+    }
+  })();
+
   useEffect(() => {
     if (document && isOpen) {
       console.log("[DocumentViewer] Document received:", document);
@@ -166,6 +184,10 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
                 }>
                   {document.status?.replace(/_/g, ' ')}
                 </Badge>
+              </div>
+              <div className="mt-3 space-y-1 text-sm text-slate-600">
+                <p>Uploaded by {uploadedBy}</p>
+                <p>Uploaded on {uploadedAtLabel}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleDownload}>
