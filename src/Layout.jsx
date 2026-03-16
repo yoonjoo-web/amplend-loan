@@ -257,7 +257,7 @@ export default function Layout({ children, currentPageName }) {
   // Show loading state while checking onboarding or loading permissions
   if (isCheckingOnboarding || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
       </div>
     );
