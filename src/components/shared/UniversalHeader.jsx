@@ -330,8 +330,9 @@ export default function UniversalHeader({ currentUser }) {
     <div className="w-full bg-slate-50">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="min-w-0">
-          <p className="text-sm text-slate-500">Welcome back,</p>
-          <p className="truncate text-base text-slate-900">{headerName}</p>
+          <p className="truncate text-xl font-semibold text-slate-900">
+            Welcome back, {headerName}
+          </p>
         </div>
         <HeaderActionControls currentUser={currentUser} />
       </div>
