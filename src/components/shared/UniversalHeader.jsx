@@ -166,7 +166,7 @@ export function HeaderActionControls({ currentUser, className = "", isVertical =
 
   return (
     <div className={className}>
-      <div className={`flex items-center ${isVertical ? 'flex-col gap-3' : 'ml-auto gap-4'}`}>
+      <div className={`flex ${isVertical ? 'flex-col items-start gap-3' : 'items-center ml-auto gap-4'}`}>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
