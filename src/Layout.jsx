@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { usePermissions } from "@/components/hooks/usePermissions";
@@ -101,6 +101,8 @@ export default function Layout({ children, currentPageName }) {
   const [activeSubmenu, setActiveSubmenu] = useState(null); // holds the nav item with submenu
   const [autoOpenedLoanSubmenuKey, setAutoOpenedLoanSubmenuKey] = useState(null);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [isContentScrolled, setIsContentScrolled] = useState(false);
+  const mainContentRef = useRef(null);
 
   useEffect(() => {
     if (!isLoading && currentUser) {
@@ -119,6 +121,11 @@ export default function Layout({ children, currentPageName }) {
       setIsCheckingOnboarding(false);
     }
   }, [isLoading, currentUser, location.pathname]);
+
+  useEffect(() => {
+    const scrollContainer = mainContentRef.current;
+    setIsContentScrolled((scrollContainer?.scrollTop || 0) > 0);
+  }, [location.pathname, location.search]);
 
   const navigationItems = [
     {
@@ -464,14 +471,21 @@ export default function Layout({ children, currentPageName }) {
               marginLeft: sidebarCollapsed ? '64px' : '256px' 
             }}
           >
-            <div className="fixed top-0 z-40 bg-white border-b border-slate-200 transition-all duration-300" style={{ 
+            <div className={`fixed top-0 z-40 bg-gradient-to-br from-slate-50 to-slate-100 transition-all duration-300 ${
+              isContentScrolled ? 'border-b border-slate-200/60' : 'border-b border-transparent'
+            }`} style={{ 
               left: sidebarCollapsed ? '64px' : '256px',
               right: 0
             }}>
               <UniversalHeader currentUser={currentUser} />
             </div>
 
-            <div className="flex-1 overflow-auto" style={{ marginTop: '64px' }}>
+            <div
+              ref={mainContentRef}
+              onScroll={(event) => setIsContentScrolled(event.currentTarget.scrollTop > 0)}
+              className="flex-1 overflow-auto"
+              style={{ marginTop: '64px' }}
+            >
               {children}
             </div>
           </main>
