@@ -6,15 +6,12 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Settings,
   ClipboardList,
   ChevronLeft,
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Briefcase,
   MessageSquare,
-  UserCircle,
   UserCheck,
   UserRound,
   Handshake,
@@ -31,7 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import UniversalHeader from "../components/shared/UniversalHeader";
+import UniversalHeader, { HeaderActionControls } from "../components/shared/UniversalHeader";
 import ProductTour from "../components/shared/ProductTour";
 import {
   DEFAULT_LOAN_DETAIL_TAB,
@@ -196,18 +193,6 @@ export default function Layout({ children, currentPageName }) {
       ]
     },
     {
-      title: "Loan Officer Queue",
-      url: createPageUrl("LoanOfficerQueue"),
-      icon: Briefcase,
-      show: permissions.canViewLoanOfficerQueue, // Rule 14
-    },
-    {
-      title: "My Profile",
-      url: createPageUrl("MyProfile"),
-      icon: UserCircle,
-      show: permissions.canViewMyProfile, // Rule 6
-    },
-    {
       title: "Quotes",
       url: createPageUrl("Quotes"),
       icon: FileText,
@@ -219,12 +204,6 @@ export default function Layout({ children, currentPageName }) {
           icon: FlaskConical,
         },
       ],
-    },
-    {
-      title: "Settings",
-      url: createPageUrl("Settings"),
-      icon: Settings,
-      show: permissions.canAccessSettings, // Rule 11
     },
   ];
 
@@ -461,6 +440,14 @@ export default function Layout({ children, currentPageName }) {
                   </div>
                 )}
               </div>
+
+              <div className={`border-t border-slate-200 p-2 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+                <HeaderActionControls
+                  currentUser={currentUser}
+                  isVertical={true}
+                  className={sidebarCollapsed ? '' : 'w-full'}
+                />
+              </div>
             </div>
           </div>
 
@@ -477,7 +464,7 @@ export default function Layout({ children, currentPageName }) {
               left: sidebarCollapsed ? '64px' : '256px',
               right: 0
             }}>
-              <UniversalHeader currentUser={currentUser} />
+              <UniversalHeader />
             </div>
 
             <div

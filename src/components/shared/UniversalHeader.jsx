@@ -16,14 +16,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Mail, LogOut, User, Settings, CheckCircle } from "lucide-react";
+import { Bell, Mail, LogOut, Settings, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function UniversalHeader({ currentUser }) {
+export function HeaderActionControls({ currentUser, className = "", isVertical = false }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageCount, setMessageCount] = useState(0);
@@ -165,170 +165,168 @@ export default function UniversalHeader({ currentUser }) {
   }
 
   return (
-    <div className="w-full bg-slate-50">
-      <div className="flex h-16 items-center justify-between px-6">
-        <div className="ml-auto flex items-center gap-4">
-          {/* Messages Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Mail className="h-5 w-5" />
-                {messageCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+    <div className={className}>
+      <div className={`flex items-center ${isVertical ? 'flex-col gap-3' : 'ml-auto gap-4'}`}>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Mail className="h-5 w-5" />
+              {messageCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {messageCount > 9 ? '9+' : messageCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align={isVertical ? "end" : "end"} side={isVertical ? "right" : "bottom"}>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4>Messages</h4>
+                {messages.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(createPageUrl("Messages"))}
+                    className="text-xs text-blue-600 hover:text-blue-700"
                   >
-                    {messageCount > 9 ? '9+' : messageCount}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="">Messages</h4>
-                  {messages.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(createPageUrl("Messages"))}
-                      className="text-xs text-blue-600 hover:text-blue-700"
-                    >
-                      View All
-                    </Button>
-                  )}
-                </div>
-                {messages.length > 0 ? (
-                  <ScrollArea className="h-96">
-                    <div className="space-y-2">
-                      {messages.slice(0, 5).map((msg) => (
-                        <div
-                          key={msg.id}
-                          className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-                          onClick={() => navigate(createPageUrl("Messages"))}
-                        >
-                          <p className="text-sm ">{msg.sender_name}</p>
-                          <p className="text-xs text-slate-600 line-clamp-2">{msg.content}</p>
-                          <p className="text-xs text-slate-400 mt-1">
-                            {format(new Date(msg.created_date), 'MMM d, h:mm a')}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                ) : (
-                  <p className="text-sm text-slate-500 py-4 text-center">No new messages</p>
+                    View All
+                  </Button>
                 )}
               </div>
-            </PopoverContent>
-          </Popover>
+              {messages.length > 0 ? (
+                <ScrollArea className="h-96">
+                  <div className="space-y-2">
+                    {messages.slice(0, 5).map((msg) => (
+                      <div
+                        key={msg.id}
+                        className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => navigate(createPageUrl("Messages"))}
+                      >
+                        <p className="text-sm">{msg.sender_name}</p>
+                        <p className="text-xs text-slate-600 line-clamp-2">{msg.content}</p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {format(new Date(msg.created_date), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="text-sm text-slate-500 py-4 text-center">No new messages</p>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
 
-          {/* Notifications Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {notifications.length > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {notifications.length > 9 ? '9+' : notifications.length}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-96" align={isVertical ? "end" : "end"} side={isVertical ? "right" : "bottom"}>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4>Notifications</h4>
                 {notifications.length > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => markAllNotificationsReadMutation.mutate()}
+                    className="text-xs text-blue-600 hover:text-blue-700"
                   >
-                    {notifications.length > 9 ? '9+' : notifications.length}
-                  </Badge>
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Mark all read
+                  </Button>
                 )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-96" align="end">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="">Notifications</h4>
-                  {notifications.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => markAllNotificationsReadMutation.mutate()}
-                      className="text-xs text-blue-600 hover:text-blue-700"
-                    >
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Mark all read
-                    </Button>
-                  )}
-                </div>
-                {notifications.length > 0 ? (
-                  <ScrollArea className="h-96">
-                    <div className="space-y-2">
-                      {notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors ${getPriorityColor(notif.priority)}`}
-                          onClick={() => handleNotificationClick(notif)}
-                        >
-                          <div className="flex items-start gap-2">
-                            {/* The span for the icon is now empty or can be removed if no visual indicator is desired */}
-                            <span className="text-xl">{getNotificationIcon(notif.type)}</span> 
-                            <div className="flex-1">
-                              <p className="text-sm  text-slate-900">{notif.message}</p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                {format(new Date(notif.created_date), 'MMM d, h:mm a')}
-                              </p>
-                            </div>
+              </div>
+              {notifications.length > 0 ? (
+                <ScrollArea className="h-96">
+                  <div className="space-y-2">
+                    {notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={`p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors ${getPriorityColor(notif.priority)}`}
+                        onClick={() => handleNotificationClick(notif)}
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="text-xl">{getNotificationIcon(notif.type)}</span>
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-900">{notif.message}</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {format(new Date(notif.created_date), 'MMM d, h:mm a')}
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                ) : (
-                  <p className="text-sm text-slate-500 py-4 text-center">No new notifications</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="text-sm text-slate-500 py-4 text-center">No new notifications</p>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-slate-500 text-white">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side={isVertical ? "right" : "bottom"} className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm">
+                  {getUserDisplayName()}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {currentUser.email}
+                </p>
+                {currentUser.app_role && (
+                  <Badge variant="outline" className="mt-1 w-fit text-xs">
+                    {currentUser.app_role}
+                  </Badge>
                 )}
               </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-slate-500 text-white">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm  ">
-                    {getUserDisplayName()}
-                  </p>
-                  <p className="text-xs  text-muted-foreground">
-                    {currentUser.email}
-                  </p>
-                  {currentUser.app_role && (
-                    <Badge variant="outline" className="mt-1 w-fit text-xs">
-                      {currentUser.app_role}
-                    </Badge>
-                  )}
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate(createPageUrl("MyProfile"))}>
-                <User className="mr-2 h-4 w-4" />
-                My Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate(createPageUrl("Settings"))}>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate(createPageUrl("Settings"))}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+    </div>
+  );
+}
+
+export default function UniversalHeader() {
+  return (
+    <div className="w-full bg-slate-50">
+      <div className="flex h-16 items-center px-6" />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '@/entities/all';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, User as UserIcon, ClipboardList, Settings as SettingsIcon, Bell, FileText, Compass, Mail } from 'lucide-react';
+import { Users, User as UserIcon, ClipboardList, Settings as SettingsIcon, Bell, FileText, Compass, Mail, Briefcase } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +16,7 @@ import EditUserModal from '../components/settings/EditUserModal';
 import FieldsManagementTab from "../components/settings/FieldsManagementTab";
 import ChecklistManagementTab from "../components/settings/ChecklistManagementTab";
 import ManageInvitesTab from "../components/settings/ManageInvitesTab";
+import LoanOfficerQueueTab from "../components/settings/LoanOfficerQueueTab";
 import { createPageUrl } from "@/utils";
 import ProductTour from "../components/shared/ProductTour";
 
@@ -67,6 +68,8 @@ export default function Settings() {
           setActiveTab('users');
         } else if (permissions.isBroker) {
           setActiveTab('invites');
+        } else if (permissions.canViewLoanOfficerQueue) {
+          setActiveTab('loan-officer-queue');
         } else if (permissions.canManageChecklists) {
           setActiveTab('checklist');
         } else if (permissions.isPlatformAdmin || permissions.isAdministrator) {
@@ -218,6 +221,19 @@ export default function Settings() {
               Notifications
             </button>
           )}
+          {permissions.canViewLoanOfficerQueue && (
+            <button
+              onClick={() => setActiveTab('loan-officer-queue')}
+              className={`px-4 py-2  transition-colors whitespace-nowrap ${
+                activeTab === 'loan-officer-queue'
+                  ? 'text-slate-900 border-b-2 border-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Briefcase className="w-4 h-4 inline mr-2" />
+              Loan Officer Queue
+            </button>
+          )}
           {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer || permissions.isBroker) && (
             <button
               onClick={() => setActiveTab('invites')}
@@ -337,6 +353,10 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'loan-officer-queue' && permissions.canViewLoanOfficerQueue && (
+          <LoanOfficerQueueTab />
         )}
 
         {/* Manage Invites Tab */}
