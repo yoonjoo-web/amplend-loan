@@ -273,7 +273,7 @@ export default function Layout({ children, currentPageName }) {
     <TooltipProvider>
       <SidebarProvider>
         <ProductTour currentUser={currentUser} pageName={null} />
-        <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen flex w-full bg-slate-50">
           {/* Sidebar with fixed positioning */}
           <div 
             className="fixed left-0 top-0 h-full z-50 transition-all duration-300 bg-white border-r border-slate-200 shadow-lg"
