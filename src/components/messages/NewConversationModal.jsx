@@ -339,14 +339,14 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-semibold text-slate-700">
+                              <span className="text-sm  text-slate-700">
                                 {user.first_name && user.last_name 
                                   ? `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
                                   : (user.full_name || user.email).substring(0, 2).toUpperCase()}
                               </span>
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900">
+                              <p className=" text-slate-900">
                                 {user.first_name && user.last_name 
                                   ? `${user.first_name} ${user.last_name}`
                                   : user.full_name || user.email}
@@ -394,7 +394,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                               <Hash className="w-5 h-5 text-purple-700" />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900">
+                              <p className=" text-slate-900">
                                 {loan.loan_number || loan.primary_loan_id}
                               </p>
                               <p className="text-xs text-slate-500">
@@ -411,7 +411,7 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
 
               {selectedLoan && (
                 <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
-                  <Label className="text-sm font-semibold">Include in channel:</Label>
+                  <Label className="text-sm ">Include in channel:</Label>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -495,14 +495,14 @@ export default function NewConversationModal({ isOpen, onClose, currentUser, onC
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-semibold text-slate-700">
+                            <span className="text-sm  text-slate-700">
                               {user.first_name && user.last_name 
                                 ? `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
                                 : (user.full_name || user.email).substring(0, 2).toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900">
+                            <p className=" text-slate-900">
                               {user.first_name && user.last_name 
                                 ? `${user.first_name} ${user.last_name}`
                                 : user.full_name || user.email}

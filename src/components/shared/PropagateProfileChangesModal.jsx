@@ -58,7 +58,7 @@ export default function PropagateProfileChangesModal({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Propagate Profile Changes</DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
+          <DialogDescription className="text-sm ">
             This profile has ongoing applications/loans. Select which records should receive these updated profile values.
           </DialogDescription>
         </DialogHeader>
@@ -66,7 +66,7 @@ export default function PropagateProfileChangesModal({
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
           {applications.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <h3 className="text-sm  text-slate-900 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Applications ({applications.length})
               </h3>
@@ -82,7 +82,7 @@ export default function PropagateProfileChangesModal({
                       disabled={isProcessing}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm  text-slate-900">
                         #{app.application_number}
                       </p>
                       <p className="text-xs text-slate-600">
@@ -100,7 +100,7 @@ export default function PropagateProfileChangesModal({
 
           {loans.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <h3 className="text-sm  text-slate-900 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Loans ({loans.length})
               </h3>
@@ -116,7 +116,7 @@ export default function PropagateProfileChangesModal({
                       disabled={isProcessing}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm  text-slate-900">
                         {loan.loan_number || loan.primary_loan_id}
                       </p>
                       <p className="text-xs text-slate-600">

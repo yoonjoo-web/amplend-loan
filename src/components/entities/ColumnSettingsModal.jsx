@@ -81,7 +81,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
                 <Columns3 className="w-5 h-5 text-slate-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Customize Columns</h3>
+                <h3 className="text-xl text-slate-900">Customize Columns</h3>
                 <p className="text-sm text-slate-500">Select which columns to display</p>
               </div>
             </div>

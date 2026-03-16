@@ -300,7 +300,7 @@ export default function Applications() {
   const renderColumnValue = (app, columnKey) => {
     switch (columnKey) {
       case 'application_number':
-        return <span className="font-medium">{app.application_number || 'N/A'}</span>;
+        return <span className="">{app.application_number || 'N/A'}</span>;
       case 'borrower_name':
         return app.borrower_first_name && app.borrower_last_name ?
         `${app.borrower_first_name} ${app.borrower_last_name}` :
@@ -335,7 +335,7 @@ export default function Applications() {
       case 'submission_count':
         const count = app.submission_count || 0;
         return count > 0 ?
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 ">
             {getOrdinal(count)}
           </Badge> :
         <span className="text-slate-500">-</span>;
@@ -360,7 +360,7 @@ export default function Applications() {
               <div className="flex items-start gap-4">
                 <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-red-900 mb-2">Failed to Load Applications</h3>
+                  <h3 className="text-lg  text-red-900 mb-2">Failed to Load Applications</h3>
                   <p className="text-red-700 mb-4">
                     {error.message || 'An error occurred while loading applications. This may be a temporary network issue.'}
                   </p>
@@ -386,7 +386,7 @@ export default function Applications() {
           transition={{ duration: 0.5 }}
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl  text-slate-900 ">
             Applications
           </h1>
           {permissions.canCreateApplication &&
@@ -479,7 +479,7 @@ export default function Applications() {
                     onClick={() => handleViewApplication(app)}>
 
                         {visibleColumns.map((column) =>
-                        <TableCell key={column.key} className="px-2 py-4 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
+                        <TableCell key={column.key} className="px-2 py-4  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
                               {renderColumnValue(app, column.key)}
                             </TableCell>
                         )}

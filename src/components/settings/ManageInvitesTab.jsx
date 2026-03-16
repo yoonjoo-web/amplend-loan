@@ -129,7 +129,7 @@ const InviteTable = ({
             const canReject = typeof canRejectInvite === "function" ? canRejectInvite(request) : false;
             return (
               <TableRow key={request.id}>
-                <TableCell className="font-medium text-slate-900">
+                <TableCell className="text-slate-900">
                   {borrowerName || "Unknown Borrower"}
                 </TableCell>
                 <TableCell className="text-slate-600">{request.requested_email || "No email"}</TableCell>

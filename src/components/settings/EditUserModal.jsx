@@ -105,7 +105,7 @@ export default function EditUserModal({ isOpen, onClose, user, onUserUpdate }) {
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Edit User</h3>
+              <h3 className="text-xl text-slate-900">Edit User</h3>
               <p className="text-sm text-slate-500 truncate">Editing: {user.email}</p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">

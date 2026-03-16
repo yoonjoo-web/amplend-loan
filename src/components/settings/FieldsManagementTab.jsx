@@ -488,7 +488,7 @@ export default function FieldsManagementTab({ currentUser }) {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium text-slate-900">{field.field_label}</p>
+                          <p className="text-slate-900">{field.field_label}</p>
                           {field.required && (
                             <Badge variant="outline" className="text-xs">Required</Badge>
                           )}

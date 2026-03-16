@@ -113,7 +113,7 @@ export default function BorrowerInviteRequests({
               return (
                 <div key={req.id} className="border rounded-lg p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{displayName || "Unknown Borrower"}</p>
+                    <p className="text-sm  text-slate-900">{displayName || "Unknown Borrower"}</p>
                     <p className="text-xs text-slate-500">{req.requested_email || "No email"}</p>
                     <p className="text-xs text-slate-400 mt-1">
                       Requested {req.created_date ? new Date(req.created_date).toLocaleDateString() : "N/A"}

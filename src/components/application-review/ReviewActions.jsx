@@ -53,7 +53,7 @@ export default function ReviewActions({
     <>
       <Card className="border-2 border-slate-200 bg-slate-50">
         <CardContent className="p-6">
-          <h3 className="font-semibold text-slate-900 mb-4">Review Actions</h3>
+          <h3 className="text-slate-900 mb-4">Review Actions</h3>
           
           <div className="flex flex-wrap gap-3">
             {applicationStatus === 'submitted' && (

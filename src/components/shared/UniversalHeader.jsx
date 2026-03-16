@@ -305,7 +305,7 @@ export default function UniversalHeader({ currentUser }) {
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
           {!hideBranding && (
-            <h1 className="text-xl font-bold text-slate-900">Amplend</h1>
+            <h1 className="text-xl  text-slate-900">Amplend</h1>
           )}
         </div>
 
@@ -328,7 +328,7 @@ export default function UniversalHeader({ currentUser }) {
             <PopoverContent className="w-80" align="end">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-semibold">Messages</h4>
+                  <h4 className="">Messages</h4>
                   {messages.length > 0 && (
                     <Button
                       variant="ghost"
@@ -349,7 +349,7 @@ export default function UniversalHeader({ currentUser }) {
                           className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
                           onClick={() => navigate(createPageUrl("Messages"))}
                         >
-                          <p className="text-sm font-medium">{msg.sender_name}</p>
+                          <p className="text-sm ">{msg.sender_name}</p>
                           <p className="text-xs text-slate-600 line-clamp-2">{msg.content}</p>
                           <p className="text-xs text-slate-400 mt-1">
                             {format(new Date(msg.created_date), 'MMM d, h:mm a')}
@@ -383,7 +383,7 @@ export default function UniversalHeader({ currentUser }) {
             <PopoverContent className="w-96" align="end">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-semibold">Notifications</h4>
+                  <h4 className="">Notifications</h4>
                   {notifications.length > 0 && (
                     <Button
                       variant="ghost"
@@ -409,7 +409,7 @@ export default function UniversalHeader({ currentUser }) {
                             {/* The span for the icon is now empty or can be removed if no visual indicator is desired */}
                             <span className="text-xl">{getNotificationIcon(notif.type)}</span> 
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-slate-900">{notif.message}</p>
+                              <p className="text-sm  text-slate-900">{notif.message}</p>
                               <p className="text-xs text-slate-500 mt-1">
                                 {format(new Date(notif.created_date), 'MMM d, h:mm a')}
                               </p>
@@ -440,10 +440,10 @@ export default function UniversalHeader({ currentUser }) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
+                  <p className="text-sm  ">
                     {getUserDisplayName()}
                   </p>
-                  <p className="text-xs leading-none text-muted-foreground">
+                  <p className="text-xs  text-muted-foreground">
                     {currentUser.email}
                   </p>
                   {currentUser.app_role && (

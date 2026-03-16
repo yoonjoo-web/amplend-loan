@@ -39,7 +39,7 @@ export default function PropertyChangeHistoryModal({ isOpen, onClose, history })
               {sortedHistory.map((entry, index) => (
                 <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                   <div className="flex items-start justify-between mb-2">
-                    <span className="font-semibold text-slate-900">
+                    <span className=" text-slate-900">
                       {entry.modified_by_name}
                     </span>
                     <span className="text-xs text-slate-500">
@@ -47,14 +47,14 @@ export default function PropertyChangeHistoryModal({ isOpen, onClose, history })
                     </span>
                   </div>
                   <div className="text-sm text-slate-700">
-                    Changed <span className="font-medium text-slate-900">{entry.field_name?.replace(/_/g, ' ')}</span>
+                    Changed <span className=" text-slate-900">{entry.field_name?.replace(/_/g, ' ')}</span>
                   </div>
                   <div className="mt-2 text-sm">
                     <div className="text-red-600">
-                      From: <span className="font-medium">{formatValue(entry.old_value)}</span>
+                      From: <span className="">{formatValue(entry.old_value)}</span>
                     </div>
                     <div className="text-green-600 mt-1">
-                      To: <span className="font-medium">{formatValue(entry.new_value)}</span>
+                      To: <span className="">{formatValue(entry.new_value)}</span>
                     </div>
                   </div>
                 </div>

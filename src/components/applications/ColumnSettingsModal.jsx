@@ -97,7 +97,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
                 <Columns3 className="w-5 h-5 text-slate-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Customize Columns</h3>
+                <h3 className="text-xl text-slate-900">Customize Columns</h3>
                 <p className="text-sm text-slate-500">Select and reorder columns</p>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, onColumnsChange }
             </DragDropContext>
 
             <div className="pt-4 border-t">
-              <p className="text-sm font-medium text-slate-700 mb-2">Available Columns</p>
+              <p className="text-sm text-slate-700 mb-2">Available Columns</p>
               {availableColumns
                 .filter(col => !selectedColumns.includes(col.key))
                 .map(column => (

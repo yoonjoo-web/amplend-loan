@@ -255,7 +255,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
     return (
       <div className="space-y-3 relative">
         <div className="flex items-start justify-between gap-2">
-          <Label className="text-sm font-medium text-slate-900">{label} *</Label>
+          <Label className="text-sm  text-slate-900">{label} *</Label>
           <FieldChangeIndicator fieldName={questionKey} applicationData={data} />
         </div>
         <RadioGroup
@@ -285,7 +285,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
       {/* Borrower Declaration */}
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <CardTitle className="text-lg  flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Borrower Declaration
           </CardTitle>
@@ -361,14 +361,14 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
       {/* Acknowledgement and Agreement */}
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <CardTitle className="text-lg  flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Acknowledgement and Agreement
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-64 overflow-y-auto">
-            <p className="text-sm text-slate-700 leading-relaxed">
+            <p className="text-sm text-slate-700 ">
               Each of the undersigned specifically represents to Lender and to Lender's actual or potential agents, brokers, processors, attorneys, insurers, servicers, successors and assigns and agrees and acknowledges that: (1) the information provided in this application is true and correct as of the date set forth opposite my signature and that any intentional or negligent misrepresentation of this information contained in this application may result in civil liability, including monetary damages, to any person who may suffer any loss due to reliance upon any misrepresentation that I have made on this application, and/or in criminal penalties including, but not limited to, fine or imprisonment or both under the provisions of Title 18, United States Code, Sec. 1001, et seq.; (2) the loan requested pursuant to this application (the "Loan") will be secured by a mortgage or deed of trust on the property described in this application; (3) the property will not be used for any illegal or prohibited purpose or use; (4) all statements made in this application are made for the purpose of obtaining a residential mortgage loan; (5) the property will be occupied as indicated in this application; (6) the Lender, its servicers, successors or assigns may retain the original and/or an electronic record of this application, whether or not the Loan is approved; (7) the Lender and its agents, brokers, insurers, servicers, and assigns may continuously rely on the information contained in the application, and I am obligated to amend and/or supplement the information provided in this application if any of the material facts that I have represented should change prior to closing of the Loan; (8) in the event that my payments on the Loan become delinquent, the Lender, its servicers, successors or assigns may, in addition to any other rights and remedies that it may have relating to such delinquency, report my name and account information to one or more consumer reporting agencies; (9) ownership of the Loan and/or administration of the Loan account may be transferred with such notice as may be required by law; (10) neither Lender nor its agents, brokers, insurers, servicers, successors or assigns has made any representation or warranty, express or implied, to me regarding the property or the condition or value of the property; and (11) my transmission of this application as an "electronic record" containing my "electronic signature," as those terms are defined in applicable federal and/or state laws (excluding audio and video recordings), or my facsimile transmission of this application containing a facsimile of my signature, shall be as effective, enforceable and valid as if a paper version of this application were delivered containing my original written signature.
             </p>
           </div>
@@ -380,7 +380,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               disabled={isReadOnly && !canManage} />
 
             <div className="flex-1">
-              <Label htmlFor="acknowledgement" className="text-sm leading-relaxed cursor-pointer font-medium">
+              <Label htmlFor="acknowledgement" className="text-sm  cursor-pointer ">
                 I acknowledge that I have read and agree to the above Acknowledgement and Agreement *
               </Label>
               {acknowledgementError && <p className="text-red-500 text-sm mt-2">{acknowledgementError}</p>}
@@ -392,24 +392,24 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
       {/* Borrower's Authorization to Release Information */}
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <CardTitle className="text-lg  flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Authorization to Release Information
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-64 overflow-y-auto">
-            <p className="text-sm text-slate-700 leading-relaxed mb-4">
+            <p className="text-sm text-slate-700  mb-4">
               I/We understand that by signing this application, I/We hereby authorize Lender on its own or through its service provider to conduct:
             </p>
             <ol className="list-decimal ml-5 space-y-2 text-sm text-slate-700">
               <li>A consumer credit report to verify other credit information, including past and present</li>
               <li>A Background investigation report and verify both criminal and civil records.</li>
             </ol>
-            <p className="text-sm text-slate-700 leading-relaxed mt-4">
+            <p className="text-sm text-slate-700  mt-4">
               It is understood that a copy of this form will also serve as authorization to conduct these checks. The information gathered is connected with a credit transaction involving me/us. The information that Lender obtains is only to be used in conjunction with this application for the Loan.
             </p>
-            <p className="text-sm text-slate-700 leading-relaxed mt-4">
+            <p className="text-sm text-slate-700  mt-4">
               I understand the information collected as part of the credit and background investigation will be shared with the Lender on behalf of me/us to evaluate the commercial mortgage I/We consider. This investigation is authorized irrespective of the person(s) or entity(s) that pays for said investigation. This investigation authorization expires 60 days from the signed date.
             </p>
           </div>
@@ -421,7 +421,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               disabled={isReadOnly && !canManage} />
 
             <div className="flex-1">
-              <Label htmlFor="authorization" className="text-sm leading-relaxed cursor-pointer font-medium">
+              <Label htmlFor="authorization" className="text-sm  cursor-pointer ">
                 I authorize the Lender to conduct credit and background investigations as described above *
               </Label>
               {authorizationError && <p className="text-red-500 text-sm mt-2">{authorizationError}</p>}
@@ -433,7 +433,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
       {/* Additional Comments */}
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <CardTitle className="text-lg  flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Additional Comments
           </CardTitle>
@@ -453,7 +453,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
       {/* Electronic Signature */}
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <CardTitle className="text-lg  flex items-center gap-2">
             <PenTool className="w-5 h-5" />
             Electronic Signature
           </CardTitle>
@@ -479,7 +479,7 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
               value={esignature}
               onChange={handleEsignatureChange}
               disabled={(isReadOnly && !canManage) || !canSignApplication}
-              className="font-sans text-lg" />
+              className=" text-lg" />
 
             {signatureError && <p className="text-red-500 text-sm">{signatureError}</p>}
           </div>
@@ -488,10 +488,10 @@ export default React.memo(function ConsentStep({ data, onChange, isReadOnly, bor
           <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
               <div className="flex items-center gap-2 text-emerald-700 mb-2">
                 <Check className="w-5 h-5" />
-                <span className="font-semibold">Electronically signed</span>
+                <span className="">Electronically signed</span>
               </div>
               <p className="text-sm text-emerald-700">
-                Signature: <span className="font-sans text-base">{esignature}</span>
+                Signature: <span className=" text-base">{esignature}</span>
               </p>
               {esignatureDate &&
             <p className="text-xs text-emerald-600 mt-1">

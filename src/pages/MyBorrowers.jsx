@@ -143,7 +143,7 @@ export default function MyBorrowers() {
         <div className="max-w-4xl mx-auto">
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg font-bold text-slate-900">My Borrowers</CardTitle>
+              <CardTitle className="text-lg  text-slate-900">My Borrowers</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-slate-600">
               You do not have permission to view this page.
@@ -164,7 +164,7 @@ export default function MyBorrowers() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
         >
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+            <h1 className="text-3xl  text-slate-900  mb-2">
               My Borrowers
             </h1>
             {isBroker && (
@@ -230,19 +230,19 @@ export default function MyBorrowers() {
                         key={borrower.id}
                         className="hover:bg-slate-50"
                       >
-                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-900">
+                        <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-900">
                           {getBorrowerName(borrower)}
                         </TableCell>
-                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {borrower.email || '-'}
                         </TableCell>
-                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {borrower.phone || '-'}
                         </TableCell>
-                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {getBorrowerLoanCount(borrower)}
                         </TableCell>
-                        <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                        <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                           {lastActivity ? format(lastActivity, 'MMM d, yyyy') : 'N/A'}
                         </TableCell>
                       </TableRow>

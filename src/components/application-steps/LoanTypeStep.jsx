@@ -116,7 +116,7 @@ export default React.memo(function LoanTypeStep({ data, onChange, isReadOnly, cu
       {/* Assigned Liaisons Display */}
       {liaisonNames.length > 0 && (
         <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-          <h4 className="text-sm font-semibold text-slate-900 mb-3">Assigned Liaison</h4>
+          <h4 className="text-sm  text-slate-900 mb-3">Assigned Liaison</h4>
           <div className="flex flex-wrap gap-2">
             {liaisonNames.map((name, index) => (
               <Badge key={index} variant="secondary" className="flex items-center gap-2 px-3 py-1">

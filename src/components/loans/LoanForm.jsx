@@ -79,7 +79,7 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
   return (
     <Card className="border-0 shadow-xl bg-white">
       <CardHeader className="pb-6">
-        <CardTitle className="text-2xl font-bold text-slate-900">
+        <CardTitle className="text-2xl text-slate-900">
           {loan ? 'Edit Loan' : 'New Loan Application'}
         </CardTitle>
       </CardHeader>

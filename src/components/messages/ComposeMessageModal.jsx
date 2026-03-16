@@ -208,7 +208,7 @@ export default function ComposeMessageModal({ isOpen, onClose, currentUser, onSe
                           className="cursor-pointer"
                         >
                           <div>
-                            <p className="font-semibold">{user.full_name || user.email}</p>
+                            <p className="">{user.full_name || user.email}</p>
                             <p className="text-xs text-slate-500">{user.app_role}</p>
                           </div>
                         </CommandItem>

@@ -177,7 +177,7 @@ export default function JoinRequest() {
         <Card className="max-w-md">
           <CardContent className="p-12 text-center">
             <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Request Not Found</h2>
+            <h2 className="text-2xl  text-slate-900 mb-2">Request Not Found</h2>
             <p className="text-slate-600 mb-6">The invitation you're looking for could not be found.</p>
             <Button onClick={() => window.location.href = createPageUrl('Dashboard')}>
               Go to Dashboard
@@ -219,7 +219,7 @@ export default function JoinRequest() {
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">{requestData.entity.entity_name}</h3>
+                    <h3 className="text-xl  text-slate-900">{requestData.entity.entity_name}</h3>
                     <p className="text-sm text-slate-600 mt-1">
                       {requestData.entity.entity_type} • EIN: {requestData.entity.registration_number ? formatEIN(requestData.entity.registration_number) : 'N/A'}
                     </p>
@@ -230,7 +230,7 @@ export default function JoinRequest() {
                 {requestData.inviter && (
                   <div className="mt-4 pt-4 border-t border-slate-200">
                     <p className="text-sm text-slate-600">
-                      Invited by: <span className="font-semibold text-slate-900">
+                      Invited by: <span className=" text-slate-900">
                         {requestData.inviter.first_name} {requestData.inviter.last_name}
                       </span>
                     </p>
@@ -239,7 +239,7 @@ export default function JoinRequest() {
 
                 {requestData.entity.ownership_structure && requestData.entity.ownership_structure.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-slate-200">
-                    <p className="text-sm font-semibold text-slate-700 mb-2">Current Owners:</p>
+                    <p className="text-sm  text-slate-700 mb-2">Current Owners:</p>
                     <div className="space-y-1">
                       {requestData.entity.ownership_structure.map((owner, idx) => (
                         <div key={idx} className="flex items-center justify-between text-sm">
@@ -257,7 +257,7 @@ export default function JoinRequest() {
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">
+                    <h3 className="text-xl  text-slate-900">
                       Application #{requestData.application.application_number}
                     </h3>
                     <p className="text-sm text-slate-600 mt-1">
@@ -270,7 +270,7 @@ export default function JoinRequest() {
                 {requestData.inviter && (
                   <div className="mt-4 pt-4 border-t border-slate-200">
                     <p className="text-sm text-slate-600">
-                      Primary Borrower: <span className="font-semibold text-slate-900">
+                      Primary Borrower: <span className=" text-slate-900">
                         {requestData.inviter.first_name} {requestData.inviter.last_name}
                       </span>
                     </p>

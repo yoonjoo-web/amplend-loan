@@ -449,7 +449,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         searchFields={['first_name', 'last_name', 'email']}
         renderItem={(borrower) => (
           <div className="flex flex-col items-start gap-0.5">
-            <span className="font-medium text-sm text-slate-900">
+            <span className=" text-sm text-slate-900">
               {borrower.first_name} {borrower.last_name}
             </span>
             <span className="text-xs text-slate-500">{borrower.email}</span>
@@ -473,7 +473,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
         searchFields={['first_name', 'last_name', 'email']}
         renderItem={(borrower) => (
           <div className="flex flex-col items-start gap-0.5">
-            <span className="font-medium text-sm text-slate-900">
+            <span className=" text-sm text-slate-900">
               {borrower.first_name} {borrower.last_name}
             </span>
             <span className="text-xs text-slate-500">{borrower.email}</span>
@@ -491,7 +491,7 @@ export default function BorrowerInfoStep({ applicationData, onUpdate, isReadOnly
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm  text-blue-900">
                 {selectedBorrowerToLink?.first_name} {selectedBorrowerToLink?.last_name}
               </p>
               <p className="text-sm text-blue-700">{selectedBorrowerToLink?.email}</p>

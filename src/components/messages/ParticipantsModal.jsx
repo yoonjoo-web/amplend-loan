@@ -35,15 +35,15 @@ export default function ParticipantsModal({
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <Avatar className="w-12 h-12 bg-slate-200">
-                  <AvatarFallback className="text-slate-700 font-semibold">
+                  <AvatarFallback className="text-slate-700 ">
                     {participant.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">
+                  <p className=" text-slate-900 truncate">
                     {participant.name}
                     {participant.id === currentUser?.id && (
-                      <span className="text-xs text-slate-500 font-normal ml-2">(You)</span>
+                      <span className="text-xs text-slate-500  ml-2">(You)</span>
                     )}
                   </p>
                   {participant.email && (

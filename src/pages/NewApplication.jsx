@@ -1140,7 +1140,7 @@ export default function NewApplication() {
       return (
         <>
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{currentStepObj.title}</h2>
+            <h2 className="text-2xl  text-slate-900 mb-2">{currentStepObj.title}</h2>
             <p className="text-slate-600">{currentStepObj.description}</p>
           </div>
           <DynamicFormRenderer
@@ -1309,7 +1309,7 @@ export default function NewApplication() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                  <h1 className="text-3xl  text-slate-900 ">
                     {getApplicationTitle()}
                   </h1>
                   {formData.submission_count > 0 && (
@@ -1320,7 +1320,7 @@ export default function NewApplication() {
                 </div>
                 {formData.status === 'review_completed' && !isReadOnly && (
                   <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800 font-medium">
+                    <p className="text-sm text-blue-800 ">
                       📋 Review completed! Please review the loan officer's comments below, make any necessary changes, and resubmit your application.
                     </p>
                   </div>
@@ -1354,7 +1354,7 @@ export default function NewApplication() {
                 {/* Loan Officer */}
                 {showAssignmentCard && !showBrokerName && (
                   <span className="flex items-center gap-1">
-                    <span className="text-slate-500 font-medium">Loan Officer:</span>
+                    <span className="text-slate-500 ">Loan Officer:</span>
                     <span>
                       {formData.assigned_loan_officer_id ? (
                         hideLoanOfficerDetails ? 'Loan Officer' : (() => {
@@ -1380,14 +1380,14 @@ export default function NewApplication() {
                 {/* Broker name for borrower view */}
                 {showAssignmentCard && showBrokerName && (
                   <span className="flex items-center gap-1">
-                    <span className="text-slate-500 font-medium">Broker:</span>
+                    <span className="text-slate-500 ">Broker:</span>
                     <span>{brokerDisplayName || 'Broker'}</span>
                   </span>
                 )}
                 {/* Broker */}
                 {!showBrokerName && (formData?.broker_id || assignedBrokerName) && (
                   <span className="flex items-center gap-1">
-                    <span className="text-slate-500 font-medium">Broker:</span>
+                    <span className="text-slate-500 ">Broker:</span>
                     <span>{assignedBrokerName || 'Broker'}</span>
                     {canManagePartnerAssignments && (
                       <button
@@ -1407,7 +1407,7 @@ export default function NewApplication() {
                     className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
                     title="Add Broker"
                   >
-                    <span className="text-slate-500 font-medium">Broker:</span>
+                    <span className="text-slate-500 ">Broker:</span>
                     <span className="text-slate-400 italic">None</span>
                     <Pencil className="w-3 h-3 ml-0.5" />
                   </button>
@@ -1415,7 +1415,7 @@ export default function NewApplication() {
                 {/* Liaison */}
                 {liaisonPartners.length > 0 && (
                   <span className="flex items-center gap-1">
-                    <span className="text-slate-500 font-medium">Liaison:</span>
+                    <span className="text-slate-500 ">Liaison:</span>
                     <span>{liaisonPartners.join(', ')}</span>
                     {canManagePartnerAssignments && (
                       <button
@@ -1435,7 +1435,7 @@ export default function NewApplication() {
                     className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
                     title="Add Liaison"
                   >
-                    <span className="text-slate-500 font-medium">Liaison:</span>
+                    <span className="text-slate-500 ">Liaison:</span>
                     <span className="text-slate-400 italic">None</span>
                     <Pencil className="w-3 h-3 ml-0.5" />
                   </button>
@@ -1450,7 +1450,7 @@ export default function NewApplication() {
                 <div className="mb-6">
                   <div className="flex justify-between items-center mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900">
+                      <h3 className="text-lg  text-slate-900">
                         Step {currentStepDisplayNumber} of {totalVisibleSteps}: {currentStepObj?.title}
                       </h3>
                       {!isReadOnly && (
@@ -1481,7 +1481,7 @@ export default function NewApplication() {
                           : 'bg-slate-100 text-slate-500'
                       } ${ (step.id > (formData.current_step || 0) && !isReadOnly) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                     >
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs  shrink-0 ${
                         step.id === currentStep
                           ? 'bg-white text-slate-900'
                           : step.id <= (formData.current_step || 0)
@@ -1490,7 +1490,7 @@ export default function NewApplication() {
                       }`}>
                         {step.id <= (formData.current_step || 0) && step.id !== currentStep ? <Check className="w-3 h-3" /> : index + 1}
                       </div>
-                      <span className="font-medium text-xs truncate">{step.title}</span>
+                      <span className=" text-xs truncate">{step.title}</span>
                     </button>
                   ))}
                 </div>
@@ -1501,7 +1501,7 @@ export default function NewApplication() {
           {canReview && (
             <Card className="border-2 border-blue-200 bg-blue-50/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <CardTitle className="text-lg  text-slate-900 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-blue-600" />
                   Application Review
                 </CardTitle>
@@ -1520,7 +1520,7 @@ export default function NewApplication() {
                 {['submitted', 'under_review', 'review_completed'].includes(formData.status) && (
                   <Card className="border border-slate-200 bg-white mt-4">
                     <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-base font-semibold text-slate-900">
+                      <CardTitle className="text-base  text-slate-900">
                         Overall Review Comments
                       </CardTitle>
                       <p className="text-xs text-slate-500 mt-1">Internal comments visible only to loan officers and administrators</p>

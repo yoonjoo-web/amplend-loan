@@ -53,7 +53,7 @@ export default function SearchExistingModal({
 
           {/* Modal Header */}
           <div className="flex items-start justify-between mb-4">
-            <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+            <h3 className="text-xl  text-slate-900">{title}</h3>
             <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
               <X className="w-4 h-4" />
             </Button>

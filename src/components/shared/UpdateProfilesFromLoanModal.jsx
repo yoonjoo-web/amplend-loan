@@ -21,7 +21,7 @@ export default function UpdateProfilesFromLoanModal({ isOpen, onClose, onUpdateP
             </div>
             <DialogTitle>Update Contacts with Final Approved Data?</DialogTitle>
           </div>
-          <DialogDescription className="font-semibold text-sm leading-relaxed">
+          <DialogDescription className=" text-sm ">
             Do you want to update the linked Borrower/Entity/Partner contact profiles with the latest approved values from this Loan?
           </DialogDescription>
         </DialogHeader>

@@ -278,7 +278,7 @@ function ReferrerDropdown({ value, onChange, isReadOnly }) {
                 className="cursor-pointer"
               >
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{formatReferrerName(partner)}</span>
+                  <span className="text-sm ">{formatReferrerName(partner)}</span>
                 </div>
               </CommandItem>
             ))}
@@ -641,13 +641,13 @@ export default function DynamicField({
                     {isSelected && <div className="w-2 h-2 rounded-full bg-white"></div>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium transition-colors ${
+                    <p className={`text-sm  transition-colors ${
                       isSelected ? 'text-blue-700' : 'text-slate-900'
                     }`}>
                       {formatOptionLabel(option)}
                     </p>
                     {description && (
-                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{description}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 ">{description}</p>
                     )}
                   </div>
                 </div>
@@ -979,11 +979,11 @@ export default function DynamicField({
               className="mt-0.5 flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <Label className="cursor-pointer text-sm font-medium text-slate-900 leading-snug">
+              <Label className="cursor-pointer text-sm  text-slate-900 ">
                 {fieldConfig.field_label}
               </Label>
               {fieldConfig.description && (
-                <p className="text-xs text-slate-500 mt-1 leading-snug">{fieldConfig.description}</p>
+                <p className="text-xs text-slate-500 mt-1 ">{fieldConfig.description}</p>
               )}
             </div>
           </div>
@@ -1111,7 +1111,7 @@ export default function DynamicField({
             <div className="flex items-start gap-2">
               {getCommentIcon()}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold">Loan Officer Comment:</p>
+                <p className="text-xs ">Loan Officer Comment:</p>
                 <p className="text-xs mt-0.5">{comment.comment}</p>
               </div>
             </div>
@@ -1125,7 +1125,7 @@ export default function DynamicField({
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Label className="text-sm font-semibold text-slate-800">
+          <Label className="text-sm  text-slate-800">
             {fieldConfig.field_label}
             {fieldConfig.required && <span className="text-red-500 ml-1">*</span>}
           </Label>
@@ -1150,7 +1150,7 @@ export default function DynamicField({
             <div className="flex items-start gap-2">
               {getCommentIcon()}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold">Loan Officer Comment:</p>
+                <p className="text-xs ">Loan Officer Comment:</p>
                 <p className="text-xs mt-0.5">{comment.comment}</p>
               </div>
             </div>
@@ -1163,7 +1163,7 @@ export default function DynamicField({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Label htmlFor={fieldConfig.field_name} className="text-xs font-medium text-slate-700">
+        <Label htmlFor={fieldConfig.field_name} className="text-xs  text-slate-700">
           {fieldConfig.field_label}
           {fieldConfig.required && <span className="text-red-500 ml-0.5">*</span>}
         </Label>
@@ -1271,7 +1271,7 @@ export default function DynamicField({
       {renderField()}
       
       {fieldConfig.description && (
-        <p className="text-xs text-slate-500 leading-snug">{fieldConfig.description}</p>
+        <p className="text-xs text-slate-500 ">{fieldConfig.description}</p>
       )}
 
       {showComments && hasComment && (
@@ -1279,7 +1279,7 @@ export default function DynamicField({
           <div className="flex items-start gap-2">
             {getCommentIcon()}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold">Loan Officer Comment:</p>
+              <p className="text-xs ">Loan Officer Comment:</p>
               <p className="text-xs mt-0.5">{comment.comment}</p>
             </div>
           </div>

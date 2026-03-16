@@ -123,7 +123,7 @@ export default function MyProfile() {
           <Card>
             <CardContent className="p-12 text-center">
               <UserCircle className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+              <h2 className="text-2xl  text-slate-900 mb-2">Access Denied</h2>
               <p className="text-slate-600">You don't have access to this profile page.</p>
             </CardContent>
           </Card>
@@ -142,7 +142,7 @@ export default function MyProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+          <h1 className="text-3xl  text-slate-900  mb-2">
             My Profile
           </h1>
           <p className="text-slate-600">View your profile information and manage preferences</p>
@@ -277,7 +277,7 @@ export default function MyProfile() {
                           <div className="space-y-2">
                             {ownedEntity.ownership_structure.map((owner, index) => (
                               <div key={index} className="p-3 bg-slate-50 rounded-lg flex justify-between items-center">
-                                <span className="font-medium">{owner.owner_name}</span>
+                                <span className="">{owner.owner_name}</span>
                                 <span className="text-slate-600">{owner.ownership_percentage}%</span>
                               </div>
                             ))}
@@ -315,7 +315,7 @@ export default function MyProfile() {
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                   <div className="flex-1">
-                    <Label htmlFor="daily-report" className="font-medium">
+                    <Label htmlFor="daily-report" className="">
                       Daily Report Emails
                     </Label>
                     <p className="text-sm text-slate-600 mt-1">
@@ -334,7 +334,7 @@ export default function MyProfile() {
 
                 {/* Product Tour Replay */}
                 <div className="border-t pt-6">
-                  <h4 className="font-medium text-slate-900 mb-2">Product Tour</h4>
+                  <h4 className=" text-slate-900 mb-2">Product Tour</h4>
                   <p className="text-sm text-slate-600 mb-3">
                     Replay the guided tour to learn about the platform features.
                   </p>

@@ -301,21 +301,21 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
   return (
     <Card className="border-0 shadow-xl bg-white">
       <CardHeader className="pb-6">
-        <CardTitle className="text-2xl font-bold text-slate-900">
+        <CardTitle className="text-2xl text-slate-900">
           {borrower ? 'Edit Borrower' : 'New Borrower'}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {/* User Linking Section */}
         <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-          <h4 className="font-semibold text-slate-900 mb-3">User Account Linking</h4>
+          <h4 className="text-slate-900 mb-3">User Account Linking</h4>
 
           {formData.user_id && linkedUser ? (
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
               <div className="flex items-center gap-3">
                 <Link2 className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="font-medium text-blue-900">
+                  <p className="text-blue-900">
                     Linked to: {linkedUser.first_name} {linkedUser.last_name}
                   </p>
                   <p className="text-sm text-blue-700">{linkedUser.email}</p>
@@ -347,7 +347,7 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
                             className="cursor-pointer"
                           >
                             <div className="flex flex-col">
-                              <span className="font-medium">
+                              <span>
                                 {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.full_name || 'No Name'}
                               </span>
                               <span className="text-sm text-slate-500">{user.email}</span>
@@ -517,7 +517,7 @@ export default function BorrowerForm({ borrower, onSubmit, onCancel, isProcessin
 
           {/* Address Section - New implementation */}
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-semibold text-slate-900">Address</h3>
+            <h3 className="text-slate-900">Address</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2 space-y-2">
                 <Label htmlFor="address_street">Street Address</Label>

@@ -71,7 +71,7 @@ export default function InviteBorrowerModal({ isOpen, onClose, onInviteSubmitted
                 <UserPlus className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+                <h3 className="text-xl  text-slate-900">{title}</h3>
                 <p className="text-sm text-slate-500">Send an invitation email to add this borrower</p>
               </div>
             </div>

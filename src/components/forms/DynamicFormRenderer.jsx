@@ -463,7 +463,7 @@ export default function DynamicFormRenderer({
                   
                   return (
                     <div className="border-b border-blue-200 pb-2 bg-blue-50/30 -mx-2 px-2 rounded-t">
-                      <h3 className="text-sm font-semibold text-blue-900 uppercase tracking-wider">
+                      <h3 className="text-sm  text-blue-900 uppercase ">
                         {sectionLabel}
                       </h3>
                     </div>
@@ -619,7 +619,7 @@ export default function DynamicFormRenderer({
                               </PopoverTrigger>
                               <PopoverContent className="w-96" align="end">
                                 <div className="space-y-2">
-                                  <h4 className="font-semibold text-sm text-slate-900">Change History</h4>
+                                  <h4 className=" text-sm text-slate-900">Change History</h4>
                                   <div className="space-y-3 max-h-64 overflow-y-auto">
                                     {fieldChanges[fieldConfig.field_name].map((change, idx) => (
                                       <div key={idx} className="text-xs border-l-2 border-orange-500 pl-3 py-2 bg-slate-50 rounded">
@@ -633,11 +633,11 @@ export default function DynamicFormRenderer({
                                         </div>
                                         <div className="space-y-1">
                                           <div>
-                                            <span className="font-medium text-slate-600">Previous: </span>
+                                            <span className=" text-slate-600">Previous: </span>
                                             <span className="text-slate-900">{change.old_value?.toString() || '(empty)'}</span>
                                           </div>
                                           <div>
-                                            <span className="font-medium text-slate-600">Current: </span>
+                                            <span className=" text-slate-600">Current: </span>
                                             <span className="text-slate-900">{change.new_value?.toString() || '(empty)'}</span>
                                           </div>
                                         </div>
@@ -689,7 +689,7 @@ export default function DynamicFormRenderer({
               <Card key={index} className="border border-slate-200">
                 <CardHeader className="bg-slate-50 border-b border-slate-200 py-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">
+                    <CardTitle className="text-sm ">
                       {categoryName.replace(/s$/, '')} #{index + 1}
                     </CardTitle>
                     {!isReadOnly && (

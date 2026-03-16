@@ -114,7 +114,7 @@ const ChartTooltipContent = React.forwardRef((
 
     if (labelFormatter) {
       return (
-        (<div className={cn("font-medium", labelClassName)}>
+        (<div className={cn("", labelClassName)}>
           {labelFormatter(value, payload)}
         </div>)
       );
@@ -124,7 +124,7 @@ const ChartTooltipContent = React.forwardRef((
       return null
     }
 
-    return <div className={cn("font-medium", labelClassName)}>{value}</div>;
+    return <div className={cn("", labelClassName)}>{value}</div>;
   }, [
     label,
     labelFormatter,
@@ -188,7 +188,7 @@ const ChartTooltipContent = React.forwardRef((
                   )}
                   <div
                     className={cn(
-                      "flex flex-1 justify-between leading-none",
+                      "flex flex-1 justify-between ",
                       nestLabel ? "items-end" : "items-center"
                     )}>
                     <div className="grid gap-1.5">
@@ -198,7 +198,7 @@ const ChartTooltipContent = React.forwardRef((
                       </span>
                     </div>
                     {item.value && (
-                      <span className="font-medium tabular-nums text-foreground">
+                      <span className=" tabular-nums text-foreground">
                         {item.value.toLocaleString()}
                       </span>
                     )}

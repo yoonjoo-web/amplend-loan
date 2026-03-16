@@ -505,7 +505,7 @@ export default function Messages() {
           className="mb-6"
         >
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-3xl  text-slate-900 ">
               Messages
             </h1>
           </div>
@@ -568,7 +568,7 @@ export default function Messages() {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-slate-900 truncate">{title}</h3>
+                            <h3 className=" text-slate-900 truncate">{title}</h3>
                             <span className="text-xs text-slate-500">
                               {conv.last_message ? formatMessageTime(conv.last_message.created_date) : ''}
                             </span>
@@ -612,7 +612,7 @@ export default function Messages() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="font-semibold text-slate-900">
+                        <h2 className=" text-slate-900">
                           {getConversationName(activeConversation)}
                         </h2>
                       </div>
@@ -662,13 +662,13 @@ export default function Messages() {
                                 <div className="bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 rounded-xl px-6 py-3 shadow-sm">
                                   <div className="flex items-center justify-center gap-2 mb-2">
                                     <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
-                                      <span className="text-xs font-bold text-slate-600">i</span>
+                                      <span className="text-xs  text-slate-600">i</span>
                                     </div>
-                                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    <span className="text-xs  text-slate-500 uppercase ">
                                       System Message
                                     </span>
                                   </div>
-                                  <div className="text-sm text-slate-700 text-center leading-relaxed prose prose-sm max-w-none">
+                                  <div className="text-sm text-slate-700 text-center  prose prose-sm max-w-none">
                                     <ReactMarkdown
                                       components={{
                                         a: ({ node, ...props }) => (
@@ -723,7 +723,7 @@ export default function Messages() {
                               )}
 
                               <div className={`flex flex-col max-w-md ${isOwn ? 'items-end' : 'items-start'}`}>
-                                <span className={`text-xs font-semibold mb-1 px-3 ${isOwn ? 'text-blue-700' : 'text-slate-700'}`}>
+                                <span className={`text-xs  mb-1 px-3 ${isOwn ? 'text-blue-700' : 'text-slate-700'}`}>
                                   {getUserName(msg.sender_id)}
                                 </span>
 
@@ -796,7 +796,7 @@ export default function Messages() {
                           <div key={index} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
                             <FileIcon className="w-4 h-4 text-slate-500" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">{file.file_name}</p>
+                              <p className="text-sm  text-slate-900 truncate">{file.file_name}</p>
                               <p className="text-xs text-slate-500">{formatFileSize(file.file_size)}</p>
                             </div>
                             <Button
@@ -863,7 +863,7 @@ export default function Messages() {
                     <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Search className="w-10 h-10" />
                     </div>
-                    <p className="text-lg font-medium">Select a conversation</p>
+                    <p className="text-lg ">Select a conversation</p>
                     <p className="text-sm mt-1">Choose a conversation from the sidebar to start chatting</p>
                   </div>
                 </div>

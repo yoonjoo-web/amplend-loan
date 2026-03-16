@@ -818,7 +818,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       `}</style>
 
       <div className="sticky top-0 bg-white z-10 border-b border-slate-200 p-4 flex items-center justify-between">
-        <h3 className="font-semibold text-slate-900">Loan Details</h3>
+        <h3 className=" text-slate-900">Loan Details</h3>
         <Button
           variant="ghost"
           size="icon"
@@ -892,7 +892,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                   <div key={`${member.id}-${member.role}-${index}`} className="text-sm border-b pb-3 last:border-b-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="font-semibold text-slate-900">{member.displayName}</p>
+                        <p className=" text-slate-900">{member.displayName}</p>
                         <Badge className="text-xs mt-1" variant="outline">{member.role}</Badge>
                       </div>
                       {!(hideLoanOfficerDetails && member.role === 'Loan Officer') &&
@@ -1005,7 +1005,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
 
                   return (
                     <div key={index} className="text-sm border-l-2 border-blue-500 pl-3 py-2">
-                      <p className="font-semibold text-slate-900">
+                      <p className=" text-slate-900">
                         {hideLoanOfficerDetails && loanOfficerNameSet.has((mod.modified_by_name || '').trim().toLowerCase())
                           ? 'Loan Officer'
                           : (mod.modified_by_name || 'System')}
@@ -1021,7 +1021,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
                 })
               ) : (
                 <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                  <p className="font-semibold text-slate-900">Last Modified</p>
+                  <p className=" text-slate-900">Last Modified</p>
                   <p className="text-xs">{new Date(loan.updated_date).toLocaleString()}</p>
                 </div>
               )}

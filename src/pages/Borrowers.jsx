@@ -191,7 +191,7 @@ export default function Borrowers() {
         return borrower.date_of_birth ? format(new Date(borrower.date_of_birth), 'MMM d, yyyy') : '-';
       case 'employment_status':
         return borrower.employment_status ? (
-          <Badge className={`${employmentColors[borrower.employment_status]} border font-medium`}>
+          <Badge className={`${employmentColors[borrower.employment_status]} border`}>
             {borrower.employment_status.replace('_', ' ')}
           </Badge>
         ) : '-';
@@ -259,7 +259,7 @@ export default function Borrowers() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
         >
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">
+            <h1 className="text-4xl  text-slate-900  mb-2">
               Borrower Management
             </h1>
             <p className="text-slate-600 text-lg">
@@ -281,7 +281,7 @@ export default function Borrowers() {
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <CardTitle className="text-xl font-bold text-slate-900">
+                <CardTitle className="text-xl  text-slate-900">
                   All Borrowers
                 </CardTitle>
                 <div className="flex gap-3 flex-wrap">
@@ -334,7 +334,7 @@ export default function Borrowers() {
                     {sortedBorrowers.map((borrower) => (
                       <TableRow key={borrower.id} className="hover:bg-slate-50">
                         {visibleColumns.map(columnKey => (
-                          <TableCell key={columnKey} className={columnKey === 'name' ? 'font-medium' : ''}>
+                          <TableCell key={columnKey} className={columnKey === 'name' ? '' : ''}>
                             {renderColumnValue(borrower, columnKey)}
                           </TableCell>
                         ))}
@@ -381,7 +381,7 @@ export default function Borrowers() {
           </Card>
         ) : (
           <div className="text-center py-16 text-slate-500">
-            <h3 className="text-xl font-semibold text-slate-600 mb-2">Access Denied</h3>
+            <h3 className="text-xl  text-slate-600 mb-2">Access Denied</h3>
             <p className="text-slate-500 mb-6">You do not have permission to view this page. Please contact your administrator if you believe this is an error.</p>
           </div>
         )}

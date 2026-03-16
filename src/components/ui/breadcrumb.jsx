@@ -46,7 +46,7 @@ const BreadcrumbPage = React.forwardRef(({ className, ...props }, ref) => (
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-foreground", className)}
+    className={cn("text-foreground", className)}
     {...props} />
 ))
 BreadcrumbPage.displayName = "BreadcrumbPage"

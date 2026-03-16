@@ -96,7 +96,7 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
         <div className="p-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Add Field to Display</h3>
+              <h3 className="text-xl text-slate-900">Add Field to Display</h3>
               <p className="text-sm text-slate-500">Select a field to show in this contact's profile</p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
@@ -115,7 +115,7 @@ export default function AddFieldModal({ isOpen, onClose, onSave, contactType, vi
                   {availableFields.map((field) => (
                     <SelectItem key={field.key} value={field.key}>
                       <div>
-                        <div className="font-medium">{field.label}</div>
+                        <div>{field.label}</div>
                         {field.description && (
                           <div className="text-xs text-slate-500">{field.description}</div>
                         )}

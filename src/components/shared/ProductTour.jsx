@@ -307,15 +307,15 @@ export default function ProductTour({ currentUser, pageName, onComplete, forceSh
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-lg text-slate-900">{step.title}</h3>
+                <h3 className=" text-lg text-slate-900">{step.title}</h3>
                 {isActionStep && (
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full flex items-center gap-1">
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs  rounded-full flex items-center gap-1">
                     <MousePointer className="w-3 h-3" />
                     Action
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">{step.content}</p>
+              <p className="text-sm text-slate-600 ">{step.content}</p>
               
               {isActionStep && step.actionLabel && (
                 <div className={`mt-3 p-2 rounded-lg flex items-center gap-2 ${
@@ -326,12 +326,12 @@ export default function ProductTour({ currentUser, pageName, onComplete, forceSh
                   {actionCompleted ? (
                     <>
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">Action completed!</span>
+                      <span className="text-sm text-green-700 ">Action completed!</span>
                     </>
                   ) : (
                     <>
                       <MousePointer className="w-4 h-4 text-amber-600" />
-                      <span className="text-sm text-amber-700 font-medium">{step.actionLabel}</span>
+                      <span className="text-sm text-amber-700 ">{step.actionLabel}</span>
                     </>
                   )}
                 </div>

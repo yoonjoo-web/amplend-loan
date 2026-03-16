@@ -744,7 +744,7 @@ Amplend Team`
 
       if (matchedUser) {
         parts.push(
-          <span key={`mention-${mentionStart}`} className="bg-blue-100 text-blue-800 px-1 rounded font-medium">
+          <span key={`mention-${mentionStart}`} className="bg-blue-100 text-blue-800 px-1 rounded ">
             {match[0]}
           </span>
         );
@@ -785,7 +785,7 @@ Amplend Team`
     >
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="pb-3">
-          <DialogTitle className="text-lg font-bold">{formData.item_name || 'Checklist Item'}</DialogTitle>
+          <DialogTitle className="text-lg ">{formData.item_name || 'Checklist Item'}</DialogTitle>
           <div className="flex items-center gap-2 pt-1">
             {formData.category && (
               <Badge variant="outline" className="text-xs">
@@ -944,7 +944,7 @@ Amplend Team`
                       checked={firstReviewChecked}
                       onCheckedChange={handleFirstReviewChange}
                     />
-                    <Label htmlFor="first-review" className="text-xs font-medium cursor-pointer">
+                    <Label htmlFor="first-review" className="text-xs  cursor-pointer">
                       1st Underwriting Review Complete
                     </Label>
                   </div>
@@ -963,7 +963,7 @@ Amplend Team`
                       onCheckedChange={handleSecondReviewChange}
                       disabled={!firstReviewChecked}
                     />
-                    <Label htmlFor="second-review" className="text-xs font-medium cursor-pointer">
+                    <Label htmlFor="second-review" className="text-xs  cursor-pointer">
                       2nd Underwriting Review Complete
                     </Label>
                   </div>
@@ -982,7 +982,7 @@ Amplend Team`
           {/* Uploaded Files */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold">Uploaded Files</Label>
+              <Label className="text-xs ">Uploaded Files</Label>
               {canManage && (
                 <div>
                   <input
@@ -1029,7 +1029,7 @@ Amplend Team`
                 <div className="absolute inset-0 bg-blue-50 bg-opacity-90 rounded-lg z-10 flex items-center justify-center">
                   <div className="text-center">
                     <Upload className="w-8 h-8 mx-auto mb-1 text-blue-600" />
-                    <p className="text-xs font-semibold text-blue-600">Drop files here</p>
+                    <p className="text-xs  text-blue-600">Drop files here</p>
                   </div>
                 </div>
               )}
@@ -1041,7 +1041,7 @@ Amplend Team`
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <FileText className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{file.file_name}</p>
+                          <p className="text-xs  truncate">{file.file_name}</p>
                           <p className="text-xs text-slate-500">
                             {file.uploaded_date ? format(new Date(file.uploaded_date), 'MMM d, yyyy') : 'recently'}
                           </p>
@@ -1082,14 +1082,14 @@ Amplend Team`
 
           {/* Comments */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Comments</Label>
+            <Label className="text-xs ">Comments</Label>
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {formData.notes && formData.notes.length > 0 ? (
                 formData.notes.map((note) => (
                   <div key={note.id} className="bg-slate-50 p-2 rounded">
                     <div className="flex items-start justify-between mb-1">
-                      <p className="font-semibold text-xs">{getCommentAuthorName(note)}</p>
+                      <p className=" text-xs">{getCommentAuthorName(note)}</p>
                       <div className="flex items-center gap-2">
                         <p className="text-xs text-slate-500">
                           {format(new Date(note.timestamp), 'MMM d, h:mm a')}
@@ -1134,11 +1134,11 @@ Amplend Team`
                       onClick={() => handleSelectMention(user)}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs  text-blue-700">
                           {user.first_name?.[0]}{user.last_name?.[0]}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{user.first_name} {user.last_name}</p>
+                          <p className="text-xs  truncate">{user.first_name} {user.last_name}</p>
                           <p className="text-xs text-slate-500 truncate">{user.email}</p>
                         </div>
                       </div>
@@ -1163,14 +1163,14 @@ Amplend Team`
 
           {/* Activity History */}
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Activity History</Label>
+            <Label className="text-xs ">Activity History</Label>
             <div className="max-h-40 overflow-y-auto space-y-1.5">
               {formData.activity_history && formData.activity_history.length > 0 ? (
                 formData.activity_history.slice().reverse().map((activity, index) => (
                   <div key={index} className="flex items-start gap-2 text-xs text-slate-600 p-2 bg-slate-50 rounded">
                     <Clock className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-400" />
                     <div className="flex-1 min-w-0">
-                      <span className="font-medium">{activity.user_name}</span>
+                      <span className="">{activity.user_name}</span>
                       <span className="text-slate-500"> {activity.action.replace(/_/g, ' ')}</span>
                       {activity.details && <span className="text-slate-500"> - {activity.details}</span>}
                       <p className="text-xs text-slate-400 mt-0.5">

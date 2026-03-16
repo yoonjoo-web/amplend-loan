@@ -38,7 +38,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, visibleColumns, o
                 <Columns3 className="w-5 h-5 text-slate-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Column Settings</h3>
+                <h3 className="text-xl text-slate-900">Column Settings</h3>
                 <p className="text-sm text-slate-500">Choose which columns to display</p>
               </div>
             </div>
@@ -55,7 +55,7 @@ export default function ColumnSettingsModal({ isOpen, onClose, visibleColumns, o
                   checked={visibleColumns[column.key]}
                   onCheckedChange={() => handleToggle(column.key)}
                 />
-                <Label htmlFor={column.key} className="flex-1 cursor-pointer font-medium text-slate-900">
+                <Label htmlFor={column.key} className="flex-1 cursor-pointer text-slate-900">
                   {column.label}
                 </Label>
               </div>

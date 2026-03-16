@@ -81,7 +81,7 @@ function SectionBlock({ title, children, defaultOpen = true }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 text-sm font-semibold text-slate-700 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 text-sm  text-slate-700 transition-colors"
       >
         {title}
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -101,7 +101,7 @@ function ResultViewer({ result }) {
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="border-b border-slate-100 pb-3">
-        <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+        <CardTitle className="text-base  text-slate-900 flex items-center gap-2">
           Evaluation Result
           <Badge className={isSuccess ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
             {isSuccess ? "Success" : "Error"}
@@ -140,7 +140,7 @@ function ResultViewer({ result }) {
               <div className="space-y-2">
                 {data.eligible !== undefined && (
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium text-slate-700">Eligible:</span>
+                    <span className=" text-slate-700">Eligible:</span>
                     <Badge className={data.eligible ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
                       {String(data.eligible)}
                     </Badge>
@@ -148,13 +148,13 @@ function ResultViewer({ result }) {
                 )}
                 {data.ruleResults && (
                   <div className="text-sm text-slate-600">
-                    <span className="font-medium">Rule Results:</span>{" "}
+                    <span className="">Rule Results:</span>{" "}
                     {Array.isArray(data.ruleResults) ? `${data.ruleResults.length} rules evaluated` : "See full response"}
                   </div>
                 )}
                 {data.message && (
                   <div className="text-sm text-slate-600">
-                    <span className="font-medium">Message:</span> {data.message}
+                    <span className="">Message:</span> {data.message}
                   </div>
                 )}
               </div>
@@ -269,12 +269,12 @@ export default function ToorakEvaluation() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Toorak Capital Loan Evaluation</h1>
+          <h1 className="text-2xl  text-slate-900">Toorak Capital Loan Evaluation</h1>
           <p className="text-sm text-slate-500 mt-1">
             UAT environment — Bridge loan rule evaluation via Toorak Capital API.
           </p>
           <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-            <span className="font-medium text-slate-600">Originator Party ID:</span>
+            <span className=" text-slate-600">Originator Party ID:</span>
             <code className="bg-slate-100 px-2 py-0.5 rounded text-slate-700">{ORIGINATOR_PARTY_ID}</code>
             <Badge className="bg-slate-100 text-slate-600 text-xs">Locked</Badge>
           </div>

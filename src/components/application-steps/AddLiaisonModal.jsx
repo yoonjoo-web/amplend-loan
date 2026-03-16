@@ -380,7 +380,7 @@ export default function AddLiaisonModal({
                         className="cursor-pointer"
                       >
                         <div className="flex-1">
-                          <p className="font-semibold">{partner.name}</p>
+                          <p className="">{partner.name}</p>
                           <div className="flex gap-4 mt-1 text-xs text-slate-500">
                             {partner.email && <span>{partner.email}</span>}
                             {partner.phone && <span>{partner.phone}</span>}

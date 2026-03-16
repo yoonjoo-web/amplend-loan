@@ -81,11 +81,11 @@ const CoBorrowerForm = ({ coBorrower, index, onUpdate, onRemove, isReadOnly, can
     >
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white ">
             {index + 1}
           </div>
           <div>
-            <h4 className="font-semibold text-slate-900">Co-Borrower {index + 1}</h4>
+            <h4 className=" text-slate-900">Co-Borrower {index + 1}</h4>
             {coBorrower.user_id && (
               <div className="flex items-center gap-2 mt-1">
                 <Link2 className="w-3 h-3 text-blue-600" />
@@ -120,7 +120,7 @@ const CoBorrowerForm = ({ coBorrower, index, onUpdate, onRemove, isReadOnly, can
               <div key={sectionKey} className="space-y-6">
                 {sectionLabel && hasMultipleSections && (
                   <div className="border-b border-blue-200 pb-2 bg-blue-50/30 -mx-2 px-2 rounded-t">
-                    <h3 className="text-sm font-semibold text-blue-900 uppercase tracking-wider">
+                    <h3 className="text-sm  text-blue-900 uppercase ">
                       {sectionLabel}
                     </h3>
                   </div>
@@ -512,7 +512,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
       <div>
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">
+            <h2 className="text-2xl  text-slate-900">
               {singleCoBorrowerMode || isCurrentUserCoBorrower ? 'Your Information' : 'Co-Borrowers'}
             </h2>
             <p className="text-slate-600 mt-1">
@@ -584,7 +584,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
               >
                 <Search className="w-5 h-5 mr-3" />
                 <div className="text-left">
-                  <p className="font-semibold">Search Existing Borrowers</p>
+                  <p className="">Search Existing Borrowers</p>
                   <p className="text-xs text-slate-500">Find and select a registered borrower</p>
                 </div>
               </Button>
@@ -600,7 +600,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
               >
                 <Search className="w-5 h-5 mr-3" />
                 <div className="text-left">
-                  <p className="font-semibold">Searching Existing Borrowers</p>
+                  <p className="">Searching Existing Borrowers</p>
                   <p className="text-xs text-slate-500">Pick from borrowers you invited</p>
                 </div>
               </Button>
@@ -615,7 +615,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
             >
               <UserPlus className="w-5 h-5 mr-3" />
               <div className="text-left">
-                <p className="font-semibold">Invite New Borrower</p>
+                <p className="">Invite New Borrower</p>
                 <p className="text-xs text-slate-500">Send an invitation to join the platform</p>
               </div>
             </Button>
@@ -634,7 +634,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         searchFields={['first_name', 'last_name', 'email']}
         renderItem={(borrower) => (
           <div className="flex flex-col items-start gap-0.5">
-            <span className="font-medium text-sm text-slate-900">
+            <span className=" text-sm text-slate-900">
               {borrower.first_name} {borrower.last_name}
             </span>
             <span className="text-xs text-slate-500">{borrower.email}</span>
@@ -657,7 +657,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
         searchFields={['first_name', 'last_name', 'email']}
         renderItem={(borrower) => (
           <div className="flex flex-col items-start gap-0.5">
-            <span className="font-medium text-sm text-slate-900">
+            <span className=" text-sm text-slate-900">
               {borrower.first_name} {borrower.last_name}
             </span>
             <span className="text-xs text-slate-500">{borrower.email}</span>
@@ -729,7 +729,7 @@ export default React.memo(function CoBorrowerStep({ data, onChange, isReadOnly, 
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm  text-blue-900">
                 {selectedBorrowerToLink?.first_name} {selectedBorrowerToLink?.last_name}
               </p>
               <p className="text-sm text-blue-700">{selectedBorrowerToLink?.email}</p>

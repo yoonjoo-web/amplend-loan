@@ -321,7 +321,7 @@ export default function Contacts() {
                   <TableHead>
                     <button
                       onClick={() => handleSort('name')}
-                      className="flex items-center gap-1 hover:text-slate-900 transition-colors font-semibold"
+                      className="flex items-center gap-1 hover:text-slate-900 transition-colors "
                     >
                       Name
                       <ArrowUpDown className="w-3 h-3" />
@@ -333,7 +333,7 @@ export default function Contacts() {
                   <TableHead>
                     <button
                       onClick={() => handleSort('email')}
-                      className="flex items-center gap-1 hover:text-slate-900 transition-colors font-semibold"
+                      className="flex items-center gap-1 hover:text-slate-900 transition-colors "
                     >
                       Email
                       <ArrowUpDown className="w-3 h-3" />
@@ -349,7 +349,7 @@ export default function Contacts() {
                   <TableHead>
                     <button
                       onClick={() => handleSort('created_date')}
-                      className="flex items-center gap-1 hover:text-slate-900 transition-colors font-semibold"
+                      className="flex items-center gap-1 hover:text-slate-900 transition-colors "
                     >
                       Added
                       <ArrowUpDown className="w-3 h-3" />
@@ -402,7 +402,7 @@ export default function Contacts() {
                     {visibleColumns.name && (
                       <TableCell>
                         <div>
-                          <p className="font-semibold text-slate-900">{name}</p>
+                          <p className=" text-slate-900">{name}</p>
                           {showNameSubtitle && (
                             <p className="text-sm text-slate-500 capitalize">{subtitle}</p>
                           )}
@@ -501,7 +501,7 @@ export default function Contacts() {
           <Card>
             <CardContent className="p-12 text-center">
               <Users className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+              <h2 className="text-2xl  text-slate-900 mb-2">Access Denied</h2>
               <p className="text-slate-600">You don't have permission to view contacts.</p>
             </CardContent>
           </Card>
@@ -521,7 +521,7 @@ export default function Contacts() {
             transition={{ duration: 0.5 }}
             className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
           >
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-3xl  text-slate-900 ">
               Contacts
             </h1>
             <div className="flex gap-3 items-center">
@@ -600,7 +600,7 @@ export default function Contacts() {
             >
               <Users className="w-5 h-5 mr-3" />
               <div className="text-left">
-                <p className="font-semibold">Borrower</p>
+                <p className="">Borrower</p>
                 <p className="text-sm text-slate-500">Add a new borrower contact</p>
               </div>
             </Button>
@@ -611,7 +611,7 @@ export default function Contacts() {
             >
               <Building2 className="w-5 h-5 mr-3" />
               <div className="text-left">
-                <p className="font-semibold">Entity</p>
+                <p className="">Entity</p>
                 <p className="text-sm text-slate-500">Add a new business entity</p>
               </div>
             </Button>
@@ -622,7 +622,7 @@ export default function Contacts() {
             >
               <Briefcase className="w-5 h-5 mr-3" />
               <div className="text-left">
-                <p className="font-semibold">Loan Partner</p>
+                <p className="">Loan Partner</p>
                 <p className="text-sm text-slate-500">Add a servicer, title company, or other partner</p>
               </div>
             </Button>

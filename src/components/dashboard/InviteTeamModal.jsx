@@ -81,7 +81,7 @@ export default function InviteTeamModal({ isOpen, onClose, onInviteSubmitted }) 
                 <Users className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Invite Team Member</h3>
+                <h3 className="text-xl text-slate-900">Invite Team Member</h3>
                 <p className="text-sm text-slate-500">Send an invitation to add a new loan officer</p>
               </div>
             </div>

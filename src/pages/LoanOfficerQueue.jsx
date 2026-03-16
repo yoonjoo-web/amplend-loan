@@ -272,7 +272,7 @@ export default function LoanOfficerQueue() {
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
+            <h2 className="text-xl  text-slate-900 mb-2">Access Denied</h2>
             <p className="text-slate-600">Only administrators and loan officers can view the loan officer queue.</p>
             <p className="text-xs text-slate-400 mt-4">
               If you believe you should have access, please go to Settings to update your role.
@@ -293,7 +293,7 @@ export default function LoanOfficerQueue() {
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+              <h1 className="text-3xl  text-slate-900  mb-2">
                 Loan Officer Queue
               </h1>
               <p className="text-slate-600">
@@ -344,7 +344,7 @@ export default function LoanOfficerQueue() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-900">
-                <p className="font-semibold mb-1">How Auto-Assignment Works:</p>
+                <p className=" mb-1">How Auto-Assignment Works:</p>
                 <ul className="list-disc list-inside space-y-1 text-blue-800">
                   <li>Officers are automatically sorted by workload (lowest first).</li>
                   <li>Drag-and-drop an officer to manually lock their position.</li>
@@ -393,7 +393,7 @@ export default function LoanOfficerQueue() {
                                     </Badge>
                                   </div>
                                 </TableCell>
-                                <TableCell className="font-medium">
+                                <TableCell className="">
                                   {officer.officer_name}
                                 </TableCell>
                                 <TableCell>
@@ -457,7 +457,7 @@ export default function LoanOfficerQueue() {
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-12 text-center">
               <UserCheck className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-slate-600 mb-2">Queue is Empty</h3>
+              <h3 className="text-xl  text-slate-600 mb-2">Queue is Empty</h3>
               <p className="text-slate-500">
                 {permissions.canManageLoanOfficerQueue
                   ? "Add loan officers to the queue using the dropdown above."

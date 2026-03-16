@@ -261,7 +261,7 @@ export default function MyTasks() {
             Back to Dashboard
           </Button>
           
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">My Tasks</h1>
+          <h1 className="text-3xl  text-slate-900 mb-2">My Tasks</h1>
           <p className="text-slate-600">Drag and drop to prioritize your tasks</p>
         </div>
 
@@ -351,7 +351,7 @@ export default function MyTasks() {
                                 <div className="flex-1">
                                   <div className="flex items-start justify-between mb-2">
                                     <div className="flex-1">
-                                      <h3 className="font-semibold text-slate-900 mb-1">
+                                      <h3 className=" text-slate-900 mb-1">
                                         {task.item_name}
                                       </h3>
                                       {task.description && (

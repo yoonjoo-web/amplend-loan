@@ -309,12 +309,12 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
     
     return (
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold text-slate-700">{title}</h4>
+        <h4 className="text-sm  text-slate-700">{title}</h4>
         <div className="space-y-2">
           {memberIds.map(userId => (
             <div key={userId} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-900">{getUserDisplayName(userId, roleKey)}</p>
+                <p className="text-sm  text-slate-900">{getUserDisplayName(userId, roleKey)}</p>
                 <p className="text-xs text-slate-500">{getUserRole(userId, roleKey)}</p>
               </div>
               <Button
@@ -353,7 +353,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
             <>
               {/* Add New Member Section */}
               <div className="p-4 border rounded-lg bg-slate-50 space-y-3">
-                <h4 className="text-sm font-semibold text-slate-900">Add Team Member</h4>
+                <h4 className="text-sm  text-slate-900">Add Team Member</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Role</Label>
@@ -415,7 +415,7 @@ export default function TeamManagementModal({ isOpen, onClose, loan, onRefresh }
 
               {/* Current Team Members */}
               <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-slate-900">Current Team</h4>
+                <h4 className="text-sm  text-slate-900">Current Team</h4>
                 {renderTeamSection('Borrowers', borrowerIds, 'borrower')}
                 {renderTeamSection('Loan Officers', loanOfficerIds, 'loan_officer')}
                 {renderTeamSection('Brokers', brokerIds, 'broker')}

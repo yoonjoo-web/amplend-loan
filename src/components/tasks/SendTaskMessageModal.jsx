@@ -237,7 +237,7 @@ export default function SendTaskMessageModal({ isOpen, onClose, task, loan, curr
                 <label htmlFor="direct" className="flex items-center gap-2 cursor-pointer flex-1">
                   <Users className="w-4 h-4" />
                   <div>
-                    <div className="font-medium">Direct Message</div>
+                    <div>Direct Message</div>
                     <div className="text-sm text-slate-500">
                       {isBorrowerOrPartner ? 'Send to loan officers' : 'Send to specific team members'}
                     </div>
@@ -252,7 +252,7 @@ export default function SendTaskMessageModal({ isOpen, onClose, task, loan, curr
                   <label htmlFor="loan_channel" className="flex items-center gap-2 cursor-pointer flex-1">
                     <Hash className="w-4 h-4" />
                     <div>
-                      <div className="font-medium">Loan Channel</div>
+                      <div>Loan Channel</div>
                       <div className="text-sm text-slate-500">
                         Send to entire loan team ({loan?.loan_number || loan?.primary_loan_id})
                       </div>

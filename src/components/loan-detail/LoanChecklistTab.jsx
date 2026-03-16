@@ -531,7 +531,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
           <div className="flex flex-col items-center justify-center gap-4 text-center">
             <Lock className="w-12 h-12 text-slate-400" />
             <div>
-              <p className="text-lg font-semibold text-slate-700 mb-2">Loan Product Required</p>
+              <p className="text-lg  text-slate-700 mb-2">Loan Product Required</p>
               <p className="text-sm text-slate-500">
                 Please select a loan product in the Overview tab before checklists can be initialized.
               </p>
@@ -578,7 +578,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
                 <PopoverContent className="w-80" align="start">
                   <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-medium text-slate-700 mb-1.5 block">Assigned To</label>
+                      <label className="text-xs  text-slate-700 mb-1.5 block">Assigned To</label>
                       <Select value={filters.assigned} onValueChange={(v) => setFilters({...filters, assigned: v})}>
                         <SelectTrigger className="h-9 text-sm">
                           <SelectValue />
@@ -596,7 +596,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-700 mb-1.5 block">Status</label>
+                      <label className="text-xs  text-slate-700 mb-1.5 block">Status</label>
                       <Select value={filters.status} onValueChange={(v) => setFilters({...filters, status: v})}>
                         <SelectTrigger className="h-9 text-sm">
                           <SelectValue />
@@ -628,7 +628,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-700 mb-1.5 block">Due Date</label>
+                      <label className="text-xs  text-slate-700 mb-1.5 block">Due Date</label>
                       <Select value={filters.dueDate} onValueChange={(v) => setFilters({...filters, dueDate: v})}>
                         <SelectTrigger className="h-9 text-sm">
                           <SelectValue />
@@ -643,7 +643,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-slate-700 mb-1.5 block">Last Updated</label>
+                      <label className="text-xs  text-slate-700 mb-1.5 block">Last Updated</label>
                       <Select value={filters.updatedDate} onValueChange={(v) => setFilters({...filters, updatedDate: v})}>
                         <SelectTrigger className="h-9 text-sm">
                           <SelectValue />
@@ -709,7 +709,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
                       className="hover:bg-slate-50"
                     >
                       <TableCell 
-                        className="font-medium cursor-pointer"
+                        className=" cursor-pointer"
                         onClick={() => handleItemClick(item)}
                       >
                         {item.item_name}

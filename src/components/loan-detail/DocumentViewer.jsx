@@ -100,7 +100,7 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
           </DialogHeader>
           <div className="p-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-red-800 font-semibold mb-2">No file URL available for this document.</p>
+              <p className="text-red-800  mb-2">No file URL available for this document.</p>
               <p className="text-red-700 text-sm">
                 The document "{document.document_name}" doesn't have a valid file URL. 
                 This usually means the file was not properly uploaded.
@@ -108,13 +108,13 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
             </div>
             
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-              <p className="font-semibold text-sm text-slate-700 mb-2">Document Information:</p>
+              <p className=" text-sm text-slate-700 mb-2">Document Information:</p>
               <div className="space-y-1 text-xs text-slate-600">
-                <p><span className="font-semibold">Document Name:</span> {document.document_name}</p>
-                <p><span className="font-semibold">Category:</span> {document.category}</p>
-                <p><span className="font-semibold">Status:</span> {document.status}</p>
-                <p><span className="font-semibold">Uploaded By:</span> {document.uploaded_by || document.created_by}</p>
-                <p><span className="font-semibold">File URL:</span> {document.file_url || '(empty)'}</p>
+                <p><span className="">Document Name:</span> {document.document_name}</p>
+                <p><span className="">Category:</span> {document.category}</p>
+                <p><span className="">Status:</span> {document.status}</p>
+                <p><span className="">Uploaded By:</span> {document.uploaded_by || document.created_by}</p>
+                <p><span className="">File URL:</span> {document.file_url || '(empty)'}</p>
               </div>
             </div>
 
@@ -208,14 +208,14 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
           <div className="w-80 border-l bg-white p-4 overflow-y-auto">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="w-4 h-4" />
-              <h3 className="font-semibold">Comments</h3>
+              <h3 className="">Comments</h3>
             </div>
 
             <div className="space-y-4 mb-4">
               {comments.map((comment) => (
                 <div key={comment.id} className="bg-slate-50 p-3 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
-                    <p className="font-semibold text-sm">{comment.author}</p>
+                    <p className=" text-sm">{comment.author}</p>
                     <p className="text-xs text-slate-500">
                       {new Date(comment.timestamp).toLocaleString()}
                     </p>

@@ -277,7 +277,7 @@ export default function LoanDetail() {
                   Back to Loans
                 </Button>
                 
-                <h1 className="text-3xl font-bold text-slate-900">
+                <h1 className="text-3xl  text-slate-900">
                   {loan.loan_number || loan.primary_loan_id || 'Loan Details'}
                 </h1>
               </div>

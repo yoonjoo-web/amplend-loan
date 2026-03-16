@@ -148,7 +148,7 @@ export default function MyPartners() {
         <div className="max-w-4xl mx-auto">
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg font-bold text-slate-900">My Partners</CardTitle>
+              <CardTitle className="text-lg  text-slate-900">My Partners</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-slate-600">
               You do not have permission to view this page.
@@ -168,7 +168,7 @@ export default function MyPartners() {
           transition={{ duration: 0.5 }}
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Partners</h1>
+          <h1 className="text-3xl  text-slate-900 ">My Partners</h1>
         </motion.div>
 
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -205,19 +205,19 @@ export default function MyPartners() {
                 <TableBody>
                   {filteredPartners.map((partner) => (
                     <TableRow key={partner.id} className="hover:bg-slate-50">
-                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-900">
+                      <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-900">
                         {partner.name || '-'}
                       </TableCell>
-                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                      <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                         {partner.app_role || '-'}
                       </TableCell>
-                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                      <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                         {partner.email || '-'}
                       </TableCell>
-                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                      <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                         {partner.phone || '-'}
                       </TableCell>
-                      <TableCell className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
+                      <TableCell className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-slate-700">
                         {partner.company || partner.contact_person || '-'}
                       </TableCell>
                     </TableRow>

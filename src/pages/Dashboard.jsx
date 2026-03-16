@@ -98,18 +98,18 @@ const LoanApplicationItem = ({ item, type }) => {
               {isLoan ? item.loan_number : item.application_number}
             </span>
             {item.status && (
-              <Badge className={`${statusColors[item.status]} text-xs font-medium`}>
+              <Badge className={`${statusColors[item.status]} text-xs`}>
                 {formatLoanStatus(item.status)}
               </Badge>
             )}
           </div>
           <div className="space-y-1">
-            <p className="font-medium text-slate-900">
+            <p className=" text-slate-900">
               {isLoan
                 ? item.borrower_entity_name || 'Loan'
                 : `${item.borrower_first_name || ''} ${item.borrower_last_name || ''}`.trim() || 'Application'}
             </p>
-            <p className="text-slate-600 text-base font-medium">
+            <p className="text-slate-600 text-base ">
               {isLoan
                 ? [item.property_address, item.property_city, item.property_state].filter(Boolean).join(', ') || 'No property address'
                 : [item.property_address_street, item.property_address_city, item.property_address_state].filter(Boolean).join(', ') || 'No property address'}
@@ -461,7 +461,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+          <h1 className="text-3xl  text-slate-900  mb-2">
             Welcome back, {currentUser?.first_name || currentUser?.full_name || 'User'}!
           </h1>
         </motion.div>
@@ -548,7 +548,7 @@ export default function Dashboard() {
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardHeader className="border-b border-slate-100">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-slate-900">
+                  <CardTitle className="text-lg  text-slate-900">
                     My Borrowers
                   </CardTitle>
                   <Link to={createPageUrl("MyBorrowers")}>
@@ -561,7 +561,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <p className="text-2xl font-bold text-slate-900">{myBorrowersSummary.total}</p>
+                  <p className="text-2xl  text-slate-900">{myBorrowersSummary.total}</p>
                   <p className="text-sm text-slate-600 mt-1">Borrowers on Your Team</p>
                 </div>
               </CardContent>
@@ -573,12 +573,12 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200" data-tour="stats">
           <div className="flex items-center justify-around">
             <div className="text-center">
-              <p className="text-3xl font-bold text-slate-900">{activeLoans.length}</p>
+              <p className="text-3xl  text-slate-900">{activeLoans.length}</p>
               <p className="text-slate-600 mt-1 text-base">Active Loans</p>
             </div>
             <div className="h-12 w-px bg-slate-200"></div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-slate-900">{activeApplications.length}</p>
+              <p className="text-3xl  text-slate-900">{activeApplications.length}</p>
               <p className="text-slate-600 mt-1 text-base">Active Applications</p>
             </div>
           </div>
@@ -595,7 +595,7 @@ export default function Dashboard() {
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm h-full">
               <CardHeader className="border-b border-slate-100">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-slate-900">
+                  <CardTitle className="text-lg  text-slate-900">
                     Your Loans
                   </CardTitle>
                   <Link to={createPageUrl("Loans")}>
@@ -632,7 +632,7 @@ export default function Dashboard() {
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm h-full">
               <CardHeader className="border-b border-slate-100">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-slate-900">
+                  <CardTitle className="text-lg  text-slate-900">
                     Your Applications
                   </CardTitle>
                   <Link to={createPageUrl("Applications")}>
@@ -665,7 +665,7 @@ export default function Dashboard() {
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm h-full">
               <CardHeader className="border-b border-slate-100">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                  <CardTitle className="flex items-center gap-2 text-lg  text-slate-900">
                     <CheckSquare className="w-5 h-5 text-slate-600" />
                     My Tasks
                   </CardTitle>
@@ -696,10 +696,10 @@ export default function Dashboard() {
                         }}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-sm text-slate-900 flex-1">
+                          <h4 className=" text-sm text-slate-900 flex-1">
                             {task.item_name}
                           </h4>
-                          <Badge className={`${getStatusColor(task.status)} text-xs font-medium`}>
+                          <Badge className={`${getStatusColor(task.status)} text-xs`}>
                             {formatStatus(task.status)}
                           </Badge>
                         </div>

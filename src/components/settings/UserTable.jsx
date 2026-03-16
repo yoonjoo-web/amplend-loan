@@ -65,7 +65,7 @@ export default function UserTable({ users, onEditUser, onUserUpdate }) {
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
-              <TableCell className="font-medium">
+              <TableCell>
                 {user.first_name && user.last_name
                   ? `${user.first_name} ${user.last_name}`
                   : user.full_name || user.email}

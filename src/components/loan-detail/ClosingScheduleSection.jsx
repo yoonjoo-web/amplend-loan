@@ -54,22 +54,22 @@ export default function ClosingScheduleSection({ loan, onUpdate, currentUser }) 
   return (
     <Card className="border-0 shadow-sm bg-white">
       <CardHeader className="border-b border-slate-100">
-        <CardTitle className="text-xl font-bold text-slate-900">
+        <CardTitle className="text-xl  text-slate-900">
           Closing Schedule
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-5">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="text-xs  uppercase  text-slate-500">
               Target Closing Date
             </div>
-            <div className="mt-2 text-sm font-semibold text-slate-900">
+            <div className="mt-2 text-sm  text-slate-900">
               {formatDateDisplay(loan.target_closing_date)}
             </div>
           </div>
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="text-xs  uppercase  text-slate-500">
               Actual Closing Date
             </div>
             {canEdit ? (
@@ -90,7 +90,7 @@ export default function ClosingScheduleSection({ loan, onUpdate, currentUser }) 
                 </Button>
               </div>
             ) : (
-              <div className="mt-2 text-sm font-semibold text-slate-900">
+              <div className="mt-2 text-sm  text-slate-900">
                 {formatDateDisplay(loan.actual_closing_date)}
               </div>
             )}

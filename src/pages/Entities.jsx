@@ -278,7 +278,7 @@ export default function Entities() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
         >
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">
+            <h1 className="text-4xl  text-slate-900  mb-2">
               Borrower Entities
             </h1>
             <p className="text-slate-600 text-lg">
@@ -299,7 +299,7 @@ export default function Entities() {
         <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <CardTitle className="text-xl font-bold text-slate-900">
+              <CardTitle className="text-xl  text-slate-900">
                 All Entities
               </CardTitle>
               <div className="flex gap-3">
@@ -354,7 +354,7 @@ export default function Entities() {
                   {sortedEntities.map((entity) => (
                     <TableRow key={entity.id} className="hover:bg-slate-50">
                       {visibleColumns.map(columnKey => (
-                        <TableCell key={columnKey} className={columnKey === 'entity_name' ? 'font-medium' : ''}>
+                        <TableCell key={columnKey} className={columnKey === 'entity_name' ? '' : ''}>
                           {renderColumnValue(entity, columnKey)}
                         </TableCell>
                       ))}

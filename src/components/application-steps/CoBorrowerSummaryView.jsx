@@ -8,7 +8,7 @@ export default function CoBorrowerSummaryView({ coBorrowers = [], applicationSta
     return (
       <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+          <CardTitle className="text-xl  text-slate-900 flex items-center gap-2">
             <Users className="w-5 h-5" />
             Co-Borrowers
           </CardTitle>
@@ -23,7 +23,7 @@ export default function CoBorrowerSummaryView({ coBorrowers = [], applicationSta
   return (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+        <CardTitle className="text-xl  text-slate-900 flex items-center gap-2">
           <Users className="w-5 h-5" />
           Co-Borrowers ({coBorrowers.length})
         </CardTitle>
@@ -42,11 +42,11 @@ export default function CoBorrowerSummaryView({ coBorrowers = [], applicationSta
               className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white ">
                   {index + 1}
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">
+                  <p className=" text-slate-900">
                     {coBorrower.first_name && coBorrower.last_name 
                       ? `${coBorrower.first_name} ${coBorrower.last_name}`
                       : coBorrower.email || `Co-Borrower ${index + 1}`}

@@ -64,7 +64,7 @@ const InfoItem = ({ icon: Icon, label, value, href, isEmail, isPhone }) => {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-slate-500 mb-0.5">{label}</p>
-        <p className="font-medium text-slate-900 truncate">{value}</p>
+        <p className=" text-slate-900 truncate">{value}</p>
       </div>
     </div>
   );
@@ -1138,7 +1138,7 @@ export default function ContactDetail() {
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardContent className="p-12 text-center">
               <Users className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+              <h2 className="text-2xl  text-slate-900 mb-2">Access Denied</h2>
               <p className="text-slate-600">You don't have permission to view contact details.</p>
               <Button
                 onClick={() => navigate(createPageUrl("Dashboard"))}
@@ -1201,7 +1201,7 @@ export default function ContactDetail() {
                   <div className="flex items-start gap-4 flex-1">
                     {contactType === 'borrower' ? (
                       <div className="min-w-0">
-                        <h1 className="text-3xl font-bold text-slate-900 mb-1 tracking-tight">
+                        <h1 className="text-3xl  text-slate-900 mb-1 ">
                           {contact?.first_name} {contact?.last_name}
                         </h1>
                         <p className="text-md text-slate-500">{header?.subtitle}</p>
@@ -1212,7 +1212,7 @@ export default function ContactDetail() {
                           {Icon && <Icon className="w-8 h-8 text-white" />}
                         </div>
                         <div className="min-w-0">
-                          <h1 className="text-3xl font-bold text-slate-900 mb-1">{header?.name}</h1>
+                          <h1 className="text-3xl  text-slate-900 mb-1">{header?.name}</h1>
                           <p className="text-md text-slate-500">{header?.subtitle}</p>
                         </div>
                       </>
@@ -1302,7 +1302,7 @@ export default function ContactDetail() {
                                 onClick={() => navigate(createPageUrl('LoanDetail') + `?id=${loan.id}`)}
                               >
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <span className="text-sm font-medium text-slate-900 truncate">{loan.loan_number || loan.primary_loan_id}</span>
+                                  <span className="text-sm  text-slate-900 truncate">{loan.loan_number || loan.primary_loan_id}</span>
                                   {loan.total_loan_amount && (
                                     <span className="text-xs text-slate-500">${loan.total_loan_amount.toLocaleString()}</span>
                                   )}
@@ -1339,7 +1339,7 @@ export default function ContactDetail() {
                                 onClick={() => navigate(createPageUrl('NewApplication') + `?id=${app.id}&action=view`)}
                               >
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <span className="text-sm font-medium text-slate-900">#{app.application_number}</span>
+                                  <span className="text-sm  text-slate-900">#{app.application_number}</span>
                                   <span className="text-xs text-slate-500 truncate">
                                     {app.loan_type === 'dscr' ? 'DSCR' : app.loan_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                   </span>
@@ -1367,7 +1367,7 @@ export default function ContactDetail() {
                           {relatedTasks.map(task => (
                             <div key={task.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-md">
                               <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <span className="text-sm font-medium text-slate-900 truncate">{task.title}</span>
+                                <span className="text-sm  text-slate-900 truncate">{task.title}</span>
                                 {task.dueDate && (
                                   <span className="text-xs text-slate-500">Due: {format(new Date(task.dueDate), 'MMM d')}</span>
                                 )}
@@ -1391,7 +1391,7 @@ export default function ContactDetail() {
             {contactType === 'borrower' && ownedEntities.length > 0 && (
               <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
                 <CardHeader className="border-b border-slate-100 pb-3">
-                  <CardTitle className="text-base font-semibold text-slate-900">
+                  <CardTitle className="text-base  text-slate-900">
                     Owned Entities ({ownedEntities.length})
                   </CardTitle>
                 </CardHeader>
@@ -1408,13 +1408,13 @@ export default function ContactDetail() {
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <Building2 className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">{entity.entity_name}</p>
+                              <p className="text-sm  text-slate-900 truncate">{entity.entity_name}</p>
                               <p className="text-xs text-slate-500">{entity.entity_type || 'Entity'}</p>
                             </div>
                           </div>
                           {ownershipInfo && (
                             <div className="text-right flex-shrink-0">
-                              <p className="text-sm font-semibold text-slate-900">{ownershipInfo.ownership_percentage}%</p>
+                              <p className="text-sm  text-slate-900">{ownershipInfo.ownership_percentage}%</p>
                               <p className="text-xs text-slate-500">ownership</p>
                             </div>
                           )}
@@ -1431,7 +1431,7 @@ export default function ContactDetail() {
               <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
                 <CardHeader className="border-b border-slate-100 pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-semibold text-slate-900">
+                    <CardTitle className="text-base  text-slate-900">
                       Ownership Structure
                     </CardTitle>
                     <div className="flex gap-2">
@@ -1491,7 +1491,7 @@ export default function ContactDetail() {
                         return (
                           <div key={idx} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg">
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-slate-900">
+                              <p className="text-sm  text-slate-900">
                                 {owner.owner_name}
                                 {borrower && (
                                   <Badge className="ml-2 bg-slate-100 text-slate-700 text-[10px] border border-slate-300 px-1.5 py-0">
@@ -1510,7 +1510,7 @@ export default function ContactDetail() {
                                 max="100"
                                 step="0.01"
                               />
-                              <span className="text-sm font-medium text-slate-700">%</span>
+                              <span className="text-sm  text-slate-700">%</span>
                             </div>
                           </div>
                         );
@@ -1527,7 +1527,7 @@ export default function ContactDetail() {
                                 {borrower ? (
                                   <button
                                     onClick={() => navigate(createPageUrl('ContactDetail') + `?id=${borrower.id}&type=borrower`)}
-                                    className="text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors text-left"
+                                    className="text-sm  text-slate-900 hover:text-blue-600 transition-colors text-left"
                                   >
                                     {owner.owner_name}
                                     <Badge className="ml-2 bg-slate-100 text-slate-700 text-[10px] border border-slate-300 px-1.5 py-0">
@@ -1535,13 +1535,13 @@ export default function ContactDetail() {
                                     </Badge>
                                   </button>
                                 ) : (
-                                  <p className="text-sm font-medium text-slate-900">
+                                  <p className="text-sm  text-slate-900">
                                     {owner.owner_name}
                                   </p>
                                 )}
                               </div>
                               <div className="text-right">
-                                <p className="text-sm font-semibold text-slate-900">{owner.ownership_percentage}%</p>
+                                <p className="text-sm  text-slate-900">{owner.ownership_percentage}%</p>
                               </div>
                             </div>
                           );
@@ -1565,7 +1565,7 @@ export default function ContactDetail() {
               <Card className="border-2 border-blue-200 bg-blue-50 mb-6">
                 <CardContent className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-blue-900">This contact is not linked to a user account</p>
+                    <p className="text-sm  text-blue-900">This contact is not linked to a user account</p>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <p className="text-xs text-blue-700">Invite them to create an account and access the platform</p>
                       {contactType === 'borrower' && hasInviteRecord && (
@@ -1702,7 +1702,7 @@ export default function ContactDetail() {
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardHeader className="border-b border-slate-100 pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-semibold text-slate-900">Contact Information</CardTitle>
+                  <CardTitle className="text-base  text-slate-900">Contact Information</CardTitle>
                   <div className="flex gap-2">
                     {isEditingContactInfo ? (
                       <>
@@ -1743,7 +1743,7 @@ export default function ContactDetail() {
               <CardContent className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3">
                   <div>
-                    <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Email</Label>
+                    <Label className="text-[11px]  text-slate-500 uppercase ">Email</Label>
                     {isEditingContactInfo ? (
                       <Input
                         type="email"
@@ -1752,11 +1752,11 @@ export default function ContactDetail() {
                         className="h-8 text-sm mt-0.5"
                       />
                     ) : (
-                      <p className="text-sm text-slate-900 font-medium break-words mt-0.5">{contact.email || 'N/A'}</p>
+                      <p className="text-sm text-slate-900  break-words mt-0.5">{contact.email || 'N/A'}</p>
                     )}
                   </div>
                   <div>
-                    <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Phone</Label>
+                    <Label className="text-[11px]  text-slate-500 uppercase ">Phone</Label>
                     {isEditingContactInfo ? (
                       <Input
                         type="tel"
@@ -1765,7 +1765,7 @@ export default function ContactDetail() {
                         className="h-8 text-sm mt-0.5"
                       />
                     ) : (
-                      <p className="text-sm text-slate-900 font-medium mt-0.5">
+                      <p className="text-sm text-slate-900  mt-0.5">
                         {contact.phone ? (() => {
                           const digits = contact.phone.replace(/\D/g, '');
                           if (digits.length === 10) {
@@ -1780,7 +1780,7 @@ export default function ContactDetail() {
                   {contactType === 'borrower' && (
                     <>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">SSN</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">SSN</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="text"
@@ -1789,7 +1789,7 @@ export default function ContactDetail() {
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                          <p className="text-sm text-slate-900  mt-0.5">
                             {contact.ssn ? (() => {
                               const digits = contact.ssn.replace(/\D/g, '');
                               if (digits.length === 9) {
@@ -1801,7 +1801,7 @@ export default function ContactDetail() {
                         )}
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Date of Birth</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">Date of Birth</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="date"
@@ -1810,13 +1810,13 @@ export default function ContactDetail() {
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                          <p className="text-sm text-slate-900  mt-0.5">
                             {contact.date_of_birth ? format(new Date(contact.date_of_birth + 'T00:00:00'), 'MMM d, yyyy') : 'N/A'}
                           </p>
                         )}
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Credit Score</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">Credit Score</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="number"
@@ -1828,7 +1828,7 @@ export default function ContactDetail() {
                           />
                         ) : (
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-sm text-slate-900 font-medium">{contact.credit_score || 'N/A'}</p>
+                            <p className="text-sm text-slate-900 ">{contact.credit_score || 'N/A'}</p>
                             {contact.credit_expiration_date && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-700 border-slate-300">
                                 Exp: {format(new Date(contact.credit_expiration_date + 'T00:00:00'), 'MMM d, yyyy')}
@@ -1843,7 +1843,7 @@ export default function ContactDetail() {
                   {contactType === 'entity' && (
                     <>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Entity Type</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">Entity Type</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="text"
@@ -1852,11 +1852,11 @@ export default function ContactDetail() {
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.entity_type || 'N/A'}</p>
+                          <p className="text-sm text-slate-900  mt-0.5">{contact.entity_type || 'N/A'}</p>
                         )}
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">EIN</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">EIN</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="text"
@@ -1865,7 +1865,7 @@ export default function ContactDetail() {
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                          <p className="text-sm text-slate-900  mt-0.5">
                             {contact.registration_number ? formatEIN(contact.registration_number) : 'N/A'}
                           </p>
                         )}
@@ -1876,7 +1876,7 @@ export default function ContactDetail() {
                   {contactType === 'partner' && (
                     <>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Partner Role</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">Partner Role</Label>
                         {isEditingContactInfo ? (
                           <Select
                             value={normalizeAppRole(editedContactData.app_role || editedContactData.type || '')}
@@ -1894,13 +1894,13 @@ export default function ContactDetail() {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">
+                          <p className="text-sm text-slate-900  mt-0.5">
                             {normalizeAppRole(contact.app_role || contact.type) || 'N/A'}
                           </p>
                         )}
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Website</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">Website</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="url"
@@ -1909,11 +1909,11 @@ export default function ContactDetail() {
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium break-words mt-0.5">{contact.website || 'N/A'}</p>
+                          <p className="text-sm text-slate-900  break-words mt-0.5">{contact.website || 'N/A'}</p>
                         )}
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Contact Person</Label>
+                        <Label className="text-[11px]  text-slate-500 uppercase ">Contact Person</Label>
                         {isEditingContactInfo ? (
                           <Input
                             type="text"
@@ -1922,7 +1922,7 @@ export default function ContactDetail() {
                             className="h-8 text-sm mt-0.5"
                           />
                         ) : (
-                          <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.contact_person || 'N/A'}</p>
+                          <p className="text-sm text-slate-900  mt-0.5">{contact.contact_person || 'N/A'}</p>
                         )}
                       </div>
                     </>
@@ -1930,10 +1930,10 @@ export default function ContactDetail() {
                 </div>
 
                 <div className="border-t border-slate-100 mt-4 pt-4">
-                  <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2 block">Address</Label>
+                  <Label className="text-[11px]  text-slate-500 uppercase  mb-2 block">Address</Label>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-3">
                     <div>
-                      <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Street</Label>
+                      <Label className="text-[11px]  text-slate-500 uppercase ">Street</Label>
                       {isEditingContactInfo ? (
                         <Input
                           type="text"
@@ -1942,11 +1942,11 @@ export default function ContactDetail() {
                           className="h-8 text-sm mt-0.5"
                         />
                       ) : (
-                        <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_street || 'N/A'}</p>
+                        <p className="text-sm text-slate-900  mt-0.5">{contact.address_street || 'N/A'}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Unit</Label>
+                      <Label className="text-[11px]  text-slate-500 uppercase ">Unit</Label>
                       {isEditingContactInfo ? (
                         <Input
                           type="text"
@@ -1955,11 +1955,11 @@ export default function ContactDetail() {
                           className="h-8 text-sm mt-0.5"
                         />
                       ) : (
-                        <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_unit || 'N/A'}</p>
+                        <p className="text-sm text-slate-900  mt-0.5">{contact.address_unit || 'N/A'}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">City</Label>
+                      <Label className="text-[11px]  text-slate-500 uppercase ">City</Label>
                       {isEditingContactInfo ? (
                         <Input
                           type="text"
@@ -1968,11 +1968,11 @@ export default function ContactDetail() {
                           className="h-8 text-sm mt-0.5"
                         />
                       ) : (
-                        <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_city || 'N/A'}</p>
+                        <p className="text-sm text-slate-900  mt-0.5">{contact.address_city || 'N/A'}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">State</Label>
+                      <Label className="text-[11px]  text-slate-500 uppercase ">State</Label>
                       {isEditingContactInfo ? (
                         <Input
                           type="text"
@@ -1981,11 +1981,11 @@ export default function ContactDetail() {
                           className="h-8 text-sm mt-0.5"
                         />
                       ) : (
-                        <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_state || 'N/A'}</p>
+                        <p className="text-sm text-slate-900  mt-0.5">{contact.address_state || 'N/A'}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">ZIP Code</Label>
+                      <Label className="text-[11px]  text-slate-500 uppercase ">ZIP Code</Label>
                       {isEditingContactInfo ? (
                         <Input
                           type="text"
@@ -1994,7 +1994,7 @@ export default function ContactDetail() {
                           className="h-8 text-sm mt-0.5"
                         />
                       ) : (
-                        <p className="text-sm text-slate-900 font-medium mt-0.5">{contact.address_zip || 'N/A'}</p>
+                        <p className="text-sm text-slate-900  mt-0.5">{contact.address_zip || 'N/A'}</p>
                       )}
                     </div>
                   </div>
@@ -2012,7 +2012,7 @@ export default function ContactDetail() {
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardHeader className="border-b border-slate-100 pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-semibold text-slate-900">
+                  <CardTitle className="text-base  text-slate-900">
                     Additional Information
                   </CardTitle>
                   <Button
@@ -2037,8 +2037,8 @@ export default function ContactDetail() {
 
                         return (
                           <div key={fieldKey} className="relative group">
-                            <Label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">{label}</Label>
-                            <p className="text-sm text-slate-900 font-medium mt-0.5">{value || 'N/A'}</p>
+                            <Label className="text-[11px]  text-slate-500 uppercase ">{label}</Label>
+                            <p className="text-sm text-slate-900  mt-0.5">{value || 'N/A'}</p>
                             <button
                               onClick={() => handleRemoveVisibleField(fieldKey)}
                               className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-red-100 hover:bg-red-200"

@@ -318,7 +318,7 @@ export default function Layout({ children, currentPageName }) {
                         ) : (
                           <button
                             onClick={() => setActiveSubmenu(item)}
-                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors font-medium ${
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
                               location.pathname === new URL(item.url, window.location.origin).pathname
                                 ? 'bg-slate-100 text-slate-900'
                                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -353,7 +353,7 @@ export default function Layout({ children, currentPageName }) {
                         ) : (
                           <a
                             href={item.url}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                               location.pathname === new URL(item.url, window.location.origin).pathname
                                 ? 'bg-slate-700 text-white shadow-lg'
                                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -419,7 +419,7 @@ export default function Layout({ children, currentPageName }) {
                     {/* Back button */}
                     <button
                       onClick={() => setActiveSubmenu(null)}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm font-medium mb-2"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm mb-2"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       <span>Back</span>
@@ -428,7 +428,7 @@ export default function Layout({ children, currentPageName }) {
                     {/* Section title */}
                     {activeSubmenu && (
                       <>
-                        <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <div className="flex items-center gap-2 px-4 py-2 text-xs text-slate-400 uppercase">
                           {activeSubmenu.icon && <activeSubmenu.icon className="w-4 h-4" />}
                           <span>{activeSubmenu.title}</span>
                         </div>
@@ -437,7 +437,7 @@ export default function Layout({ children, currentPageName }) {
                           <a
                            key={subitem.title}
                            href={subitem.url}
-                           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors font-medium ${
+                           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors ${
                              (new URL(subitem.url, window.location.origin).search
                                ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
                                : location.pathname === new URL(subitem.url, window.location.origin).pathname)

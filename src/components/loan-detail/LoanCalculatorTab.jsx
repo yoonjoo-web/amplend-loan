@@ -160,19 +160,19 @@ export default function LoanCalculatorTab({ loan }) {
         <div className="space-y-8 max-w-4xl">
           {/* Loan Summary */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Loan Summary</h3>
+            <h3 className="text-lg  text-slate-900 mb-4">Loan Summary</h3>
             <div className="grid grid-cols-3 gap-6">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Original Loan Amount</p>
-                <p className="text-2xl font-bold text-slate-900">{formatCurrency(loan.total_loan_amount || 0)}</p>
+                <p className="text-2xl  text-slate-900">{formatCurrency(loan.total_loan_amount || 0)}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">Interest Rate</p>
-                <p className="text-2xl font-bold text-slate-900">{loan.interest_rate || 0}%</p>
+                <p className="text-2xl  text-slate-900">{loan.interest_rate || 0}%</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">Loan Term</p>
-                <p className="text-2xl font-bold text-slate-900">{loan.loan_term_months || 0} months</p>
+                <p className="text-2xl  text-slate-900">{loan.loan_term_months || 0} months</p>
               </div>
             </div>
           </div>
@@ -181,37 +181,37 @@ export default function LoanCalculatorTab({ loan }) {
 
           {/* Current Status */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Current Status</h3>
+            <h3 className="text-lg  text-slate-900 mb-4">Current Status</h3>
             <div className="grid grid-cols-2 gap-x-12 gap-y-4">
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Remaining Balance</span>
-                <span className="font-semibold text-emerald-600">{formatCurrency(calculations.remainingBalance)}</span>
+                <span className=" text-emerald-600">{formatCurrency(calculations.remainingBalance)}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Next Payment Due</span>
-                <span className="font-semibold text-slate-900">
+                <span className=" text-slate-900">
                   {calculations.nextPaymentDate ? format(calculations.nextPaymentDate, 'MMM d, yyyy') : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Next Payment Amount</span>
-                <span className="font-semibold text-slate-900">{formatCurrency(calculations.nextPaymentAmount)}</span>
+                <span className=" text-slate-900">{formatCurrency(calculations.nextPaymentAmount)}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Current LTV</span>
-                <span className={`font-semibold ${calculations.currentLTV > 80 ? 'text-red-600' : 'text-slate-900'}`}>
+                <span className={`${calculations.currentLTV > 80 ? 'text-red-600' : 'text-slate-900'}`}>
                   {calculations.currentLTV.toFixed(2)}%
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Days Until Maturity</span>
-                <span className={`font-semibold ${calculations.daysUntilMaturity < 30 && calculations.daysUntilMaturity > 0 ? 'text-orange-600' : calculations.daysUntilMaturity <= 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                <span className={`${calculations.daysUntilMaturity < 30 && calculations.daysUntilMaturity > 0 ? 'text-orange-600' : calculations.daysUntilMaturity <= 0 ? 'text-red-600' : 'text-slate-900'}`}>
                   {calculations.daysUntilMaturity > 0 ? calculations.daysUntilMaturity : 'Matured'}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Equity Built</span>
-                <span className="font-semibold text-emerald-600">{formatCurrency(calculations.equityBuilt)}</span>
+                <span className=" text-emerald-600">{formatCurrency(calculations.equityBuilt)}</span>
               </div>
             </div>
           </div>
@@ -220,23 +220,23 @@ export default function LoanCalculatorTab({ loan }) {
 
           {/* Payment Progress */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Payment Progress</h3>
+            <h3 className="text-lg  text-slate-900 mb-4">Payment Progress</h3>
             <div className="grid grid-cols-2 gap-x-12 gap-y-4">
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Payments Made</span>
-                <span className="font-semibold text-slate-900">{calculations.paymentsMade}</span>
+                <span className=" text-slate-900">{calculations.paymentsMade}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Payments Remaining</span>
-                <span className="font-semibold text-slate-900">{calculations.paymentsRemaining}</span>
+                <span className=" text-slate-900">{calculations.paymentsRemaining}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Total Principal Paid</span>
-                <span className="font-semibold text-blue-600">{formatCurrency(calculations.totalPrincipalPaid)}</span>
+                <span className=" text-blue-600">{formatCurrency(calculations.totalPrincipalPaid)}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Total Interest Paid</span>
-                <span className="font-semibold text-slate-600">{formatCurrency(calculations.totalInterestPaid)}</span>
+                <span className=" text-slate-600">{formatCurrency(calculations.totalInterestPaid)}</span>
               </div>
             </div>
           </div>
@@ -245,41 +245,41 @@ export default function LoanCalculatorTab({ loan }) {
 
           {/* Loan Details */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Loan Details</h3>
+            <h3 className="text-lg  text-slate-900 mb-4">Loan Details</h3>
             <div className="grid grid-cols-2 gap-x-12 gap-y-4">
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Origination Date</span>
-                <span className="font-semibold text-slate-900">
+                <span className=" text-slate-900">
                   {loan.origination_date ? format(new Date(loan.origination_date), 'MMM d, yyyy') : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">First Payment Date</span>
-                <span className="font-semibold text-slate-900">
+                <span className=" text-slate-900">
                   {loan.first_payment_date ? format(new Date(loan.first_payment_date), 'MMM d, yyyy') : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Maturity Date</span>
-                <span className="font-semibold text-slate-900">
+                <span className=" text-slate-900">
                   {loan.maturity_date ? format(new Date(loan.maturity_date), 'MMM d, yyyy') : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Interest Only Period</span>
-                <span className="font-semibold text-slate-900">{loan.interest_only_period_months || 0} months</span>
+                <span className=" text-slate-900">{loan.interest_only_period_months || 0} months</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Monthly Payment</span>
-                <span className="font-semibold text-slate-900">{formatCurrency(calculations.nextPaymentAmount)}</span>
+                <span className=" text-slate-900">{formatCurrency(calculations.nextPaymentAmount)}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Accrual Type</span>
-                <span className="font-semibold text-slate-900">{loan.accrual_type || 'N/A'}</span>
+                <span className=" text-slate-900">{loan.accrual_type || 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100">
                 <span className="text-sm text-slate-600">Rate Type</span>
-                <span className="font-semibold text-slate-900">
+                <span className=" text-slate-900">
                   {loan.rate_type === 'fixed' ? 'Fixed' : loan.rate_type === 'adjustable' ? 'Adjustable' : 'N/A'}
                 </span>
               </div>
@@ -291,24 +291,24 @@ export default function LoanCalculatorTab({ loan }) {
             <>
               <Separator />
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Escrow Accounts</h3>
+                <h3 className="text-lg  text-slate-900 mb-4">Escrow Accounts</h3>
                 <div className="grid grid-cols-2 gap-x-12 gap-y-4">
                   {loan.property_insurance_escrow && (
                     <div className="flex justify-between items-center py-3 border-b border-slate-100">
                       <span className="text-sm text-slate-600">Property Insurance Escrow</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(loan.property_insurance_escrow)}</span>
+                      <span className=" text-slate-900">{formatCurrency(loan.property_insurance_escrow)}</span>
                     </div>
                   )}
                   {loan.property_tax_escrow_1 && (
                     <div className="flex justify-between items-center py-3 border-b border-slate-100">
                       <span className="text-sm text-slate-600">Property Tax Escrow 1</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(loan.property_tax_escrow_1)}</span>
+                      <span className=" text-slate-900">{formatCurrency(loan.property_tax_escrow_1)}</span>
                     </div>
                   )}
                   {loan.property_tax_escrow_2 && (
                     <div className="flex justify-between items-center py-3 border-b border-slate-100">
                       <span className="text-sm text-slate-600">Property Tax Escrow 2</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(loan.property_tax_escrow_2)}</span>
+                      <span className=" text-slate-900">{formatCurrency(loan.property_tax_escrow_2)}</span>
                     </div>
                   )}
                 </div>

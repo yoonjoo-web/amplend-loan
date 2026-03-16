@@ -60,7 +60,7 @@ export default function MessageThreadModal({ isOpen, onClose, thread, currentUse
             {/* Attachments */}
             {message.attachments && message.attachments.length > 0 && (
               <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-sm font-semibold text-slate-700 mb-2">
+                <p className="text-sm  text-slate-700 mb-2">
                   Attachments ({message.attachments.length})
                 </p>
                 <div className="space-y-2">

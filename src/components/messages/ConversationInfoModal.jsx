@@ -36,7 +36,7 @@ export default function ConversationInfoModal({
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold text-lg">
+              <h3 className=" text-lg">
                 {isLoanChannel ? `# ${conversation.loan_number}` : 'Direct Message'}
               </h3>
               <Badge className={isLoanChannel ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}>
@@ -50,7 +50,7 @@ export default function ConversationInfoModal({
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="w-4 h-4 text-slate-500" />
               <span className="text-slate-600">Created:</span>
-              <span className="font-medium text-slate-900">
+              <span className=" text-slate-900">
                 {conversation.last_message?.created_date 
                   ? format(new Date(conversation.last_message.created_date), 'MMM d, yyyy')
                   : 'Unknown'
@@ -61,7 +61,7 @@ export default function ConversationInfoModal({
             <div className="flex items-center gap-2 text-sm">
               <UserIcon className="w-4 h-4 text-slate-500" />
               <span className="text-slate-600">Participants:</span>
-              <span className="font-medium text-slate-900">
+              <span className=" text-slate-900">
                 {conversation.participants.length} {conversation.participants.length === 1 ? 'person' : 'people'}
               </span>
             </div>
@@ -70,13 +70,13 @@ export default function ConversationInfoModal({
           {/* Loan Info for Loan Channels */}
           {isLoanChannel && (
             <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
-              <h4 className="font-semibold text-sm text-purple-900 mb-2">Loan Information</h4>
+              <h4 className=" text-sm text-purple-900 mb-2">Loan Information</h4>
               <div className="space-y-1 text-sm">
                 <p className="text-purple-700">
-                  <span className="font-medium">Loan Number:</span> {conversation.loan_number}
+                  <span className="">Loan Number:</span> {conversation.loan_number}
                 </p>
                 <p className="text-purple-700">
-                  <span className="font-medium">Loan ID:</span> {conversation.loan_id}
+                  <span className="">Loan ID:</span> {conversation.loan_id}
                 </p>
               </div>
             </div>

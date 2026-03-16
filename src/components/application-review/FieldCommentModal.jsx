@@ -37,7 +37,7 @@ export default function FieldCommentModal({ isOpen, onClose, field, currentComme
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Add Field Comment</h3>
+              <h3 className="text-xl text-slate-900">Add Field Comment</h3>
               <p className="text-sm text-slate-500 mt-1">Field: {field}</p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">

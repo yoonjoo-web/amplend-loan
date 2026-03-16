@@ -291,7 +291,7 @@ export default function Onboarding() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
         <Card className="max-w-md">
           <CardContent className="p-10 text-center space-y-3">
-            <h2 className="text-2xl font-bold text-slate-900">This Page Is No Longer Available</h2>
+            <h2 className="text-2xl  text-slate-900">This Page Is No Longer Available</h2>
             <p className="text-slate-600">
               This onboarding link is inactive or has expired.
             </p>
@@ -317,7 +317,7 @@ export default function Onboarding() {
               <div className="w-20 h-20 bg-gradient-to-br from-slate-900 to-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <UserCircle className="w-10 h-10 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              <h1 className="text-3xl  text-slate-900 mb-2">
                 Welcome to Amplend Loan Portal
               </h1>
             </>
@@ -339,7 +339,7 @@ export default function Onboarding() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name" className="text-sm font-medium">
+                  <Label htmlFor="first_name" className="text-sm ">
                     First Name <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -364,7 +364,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="last_name" className="text-sm font-medium">
+                  <Label htmlFor="last_name" className="text-sm ">
                     Last Name <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">

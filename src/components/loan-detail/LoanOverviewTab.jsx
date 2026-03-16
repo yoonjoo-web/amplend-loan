@@ -230,7 +230,7 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
     <Card className="border-0 shadow-sm bg-white">
       <CardHeader className="border-b border-slate-100">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-slate-900">Loan Overview</CardTitle>
+          <CardTitle className="text-xl  text-slate-900">Loan Overview</CardTitle>
           {canEdit && (
             <Button
               onClick={() => {

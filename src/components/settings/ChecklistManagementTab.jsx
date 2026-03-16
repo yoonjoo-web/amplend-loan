@@ -357,7 +357,7 @@ export default function ChecklistManagementTab({ currentUser }) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
-                    <Label className="text-base font-semibold">Loan Product:</Label>
+                    <Label className="text-base">Loan Product:</Label>
                     <Select value={selectedLoanProduct} onValueChange={handleLoanProductChange}>
                       <SelectTrigger className="w-48">
                         <SelectValue />
@@ -373,7 +373,7 @@ export default function ChecklistManagementTab({ currentUser }) {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <Label className="text-base font-semibold">Loan Purpose:</Label>
+                    <Label className="text-base">Loan Purpose:</Label>
                     <Select value={selectedLoanPurpose} onValueChange={setSelectedLoanPurpose}>
                       <SelectTrigger className="w-48">
                         <SelectValue />
@@ -495,7 +495,7 @@ export default function ChecklistManagementTab({ currentUser }) {
                                                       </div>
                                                       <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                          <p className="font-medium text-slate-900">{item.item}</p>
+                                                          <p className="text-slate-900">{item.item}</p>
                                                           {item.provider && (
                                                             <Badge variant="outline" className="text-xs">
                                                               {item.provider}

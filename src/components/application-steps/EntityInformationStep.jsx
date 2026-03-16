@@ -372,15 +372,15 @@ export default React.memo(function EntityInformationStep({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-semibold">Ownership Structure</CardTitle>
+              <CardTitle className="text-lg ">Ownership Structure</CardTitle>
               {totalOwnership > 0 && (
                 <p className="text-sm text-slate-600 mt-2">
                   Total Ownership:{' '}
                   <span
                     className={
                       totalOwnership > 100
-                        ? 'text-red-600 font-semibold'
-                        : 'font-semibold'
+                        ? 'text-red-600'
+                        : ''
                     }
                   >
                     {totalOwnership}%
@@ -410,10 +410,10 @@ export default React.memo(function EntityInformationStep({
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white ">
                       {index + 1}
                     </div>
-                    <p className="font-semibold text-slate-900">
+                    <p className=" text-slate-900">
                       {index === 0 ? 'Primary Borrower' : `Owner #${index + 1}`}
                     </p>
                   </div>
@@ -602,7 +602,7 @@ export default React.memo(function EntityInformationStep({
         searchFields={['entity_name', 'entity_type', 'registration_number']}
         renderItem={(entity) => (
           <div className="flex flex-col items-start gap-0.5">
-            <span className="font-medium text-sm text-slate-900">{entity.entity_name}</span>
+            <span className=" text-sm text-slate-900">{entity.entity_name}</span>
             <span className="text-xs text-slate-500">
               {entity.entity_type} • EIN: {entity.registration_number || 'N/A'}
             </span>

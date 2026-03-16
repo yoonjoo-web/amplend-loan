@@ -166,7 +166,7 @@ export default function LoanPartners() {
       case 'app_role': {
         const partnerRole = normalizeAppRole(partner.app_role || partner.type || '');
         return (
-          <Badge className={`${roleColors[partnerRole] || 'bg-slate-100 text-slate-800'} font-medium`}>
+          <Badge className={`${roleColors[partnerRole] || 'bg-slate-100 text-slate-800'}`}>
             {partnerRole || 'Unassigned'}
           </Badge>
         );
@@ -235,7 +235,7 @@ export default function LoanPartners() {
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
         >
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">
+            <h1 className="text-4xl  text-slate-900  mb-2">
               Loan Partners
             </h1>
             <p className="text-slate-600 text-lg">
@@ -257,7 +257,7 @@ export default function LoanPartners() {
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <CardTitle className="text-xl font-bold text-slate-900">
+                <CardTitle className="text-xl  text-slate-900">
                   All Partners
                 </CardTitle>
                 <div className="flex gap-3 flex-wrap">
@@ -322,7 +322,7 @@ export default function LoanPartners() {
                     {sortedPartners.map((partner) => (
                       <TableRow key={partner.id} className="hover:bg-slate-50">
                         {visibleColumns.map(columnKey => (
-                          <TableCell key={columnKey} className={columnKey === 'name' ? 'font-medium' : ''}>
+                          <TableCell key={columnKey} className={columnKey === 'name' ? '' : ''}>
                             {renderColumnValue(partner, columnKey)}
                           </TableCell>
                         ))}
@@ -369,7 +369,7 @@ export default function LoanPartners() {
           </Card>
         ) : (
           <div className="text-center py-16 text-slate-500">
-            <h3 className="text-xl font-semibold text-slate-600 mb-2">Access Denied</h3>
+            <h3 className="text-xl  text-slate-600 mb-2">Access Denied</h3>
             <p className="text-slate-500 mb-6">You do not have permission to view this page.</p>
           </div>
         )}

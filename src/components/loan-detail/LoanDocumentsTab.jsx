@@ -1223,7 +1223,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       <section className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
         <header className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-semibold tracking-[-0.5px] text-[#171717]">
+            <h2 className="text-2xl   text-[#171717]">
               Documents
             </h2>
           </div>
@@ -1250,7 +1250,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                   setProviderFilter("all");
                 }}
                 className={cn(
-                  "flex-1 whitespace-nowrap rounded-lg border px-5 py-2 text-sm font-medium transition-colors",
+                  "flex-1 whitespace-nowrap rounded-lg border px-5 py-2 text-sm  transition-colors",
                   activeTab === tab.value
                     ? "border-[#e5e5e5] bg-white text-black shadow-sm"
                     : "border-transparent bg-transparent text-black hover:bg-white/60"
@@ -1266,7 +1266,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <div className="grid flex-1 gap-4 md:grid-cols-2">
               <div className="flex items-center gap-3">
-                <Label className="shrink-0 text-base font-normal text-[#171717]">Provider</Label>
+                <Label className="shrink-0 text-base  text-[#171717]">Provider</Label>
                 <Select value={providerFilter} onValueChange={setProviderFilter}>
                   <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
                     <SelectValue placeholder="All" />
@@ -1283,7 +1283,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
               </div>
 
               <div className="flex items-center gap-3">
-                <Label className="shrink-0 text-base font-normal text-[#171717]">
+                <Label className="shrink-0 text-base  text-[#171717]">
                   Uploaded date
                 </Label>
                 <Select value={sortOrder} onValueChange={setSortOrder}>
@@ -1349,7 +1349,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
               <table className="min-w-[920px] w-full border-collapse">
                 <thead>
                   <tr className="border-b-2 border-[#e5e5e5]">
-                    <th className="px-6 py-3 text-left align-middle font-normal text-[#171717]">
+                    <th className="px-6 py-3 text-left align-middle  text-[#171717]">
                       <div className="flex items-center gap-4">
                         {isDownloadMode ? (
                           <Checkbox
@@ -1367,13 +1367,13 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                         <span className="text-lg">Title</span>
                       </div>
                     </th>
-                    <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
+                    <th className="w-[220px] px-6 py-3 text-left text-base  text-[#171717]">
                       Provider
                     </th>
-                    <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
+                    <th className="w-[220px] px-6 py-3 text-left text-base  text-[#171717]">
                       Uploaded date
                     </th>
-                    <th className="w-[220px] px-6 py-3 text-left text-base font-normal text-[#171717]">
+                    <th className="w-[220px] px-6 py-3 text-left text-base  text-[#171717]">
                       <div className="flex items-center gap-2">
                         <span className="flex-1">Action</span>
                         <ArrowUpDown className="h-4 w-4" />
@@ -1384,7 +1384,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 <tbody>
                   {visibleRows.map((row) => (
                     <tr key={row.id} className="border-b border-[#ededed] last:border-b-0">
-                      <td className="px-6 py-4 text-[17px] tracking-[-0.3px] text-[#171717]">
+                      <td className="px-6 py-4 text-[17px]  text-[#171717]">
                         <div className="flex items-center gap-4">
                           {isDownloadMode ? (
                             <Checkbox
@@ -1401,7 +1401,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                       </td>
                       <td
                         className={cn(
-                          "px-6 py-4 text-[17px] tracking-[-0.3px]",
+                          "px-6 py-4 text-[17px] ",
                           row.providerLabel === "Not Assigned" ? "text-[#8e8e93]" : "text-[#171717]"
                         )}
                       >
@@ -1409,7 +1409,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                       </td>
                       <td
                         className={cn(
-                          "px-6 py-4 text-[17px] tracking-[-0.3px]",
+                          "px-6 py-4 text-[17px] ",
                           row.hasFile ? "text-[#171717]" : "text-[#8e8e93]"
                         )}
                       >
@@ -1486,7 +1486,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
             {pendingUploads.map((upload) => (
               <div key={upload.id} className="rounded-xl border border-slate-200 p-4">
                 <div className="mb-4">
-                  <p className="font-medium text-slate-900">{upload.file.name}</p>
+                  <p className=" text-slate-900">{upload.file.name}</p>
                   <p className="text-sm text-slate-500">
                     {(upload.file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
@@ -1659,7 +1659,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       <Dialog open={Boolean(activityRow)} onOpenChange={(open) => !open && setActivityRow(null)}>
         <DialogContent className="max-w-[560px] rounded-[4px] px-6 pb-12 pt-8">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold tracking-[-0.5px] text-black">
+            <DialogTitle className="text-base   text-black">
               Request document activity
             </DialogTitle>
           </DialogHeader>
@@ -1671,10 +1671,10 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 return (
                   <div className="space-y-6">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-base tracking-[-0.5px] text-black">
+                      <span className="text-base  text-black">
                         First document followup date
                       </span>
-                      <span className="text-right text-base tracking-[-0.5px] text-black">
+                      <span className="text-right text-base  text-black">
                         {summary.firstRequestedAt
                           ? resolveDateLabel(summary.firstRequestedAt)
                           : "Not available"}
@@ -1682,16 +1682,16 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex flex-col items-start justify-center">
-                        <span className="text-base tracking-[-0.5px] text-black">
+                        <span className="text-base  text-black">
                           Desired due date
                         </span>
                         {summary.overdue ? (
-                          <span className="text-xs leading-none text-[#b3261e]">
+                          <span className="text-xs  text-[#b3261e]">
                             Due date is past
                           </span>
                         ) : null}
                       </div>
-                      <span className="text-right text-base tracking-[-0.5px] text-black">
+                      <span className="text-right text-base  text-black">
                         {summary.desiredDueAt
                           ? resolveDateLabel(summary.desiredDueAt)
                           : "Not available"}
@@ -1699,14 +1699,14 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex flex-col items-start justify-center">
-                        <span className="text-base tracking-[-0.5px] text-black">
+                        <span className="text-base  text-black">
                           Last document followup date
                         </span>
-                        <span className="text-xs leading-none text-black">
+                        <span className="text-xs  text-black">
                           Reminder sent every 2 days
                         </span>
                       </div>
-                      <span className="text-right text-base tracking-[-0.5px] text-black">
+                      <span className="text-right text-base  text-black">
                         {summary.lastFollowupAt
                           ? resolveDateLabel(summary.lastFollowupAt)
                           : "Not sent yet"}

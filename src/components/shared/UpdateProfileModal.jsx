@@ -57,7 +57,7 @@ export default function UpdateProfileModal({
                   />
                   <Label
                     htmlFor={`update-profile-${option.value}`}
-                    className="text-sm font-medium text-slate-700"
+                    className="text-sm  text-slate-700"
                   >
                     {option.label}
                   </Label>
@@ -69,7 +69,7 @@ export default function UpdateProfileModal({
             <Button
               onClick={() => onSubmitOption && onSubmitOption(selectedOption)}
               disabled={!onSubmitOption}
-              className="h-10 text-sm font-medium"
+              className="h-10 text-sm "
             >
               {submitLabel}
             </Button>
@@ -86,7 +86,7 @@ export default function UpdateProfileModal({
               key={action.label || index}
               variant={action.variant || 'default'}
               onClick={action.onClick}
-              className={`h-10 text-sm font-medium ${action.className || ''} ${
+              className={`h-10 text-sm  ${action.className || ''} ${
                 action.variant === 'outline' ? 'border border-slate-200' : ''
               }`}
             >
@@ -102,13 +102,13 @@ export default function UpdateProfileModal({
         <Button
           variant="outline"
           onClick={onKeepApplicationOnly}
-          className="h-10 border border-slate-200 text-sm font-medium"
+          className="h-10 border border-slate-200 text-sm "
         >
           {secondaryLabel}
         </Button>
         <Button
           onClick={onUpdateProfile}
-          className="h-10 text-sm font-medium"
+          className="h-10 text-sm "
         >
           {primaryLabel}
         </Button>

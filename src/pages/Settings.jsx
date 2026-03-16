@@ -134,7 +134,7 @@ export default function Settings() {
           <Card>
             <CardContent className="p-12 text-center">
               <SettingsIcon className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+              <h2 className="text-2xl  text-slate-900 mb-2">Access Denied</h2>
               <p className="text-slate-600">You don't have permission to access settings.</p>
             </CardContent>
           </Card>
@@ -153,7 +153,7 @@ export default function Settings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+          <h1 className="text-3xl  text-slate-900  mb-2">
             Settings
           </h1>
           <p className="text-slate-600">Manage users, invitations, and application configuration</p>
@@ -165,7 +165,7 @@ export default function Settings() {
             <button
               data-tour="tab-users"
               onClick={() => setActiveTab('users')}
-              className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2  transition-colors whitespace-nowrap ${
                 activeTab === 'users'
                   ? 'text-slate-900 border-b-2 border-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
@@ -179,7 +179,7 @@ export default function Settings() {
             <button
               data-tour="tab-fields"
               onClick={() => setActiveTab('fields')}
-              className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2  transition-colors whitespace-nowrap ${
                 activeTab === 'fields'
                   ? 'text-slate-900 border-b-2 border-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
@@ -194,7 +194,7 @@ export default function Settings() {
               <button
                 data-tour="tab-checklist"
                 onClick={() => setActiveTab('checklist')}
-                className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+                className={`px-4 py-2  transition-colors whitespace-nowrap ${
                   activeTab === 'checklist'
                     ? 'text-slate-900 border-b-2 border-slate-900'
                     : 'text-slate-600 hover:text-slate-900'
@@ -208,7 +208,7 @@ export default function Settings() {
           {permissions.canManageNotifications && (
             <button
               onClick={() => setActiveTab('notifications')}
-              className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2  transition-colors whitespace-nowrap ${
                 activeTab === 'notifications'
                   ? 'text-slate-900 border-b-2 border-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
@@ -221,7 +221,7 @@ export default function Settings() {
           {(permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer || permissions.isBroker) && (
             <button
               onClick={() => setActiveTab('invites')}
-              className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+              className={`px-4 py-2  transition-colors whitespace-nowrap ${
                 activeTab === 'invites'
                   ? 'text-slate-900 border-b-2 border-slate-900'
                   : 'text-slate-600 hover:text-slate-900'
@@ -233,7 +233,7 @@ export default function Settings() {
           )}
           <button
             onClick={() => setActiveTab('tour')}
-            className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+            className={`px-4 py-2  transition-colors whitespace-nowrap ${
               activeTab === 'tour'
                 ? 'text-slate-900 border-b-2 border-slate-900'
                 : 'text-slate-600 hover:text-slate-900'
@@ -244,7 +244,7 @@ export default function Settings() {
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+            className={`px-4 py-2  transition-colors whitespace-nowrap ${
               activeTab === 'profile'
                 ? 'text-slate-900 border-b-2 border-slate-900'
                 : 'text-slate-600 hover:text-slate-900'
@@ -296,7 +296,7 @@ export default function Settings() {
             <CardContent>
               <div className="space-y-6">
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-2">How Daily Reports Work</h4>
+                  <h4 className=" text-blue-900 mb-2">How Daily Reports Work</h4>
                   <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
                     <li>Borrowers receive automated end-of-day summary emails</li>
                     <li>Reports include: recent updates, overdue tasks, upcoming deadlines, and unread notifications</li>
@@ -306,7 +306,7 @@ export default function Settings() {
                 </div>
 
                 <div className="p-4 bg-slate-50 rounded-lg">
-                  <h4 className="font-semibold text-slate-900 mb-3">Manual Trigger</h4>
+                  <h4 className=" text-slate-900 mb-3">Manual Trigger</h4>
                   <p className="text-sm text-slate-600 mb-4">
                     For testing or immediate needs, you can manually trigger daily reports to be sent now.
                   </p>
@@ -389,19 +389,19 @@ export default function Settings() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>First Name</Label>
-                      <p className="text-slate-900 font-medium">{currentUser.first_name || '-'}</p>
+                      <p className="text-slate-900 ">{currentUser.first_name || '-'}</p>
                     </div>
                     <div>
                       <Label>Last Name</Label>
-                      <p className="text-slate-900 font-medium">{currentUser.last_name || '-'}</p>
+                      <p className="text-slate-900 ">{currentUser.last_name || '-'}</p>
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <p className="text-slate-900 font-medium">{currentUser.email || '-'}</p>
+                      <p className="text-slate-900 ">{currentUser.email || '-'}</p>
                     </div>
                     <div>
                       <Label>Role</Label>
-                      <p className="text-slate-900 font-medium">{currentUser.app_role || '-'}</p>
+                      <p className="text-slate-900 ">{currentUser.app_role || '-'}</p>
                     </div>
                   </div>
                   <div className="pt-4 border-t">

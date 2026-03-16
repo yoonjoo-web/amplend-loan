@@ -357,26 +357,26 @@ Amplend Team`
       <CardContent>
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-lg border bg-white p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="text-xs  uppercase  text-slate-500">
               Total Rehab Budget
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-900">
+            <div className="mt-2 text-lg  text-slate-900">
               ${(loan.total_rehab_budget || 0).toLocaleString()}
             </div>
           </div>
           <div className="rounded-lg border bg-white p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="text-xs  uppercase  text-slate-500">
               Total Disburse
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-900">
+            <div className="mt-2 text-lg  text-slate-900">
               ${calculateDisimburseCumulative(draws).toLocaleString()}
             </div>
           </div>
           <div className="rounded-lg border bg-white p-4">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="text-xs  uppercase  text-slate-500">
               Net Funds to Borrower
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-900">
+            <div className="mt-2 text-lg  text-slate-900">
               ${calculateFundsCumulative(draws).toLocaleString()}
             </div>
           </div>
@@ -385,7 +385,7 @@ Amplend Team`
         <div className="mb-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Draws</h3>
+              <h3 className="text-base  text-slate-900">Draws</h3>
               <p className="text-sm text-slate-500">
                 Saved draws appear here once finalized.
               </p>
@@ -514,7 +514,7 @@ Amplend Team`
           {draftDraws.length > 0 && (
             <div className="space-y-3">
               <div>
-                <h4 className="text-sm font-semibold text-slate-900">Draft Draws</h4>
+                <h4 className="text-sm  text-slate-900">Draft Draws</h4>
                 <p className="text-xs text-slate-500">
                   Review edits, then save to finalize.
                 </p>
@@ -538,7 +538,7 @@ Amplend Team`
                   <TableBody>
                     {draftDraws.map((draft, index) => (
                       <TableRow key={draft.id}>
-                        <TableCell className="font-medium text-slate-900">
+                        <TableCell className=" text-slate-900">
                           {draft.requested_item_name || 'Draw'}
                         </TableCell>
                         <TableCell>
@@ -625,7 +625,7 @@ Amplend Team`
         <div className="mb-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Draw Requests</h3>
+              <h3 className="text-base  text-slate-900">Draw Requests</h3>
               <p className="text-sm text-slate-500">
                 Borrowers can submit requests. Loan officers and admins can convert them into draws.
               </p>
@@ -702,7 +702,7 @@ Amplend Team`
                 <TableBody>
                   {drawRequests.map((request) => (
                     <TableRow key={request.id}>
-                      <TableCell className="font-medium text-slate-900">
+                      <TableCell className=" text-slate-900">
                         {request.item_name}
                       </TableCell>
                       <TableCell>{formatCurrency(request.request_amount || 0)}</TableCell>

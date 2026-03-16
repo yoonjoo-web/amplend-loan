@@ -53,7 +53,7 @@ export default function FieldChangeIndicator({ fieldName, applicationData }) {
       </PopoverTrigger>
       <PopoverContent className="w-96" align="end">
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm text-slate-900">Change History</h4>
+          <h4 className=" text-sm text-slate-900">Change History</h4>
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {changes.map((change, idx) => (
               <div key={idx} className="text-xs border-l-2 border-orange-500 pl-3 py-2 bg-slate-50 rounded">
@@ -67,11 +67,11 @@ export default function FieldChangeIndicator({ fieldName, applicationData }) {
                 </div>
                 <div className="space-y-1">
                   <div>
-                    <span className="font-medium text-slate-600">Previous: </span>
+                    <span className=" text-slate-600">Previous: </span>
                     <span className="text-slate-900">{change.old_value?.toString() || '(empty)'}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-slate-600">Current: </span>
+                    <span className=" text-slate-600">Current: </span>
                     <span className="text-slate-900">{change.new_value?.toString() || '(empty)'}</span>
                   </div>
                 </div>

@@ -511,7 +511,7 @@ export default function Loans() {
           transition={{ duration: 0.5 }}
           className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl  text-slate-900 ">
             Loans
           </h1>
         </motion.div>
@@ -583,7 +583,7 @@ export default function Loans() {
                   onClick={() => handleLoanClick(loan.id)}>
 
                       {visibleColumns.map((column) =>
-                  <TableCell key={column.key} className="px-2 py-3 font-medium align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
+                  <TableCell key={column.key} className="px-2 py-3  align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
                           {renderColumnValue(loan, column.key)}
                         </TableCell>
                   )}

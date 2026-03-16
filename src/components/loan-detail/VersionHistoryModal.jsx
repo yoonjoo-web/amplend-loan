@@ -108,7 +108,7 @@ export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOff
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 text-base mb-1">
+                          <p className=" text-slate-900 text-base mb-1">
                             Changed: {changeSummary}
                           </p>
                           {hasFieldChanges && (
@@ -149,14 +149,14 @@ export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOff
                         {mod.field_changes.map((change, changeIndex) => (
                           <div key={changeIndex} className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
                             <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
-                              <p className="text-sm font-semibold text-slate-900">
+                              <p className="text-sm  text-slate-900">
                                 {getFieldDisplayName(change.field_name)}
                               </p>
                             </div>
                             <div className="p-4">
                               <div className="flex items-center gap-4">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-slate-500 mb-2">Previous Value</p>
+                                  <p className="text-xs  text-slate-500 mb-2">Previous Value</p>
                                   <div className="bg-red-50 border border-red-200 rounded-md p-3">
                                     <p className="text-sm text-slate-900 whitespace-pre-wrap break-words">
                                       {formatValue(change.old_value)}
@@ -167,7 +167,7 @@ export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOff
                                 <ArrowRight className="w-5 h-5 text-slate-400 flex-shrink-0 mt-6" />
                                 
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-slate-500 mb-2">New Value</p>
+                                  <p className="text-xs  text-slate-500 mb-2">New Value</p>
                                   <div className="bg-green-50 border border-green-200 rounded-md p-3">
                                     <p className="text-sm text-slate-900 whitespace-pre-wrap break-words">
                                       {formatValue(change.new_value)}
@@ -193,7 +193,7 @@ export default function VersionHistoryModal({ isOpen, onClose, loan, hideLoanOff
           <div className="flex items-start gap-3 border-l-2 border-slate-300 pl-4 py-2 mt-6 bg-slate-50 rounded-r-lg">
             <Clock className="w-4 h-4 text-slate-400 mt-1" />
             <div className="flex-1">
-              <p className="font-semibold text-slate-900">Loan Created</p>
+              <p className=" text-slate-900">Loan Created</p>
               <p className="text-xs text-slate-500 mt-1">
                 {format(new Date(loan.created_date), 'MMM d, yyyy h:mm a')}
               </p>
