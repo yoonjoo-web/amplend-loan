@@ -28,7 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import UniversalHeader, { HeaderActionControls } from "../components/shared/UniversalHeader";
+import UniversalHeader from "../components/shared/UniversalHeader";
 import ProductTour from "../components/shared/ProductTour";
 import {
   DEFAULT_LOAN_DETAIL_TAB,
@@ -441,13 +441,6 @@ export default function Layout({ children, currentPageName }) {
                 )}
               </div>
 
-              <div className={`border-t border-slate-200 p-2 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-                <HeaderActionControls
-                  currentUser={currentUser}
-                  isVertical={true}
-                  className={sidebarCollapsed ? '' : 'w-full'}
-                />
-              </div>
             </div>
           </div>
 
@@ -464,7 +457,7 @@ export default function Layout({ children, currentPageName }) {
               left: sidebarCollapsed ? '64px' : '256px',
               right: 0
             }}>
-              <UniversalHeader />
+              <UniversalHeader currentUser={currentUser} />
             </div>
 
             <div
