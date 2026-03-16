@@ -455,17 +455,6 @@ export default function Dashboard() {
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl  text-slate-900  mb-2">
-            Welcome back, {currentUser?.first_name || currentUser?.full_name || 'User'}!
-          </h1>
-        </motion.div>
-
         {/* Quick Actions */}
         {canShowQuickActions && (
           <motion.div

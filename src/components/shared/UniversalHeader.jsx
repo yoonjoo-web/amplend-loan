@@ -165,7 +165,7 @@ export default function UniversalHeader({ currentUser }) {
   }
 
   return (
-    <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/90">
+    <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="ml-auto flex items-center gap-4">
           {/* Messages Popover */}
