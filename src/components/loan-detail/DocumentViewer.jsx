@@ -184,7 +184,7 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
                 }>
                   {document.status?.replace(/_/g, ' ')}
                 </Badge>
-                <span>uploaded by {uploadedBy} on {uploadedAtLabel}</span>
+                <span>Uploaded by {uploadedBy} on {uploadedAtLabel}</span>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleDownload}>

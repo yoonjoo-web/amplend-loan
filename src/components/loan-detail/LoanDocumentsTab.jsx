@@ -1045,7 +1045,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       }
 
       setShowUploadDialog(false);
-      setShowDownloadableOnlyRows(false);
       setPendingUploads([]);
       setIsDraggingUpload(false);
       toast({
@@ -1537,7 +1536,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
           setShowUploadDialog(open);
           if (!open) {
             setIsDraggingUpload(false);
-            setShowDownloadableOnlyRows(false);
           }
         }}
       >
@@ -1678,7 +1676,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 variant="outline"
                 onClick={() => {
                   setShowUploadDialog(false);
-                  setShowDownloadableOnlyRows(false);
                   setPendingUploads([]);
                   setIsDraggingUpload(false);
                 }}
