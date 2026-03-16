@@ -434,7 +434,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [sortOrder, setSortOrder] = useState("latest");
   const [viewingDocument, setViewingDocument] = useState(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showDownloadableOnlyRows, setShowDownloadableOnlyRows] = useState(false);
   const [pendingUploads, setPendingUploads] = useState([]);
   const [isDraggingUpload, setIsDraggingUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -771,9 +770,8 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       row.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       providerLabel.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProvider = providerFilter === "all" || providerLabel === providerFilter;
-    const matchesUploadFilter = !showDownloadableOnlyRows || row.hasFile;
 
-    return matchesTab && matchesSearch && matchesProvider && matchesUploadFilter;
+    return matchesTab && matchesSearch && matchesProvider;
   });
 
   visibleRows = visibleRows.sort((left, right) => {
@@ -796,10 +794,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   });
 
   if (isDownloadMode) {
-    // Keep download mode scoped to the table by surfacing downloadable rows first.
-    const downloadableRows = visibleRows.filter((row) => row.hasFile);
-    const requestOnlyRows = visibleRows.filter((row) => !row.hasFile);
-    visibleRows = [...downloadableRows, ...requestOnlyRows];
+    visibleRows = visibleRows.filter((row) => row.hasFile);
   }
 
   useEffect(() => {
@@ -891,9 +886,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   };
 
   const handleOpenUploadDialog = () => {
-    setIsDownloadMode(false);
-    setSelectedDownloadRowIds([]);
-    setShowDownloadableOnlyRows(true);
     setShowUploadDialog(true);
   };
 
