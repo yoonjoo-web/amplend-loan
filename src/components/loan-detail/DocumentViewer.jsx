@@ -174,7 +174,7 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle>{document.document_name}</DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-600">
                 <Badge variant="outline">{document.category}</Badge>
                 <Badge className={
                   document.status === 'approved' ? 'bg-green-100 text-green-800' :
@@ -184,10 +184,8 @@ export default function DocumentViewer({ isOpen, onClose, document, currentUser,
                 }>
                   {document.status?.replace(/_/g, ' ')}
                 </Badge>
-              </div>
-              <div className="mt-3 space-y-1 text-sm text-slate-600">
-                <p>Uploaded by {uploadedBy}</p>
-                <p>Uploaded on {uploadedAtLabel}</p>
+                <span>Uploaded by {uploadedBy}</span>
+                <span>Uploaded on {uploadedAtLabel}</span>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleDownload}>

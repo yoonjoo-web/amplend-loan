@@ -434,6 +434,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [sortOrder, setSortOrder] = useState("latest");
   const [viewingDocument, setViewingDocument] = useState(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showDownloadableOnlyRows, setShowDownloadableOnlyRows] = useState(false);
   const [pendingUploads, setPendingUploads] = useState([]);
   const [isDraggingUpload, setIsDraggingUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -770,8 +771,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       row.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       providerLabel.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProvider = providerFilter === "all" || providerLabel === providerFilter;
+    const matchesUploadFilter = !showDownloadableOnlyRows || row.hasFile;
 
-    return matchesTab && matchesSearch && matchesProvider;
+    return matchesTab && matchesSearch && matchesProvider && matchesUploadFilter;
   });
 
   visibleRows = visibleRows.sort((left, right) => {
@@ -889,6 +891,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   };
 
   const handleOpenUploadDialog = () => {
+    setIsDownloadMode(false);
+    setSelectedDownloadRowIds([]);
+    setShowDownloadableOnlyRows(true);
     setShowUploadDialog(true);
   };
 
@@ -1040,6 +1045,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       }
 
       setShowUploadDialog(false);
+      setShowDownloadableOnlyRows(false);
       setPendingUploads([]);
       setIsDraggingUpload(false);
       toast({
@@ -1531,6 +1537,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
           setShowUploadDialog(open);
           if (!open) {
             setIsDraggingUpload(false);
+            setShowDownloadableOnlyRows(false);
           }
         }}
       >
@@ -1671,6 +1678,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 variant="outline"
                 onClick={() => {
                   setShowUploadDialog(false);
+                  setShowDownloadableOnlyRows(false);
                   setPendingUploads([]);
                   setIsDraggingUpload(false);
                 }}
