@@ -17,32 +17,16 @@ import {
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Mail, LogOut, User, Settings, CheckCircle } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { hasBrokerOnApplication, hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 
 export default function UniversalHeader({ currentUser }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const [messageCount, setMessageCount] = useState(0);
-  const [hideBranding, setHideBranding] = useState(() => {
-    const role = currentUser?.app_role;
-    const isBorrowerContext = role === 'Borrower' || role === 'Liaison';
-    if (!isBorrowerContext) return false;
-    try {
-      const cachedValue = sessionStorage.getItem(`hide-branding:${currentUser.id}`);
-      if (cachedValue === 'true') return true;
-      if (cachedValue === 'false') return false;
-    } catch (error) {
-      console.warn('Unable to read branding visibility cache:', error);
-    }
-    // Strict default to prevent logo flash before affiliation checks complete.
-    return true;
-  });
 
   // Fetch unread messages
   const { data: messages = [] } = useQuery({
@@ -115,126 +99,6 @@ export default function UniversalHeader({ currentUser }) {
     setMessageCount(messages.length);
   }, [messages]);
 
-  useEffect(() => {
-    let isMounted = true;
-    const role = currentUser?.app_role;
-    const isBorrowerContext = role === 'Borrower' || role === 'Liaison';
-    const cacheKey = currentUser?.id ? `hide-branding:${currentUser.id}` : null;
-
-    const persistHideBranding = (value) => {
-      if (!isMounted) return;
-      setHideBranding(value);
-      if (!cacheKey) return;
-      try {
-        sessionStorage.setItem(cacheKey, value ? 'true' : 'false');
-      } catch (error) {
-        console.warn('Unable to persist branding visibility cache:', error);
-      }
-    };
-
-    const resolveBrandingVisibility = async () => {
-      if (!currentUser || !isBorrowerContext) {
-        persistHideBranding(false);
-        return;
-      }
-
-      try {
-        const borrowersByUserId = await base44.entities.Borrower.filter({ user_id: currentUser.id });
-        const borrowerRecord = borrowersByUserId?.[0]
-          || (currentUser.email
-            ? (await base44.entities.Borrower.filter({ email: currentUser.email }))?.[0]
-            : null);
-        const borrowerIds = new Set([currentUser.id, borrowerRecord?.id].filter(Boolean));
-        const hasBorrowerRecord = Boolean(borrowerRecord);
-
-        let invitedByBroker = wasInvitedByBroker(borrowerRecord);
-
-        const pathname = (location.pathname || '').toLowerCase();
-        const isLoanDetail = pathname.includes('loandetail');
-        const isApplication = pathname.includes('newapplication');
-        const params = new URLSearchParams(location.search || '');
-        const id = params.get('id');
-
-        if (id && isApplication) {
-          const application = await base44.entities.LoanApplication.get(id);
-          if (!isMounted) return;
-          if (!invitedByBroker && !hasBorrowerRecord) {
-            const coBorrowerEntry = application?.co_borrowers?.find(cb =>
-              borrowerIds.has(cb.user_id) || borrowerIds.has(cb.borrower_id)
-            );
-            invitedByBroker = wasInvitedByBroker(coBorrowerEntry);
-          }
-          const loanPartners = await base44.entities.LoanPartner.list();
-          if (!isMounted) return;
-          const hasBroker = hasBrokerOnApplication(application, loanPartners);
-          persistHideBranding(invitedByBroker || hasBroker);
-          return;
-        }
-
-        if (id && isLoanDetail) {
-          const loanPartners = await base44.entities.LoanPartner.list();
-          const loan = await base44.entities.Loan.get(id);
-          if (!isMounted) return;
-          const hasBroker = hasBrokerOnLoan(loan, loanPartners);
-          persistHideBranding(invitedByBroker || hasBroker);
-          return;
-        }
-
-        const [loans, applications] = await Promise.all([
-          base44.entities.Loan.list().catch(() => []),
-          base44.entities.LoanApplication.list().catch(() => [])
-        ]);
-        if (!isMounted) return;
-
-        const matchesBorrowerOnApplication = (app) => {
-          if (!app) return false;
-          if (borrowerIds.has(app.primary_borrower_id) || borrowerIds.has(app.created_by)) return true;
-          const coBorrowers = Array.isArray(app.co_borrowers) ? app.co_borrowers : [];
-          return coBorrowers.some((cb) =>
-            borrowerIds.has(cb?.user_id) || borrowerIds.has(cb?.borrower_id) || borrowerIds.has(cb?.id)
-          );
-        };
-
-        const matchesBorrowerOnLoan = (loan) => {
-          if (!loan) return false;
-          const borrowerList = Array.isArray(loan.borrower_ids) ? loan.borrower_ids : [];
-          return borrowerList.some((id) => borrowerIds.has(id));
-        };
-
-        const myApplications = applications.filter(matchesBorrowerOnApplication);
-        const myLoans = loans.filter(matchesBorrowerOnLoan);
-
-        if (!invitedByBroker && !hasBorrowerRecord) {
-          invitedByBroker = myApplications.some((app) => {
-            const coBorrowerEntry = app?.co_borrowers?.find(cb =>
-              borrowerIds.has(cb.user_id) || borrowerIds.has(cb.borrower_id)
-            );
-            return wasInvitedByBroker(coBorrowerEntry);
-          });
-        }
-
-        const loanPartners = await base44.entities.LoanPartner.list();
-        if (!isMounted) return;
-        const hasBroker = myLoans.some((loan) => hasBrokerOnLoan(loan, loanPartners))
-          || myApplications.some((app) => hasBrokerOnApplication(app, loanPartners));
-        persistHideBranding(invitedByBroker || hasBroker);
-      } catch (error) {
-        console.error('Error resolving branding visibility:', error);
-        // Fail closed for borrower context so branding does not appear incorrectly.
-        if (isBorrowerContext) {
-          persistHideBranding(true);
-        } else {
-          persistHideBranding(false);
-        }
-      }
-    };
-
-    resolveBrandingVisibility();
-    return () => {
-      isMounted = false;
-    };
-  }, [currentUser, location.pathname, location.search]);
-
   const handleLogout = async () => {
     try {
       await base44.auth.logout();
@@ -303,13 +167,7 @@ export default function UniversalHeader({ currentUser }) {
   return (
     <div className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="flex h-16 items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          {!hideBranding && (
-            <h1 className="text-xl  text-slate-900">Amplend</h1>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-4">
           {/* Messages Popover */}
           <Popover>
             <PopoverTrigger asChild>
