@@ -472,7 +472,7 @@ export default function Layout({ children, currentPageName }) {
             }}
           >
             <div className={`fixed top-0 z-40 bg-slate-50 transition-all duration-300 ${
-              isContentScrolled ? 'border-b border-slate-200/60' : 'border-b border-transparent'
+              isContentScrolled ? 'border-b border-slate-300' : 'border-b-0'
             }`} style={{ 
               left: sidebarCollapsed ? '64px' : '256px',
               right: 0
