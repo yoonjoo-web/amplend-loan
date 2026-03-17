@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import {
@@ -87,6 +87,7 @@ export default function Layout({ children, currentPageName }) {
   useInputShield();
   
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser, permissions, isLoading } = usePermissions();
   const searchParams = new URLSearchParams(location.search);
   const currentLoanId = searchParams.get('id');
@@ -213,6 +214,11 @@ export default function Layout({ children, currentPageName }) {
     localStorage.setItem('sidebar_collapsed', newState.toString());
   };
 
+  const handleSidebarNavigation = (event, url) => {
+    event.preventDefault();
+    navigate(url);
+  };
+
   const filteredNavItems = navigationItems.filter(item => item.show);
   const loansNavItem = filteredNavItems.find((item) => item.title === "Loans");
 
@@ -288,6 +294,7 @@ export default function Layout({ children, currentPageName }) {
                             <TooltipTrigger asChild>
                               <a
                                 href={item.defaultUrl || item.url + "?tab=all"}
+                                onClick={(event) => handleSidebarNavigation(event, item.defaultUrl || item.url + "?tab=all")}
                                 className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
                                   location.pathname === new URL(item.url, window.location.origin).pathname
                                     ? 'bg-slate-700 text-white shadow-lg'
@@ -323,6 +330,7 @@ export default function Layout({ children, currentPageName }) {
                             <TooltipTrigger asChild>
                               <a
                                 href={item.url}
+                                onClick={(event) => handleSidebarNavigation(event, item.url)}
                                 className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
                                   location.pathname === new URL(item.url, window.location.origin).pathname
                                     ? 'bg-slate-700 text-white shadow-lg'
@@ -339,6 +347,7 @@ export default function Layout({ children, currentPageName }) {
                         ) : (
                           <a
                             href={item.url}
+                            onClick={(event) => handleSidebarNavigation(event, item.url)}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                               location.pathname === new URL(item.url, window.location.origin).pathname
                                 ? 'bg-slate-700 text-white shadow-lg'
@@ -378,6 +387,7 @@ export default function Layout({ children, currentPageName }) {
                         <TooltipTrigger asChild>
                           <a
                             href={subitem.url}
+                            onClick={(event) => handleSidebarNavigation(event, subitem.url)}
                             className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
                               (new URL(subitem.url, window.location.origin).search
                                 ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
@@ -423,6 +433,7 @@ export default function Layout({ children, currentPageName }) {
                           <a
                            key={subitem.title}
                            href={subitem.url}
+                           onClick={(event) => handleSidebarNavigation(event, subitem.url)}
                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors ${
                              (new URL(subitem.url, window.location.origin).search
                                ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
