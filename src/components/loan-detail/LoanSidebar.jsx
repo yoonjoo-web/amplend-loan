@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, ChevronLeft, Mail, Phone, MessageSquare, Copy } from "lucide-react";
+import { Users, ChevronLeft, ChevronRight, Mail, Phone, MessageSquare, Copy } from "lucide-react";
 import { base44 } from "@/api/base44Client"; // Updated import
 import { Message } from "@/entities/all";
 
