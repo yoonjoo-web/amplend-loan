@@ -2,113 +2,22 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, Users, History, ChevronRight, ChevronLeft, Mail, Phone, MessageSquare, Copy } from "lucide-react";
+import { Users, History, ChevronRight, ChevronLeft, Mail, Phone, MessageSquare, Copy } from "lucide-react";
 import { base44 } from "@/api/base44Client"; // Updated import
 import { Message } from "@/entities/all";
 
 import TeamManagementModal from "./TeamManagementModal";
 import VersionHistoryModal from "./VersionHistoryModal";
 import ClosingScheduleSection from "./ClosingScheduleSection";
-import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import AddBrokerModal from "../application-steps/AddBrokerModal";
 import AddLiaisonModal from "../application-steps/AddLiaisonModal";
 import { useToast } from "@/components/ui/use-toast";
 import { hasBrokerOnLoan, wasInvitedByBroker } from "@/components/utils/brokerVisibility";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 
-const STATUS_DESCRIPTIONS = {
-  application_submitted: {
-    label: "Application Submitted",
-    description: "The borrower has submitted a loan application and the official loan process has begun.",
-    color: "bg-blue-100 text-blue-800"
-  },
-  underwriting: {
-    label: "Underwriting",
-    description: "The lender is evaluating the borrower's financial information, credit history, experience, and other relevant factors for risk assessment.",
-    color: "bg-purple-100 text-purple-800"
-  },
-  processing: {
-    label: "Processing",
-    description: "The lender sent a list of required items and reviews the delivered documents for completeness and accuracy.",
-    color: "bg-amber-100 text-amber-800"
-  },
-  on_hold: {
-    label: "On Hold",
-    description: "The loan is being placed on hold until further notice.",
-    color: "bg-slate-100 text-slate-800"
-  },
-  preclosed_review: {
-    label: "Preclosed Review",
-    description: "The loan file is being reviewed before the post-appraisal term sheet is sent.",
-    color: "bg-sky-100 text-sky-800"
-  },
-  term_sheet_sent: {
-    label: "Term Sheet Sent (Post-Appraisal)",
-    description: "The post-appraisal term sheet is sent along with a completed appraisal report.",
-    color: "bg-cyan-100 text-cyan-800"
-  },
-  conditional_approval: {
-    label: "Conditional Approval",
-    description: "The lender issued a conditional approval contingent upon the satisfaction of specific conditions by the borrower.",
-    color: "bg-yellow-100 text-yellow-800"
-  },
-  final_approval: {
-    label: "Final Approval",
-    description: "Once all conditions are met, the lender grants final approval for the loan.",
-    color: "bg-emerald-100 text-emerald-800"
-  },
-  clear_to_close: {
-    label: "Clear to Close (CTC)",
-    description: "Clear-to-Close approval has been obtained from Title, Lender Attorney, Borrower, and Seller.",
-    color: "bg-green-100 text-green-800"
-  },
-  closing_scheduled: {
-    label: "Closing Scheduled",
-    description: "A closing date and time are scheduled for the borrower to sign the loan documents and finalize the transaction.",
-    color: "bg-teal-100 text-teal-800"
-  },
-  loan_funded: {
-    label: "Loan Funded",
-    description: "The approved loan amount has been disbursed to the Title/Borrower.",
-    color: "bg-indigo-100 text-indigo-800"
-  },
-  loan_sold: {
-    label: "Loan Sold",
-    description: "The funded loan has been sold to a loan buyer in the secondary market.",
-    color: "bg-violet-100 text-violet-800"
-  },
-  in_house_servicing: {
-    label: "In-House Servicing",
-    description: "The lender continues to manage the loan account, including processing payments, managing escrow accounts (if applicable), and providing customer service support.",
-    color: "bg-blue-100 text-blue-800"
-  },
-  draws_underway: {
-    label: "Draws Underway",
-    description: "Either a rehab or construction project is progressing and the draw holdback amount still remains.",
-    color: "bg-orange-100 text-orange-800"
-  },
-  draws_fully_released: {
-    label: "Draws Fully Released",
-    description: "Financed budget amount is fully drawn and the loan is waiting to be repaid.",
-    color: "bg-lime-100 text-lime-800"
-  },
-  archived: {
-    label: "Archived",
-    description: "The loan is fully paid off and thus closed.",
-    color: "bg-gray-100 text-gray-800"
-  },
-  dead: {
-    label: "Dead",
-    description: "The loan is permanently closed with no possibility of revival.",
-    color: "bg-gray-100 text-gray-800"
-  }
-};
-
 export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, onToggleCollapse, onRefresh, allLoanOfficers }) {
-  const [isUpdating, setIsUpdating] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
   const [hideLoanOfficerDetails, setHideLoanOfficerDetails] = useState(false);
   const [loanOfficerNameSet, setLoanOfficerNameSet] = useState(new Set());
@@ -116,8 +25,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [modificationHistory, setModificationHistory] = useState([]);
   const [fieldConfigMap, setFieldConfigMap] = useState({});
-  const [showUpdateProfilesModal, setShowUpdateProfilesModal] = useState(false);
-  const [pendingStatusChange, setPendingStatusChange] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState(null);
   const [messageText, setMessageText] = useState('');
@@ -535,88 +442,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     }
   };
 
-  const handleStatusChange = async (newStatus) => {
-    // Check if moving from underwriting to processing
-    if (loan.status === 'underwriting' && newStatus === 'processing') {
-      setPendingStatusChange(newStatus);
-      setShowUpdateProfilesModal(true);
-      return;
-    }
-    
-    // Otherwise just update status
-    setIsUpdating(true);
-    try {
-      await onUpdate({ status: newStatus });
-      if (onRefresh) {
-        await onRefresh();
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
-    }
-    setIsUpdating(false);
-  };
-
-  const handleUpdateProfilesFromLoan = async () => {
-    console.log('[LoanSidebar] handleUpdateProfilesFromLoan called');
-    console.log('[LoanSidebar] Loan ID:', loan.id);
-    console.log('[LoanSidebar] Pending status change:', pendingStatusChange);
-    
-    setIsUpdating(true);
-    try {
-      console.log('[LoanSidebar] Calling backend function...');
-      const response = await base44.functions.invoke('updateProfileFromLoan', {
-        loan_id: loan.id
-      });
-      console.log('[LoanSidebar] Backend response:', response);
-      
-      // Update loan status
-      console.log('[LoanSidebar] Updating loan status...');
-      await onUpdate({ status: pendingStatusChange });
-      
-      toast({
-        title: "Profiles Updated",
-        description: "Borrower/entity profiles have been updated with loan data.",
-      });
-      
-      if (onRefresh) {
-        console.log('[LoanSidebar] Refreshing...');
-        await onRefresh();
-      }
-      console.log('[LoanSidebar] Update complete');
-    } catch (error) {
-      console.error("[LoanSidebar] Error updating profiles:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to update profiles. Please try again.",
-      });
-    }
-    setIsUpdating(false);
-    setShowUpdateProfilesModal(false);
-    setPendingStatusChange(null);
-  };
-
-  const handleSkipProfileUpdate = async () => {
-    setIsUpdating(true);
-    try {
-      await onUpdate({ status: pendingStatusChange });
-      if (onRefresh) {
-        await onRefresh();
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
-    }
-    setIsUpdating(false);
-    setShowUpdateProfilesModal(false);
-    setPendingStatusChange(null);
-  };
-
-  const currentStatus = STATUS_DESCRIPTIONS[loan.status] || {
-    label: "Unknown Status",
-    description: "This loan has an unrecognized status.",
-    color: "bg-gray-100 text-gray-800"
-  };
-
   const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker', 'Title Company', 'Insurance Company', 'Servicer'];
   const isBorrowerRole = normalizedRole === 'Borrower';
   const isLiaisonRole = normalizedRole === 'Liaison';
@@ -830,40 +655,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Loan Status */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-slate-600" />
-              Loan Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {canManage ? (
-              <Select
-                value={loan.status}
-                onValueChange={handleStatusChange}
-                disabled={isUpdating}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(STATUS_DESCRIPTIONS).map(([value, { label }]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Badge className={`${currentStatus.color} border-0 text-sm px-3 py-1`}>
-                {currentStatus.label}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Team */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
@@ -1052,16 +843,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
         loan={loan}
         hideLoanOfficerNames={hideLoanOfficerDetails}
         loanOfficerNameSet={loanOfficerNameSet}
-      />
-
-      <UpdateProfilesFromLoanModal
-        isOpen={showUpdateProfilesModal}
-        onClose={() => {
-          setShowUpdateProfilesModal(false);
-          setPendingStatusChange(null);
-        }}
-        onUpdateProfiles={handleUpdateProfilesFromLoan}
-        onSkipUpdate={handleSkipProfileUpdate}
       />
 
       <Dialog

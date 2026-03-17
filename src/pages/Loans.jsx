@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 import { isUserOnLoanTeam } from "@/components/utils/teamAccess";
+import { LOAN_STATUS_MAP, getLoanStatusMeta } from "@/components/loan-detail/loanStatusConfig";
 
 import ColumnSettingsModal from "../components/loans/ColumnSettingsModal";
 import FilterModal from "../components/loans/FilterModal";
@@ -52,29 +53,9 @@ const getDefaultColumnKeys = (isBorrower) => {
   return ['loan_number', 'property_address', 'borrower', 'loan_product', 'status', 'initial_loan_amount', 'interest_rate', 'updated_date'];
 };
 
-const statusColors = {
-  application_submitted: 'bg-blue-100 text-blue-800',
-  underwriting: 'bg-purple-100 text-purple-800',
-  processing: 'bg-amber-100 text-amber-800',
-  on_hold: 'bg-slate-100 text-slate-800',
-  preclosed_review: 'bg-sky-100 text-sky-800',
-  term_sheet_sent: 'bg-cyan-100 text-cyan-800',
-  conditional_approval: 'bg-yellow-100 text-yellow-800',
-  final_approval: 'bg-emerald-100 text-emerald-800',
-  clear_to_close: 'bg-green-100 text-green-800',
-  closing_scheduled: 'bg-teal-100 text-teal-800',
-  loan_funded: 'bg-indigo-100 text-indigo-800',
-  loan_sold: 'bg-violet-100 text-violet-800',
-  in_house_servicing: 'bg-blue-100 text-blue-800',
-  draws_underway: 'bg-orange-100 text-orange-800',
-  draws_fully_released: 'bg-lime-100 text-lime-800',
-  archived: 'bg-gray-100 text-gray-800',
-  dead: 'bg-gray-100 text-gray-800'
-};
-
 const formatStatusLabel = (status) => {
   if (!status) return 'N/A';
-  return status.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  return getLoanStatusMeta(status).label;
 };
 
 const formatDateColumn = (dateString) => {
@@ -244,7 +225,7 @@ export default function Loans() {
 
       const newLoan = await Loan.create({
         loan_number: loanNumberData.loan_number,
-        status: 'application_submitted',
+        status: 'underwriting',
         loan_officer_ids: [currentUser.id]
       });
 
@@ -463,7 +444,7 @@ export default function Loans() {
         return productLabel.split(' ').map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
       case 'status':
         return (
-          <Badge className={`${statusColors[loan.status]} border-0`}>
+          <Badge className={`${LOAN_STATUS_MAP[loan.status]?.color || 'bg-gray-100 text-gray-800'} border-0`}>
             {formatStatusLabel(loan.status)}
           </Badge>);
 

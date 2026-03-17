@@ -11,6 +11,7 @@ import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
+import LoanStatusProgressCard from "../components/loan-detail/LoanStatusProgressCard";
 import LoanDetailPlaceholderView from "../components/loan-detail/LoanDetailPlaceholderView";
 import {
   DEFAULT_LOAN_DETAIL_TAB,
@@ -273,8 +274,14 @@ export default function LoanDetail() {
 
               <section className="min-w-0 space-y-6" data-tour="loan-tabs">
                 {activeTab === 'dashboard' ? (
-                  <div>
+                  <div className="space-y-6">
                     <LoanSummaryHeader loan={loan} />
+                    <LoanStatusProgressCard
+                      loan={loan}
+                      currentUser={currentUser}
+                      onUpdate={handleLoanUpdate}
+                      onRefresh={loadLoan}
+                    />
                   </div>
                 ) : activeTab === 'details' ? (
                   <LoanOverviewTab 

@@ -25,6 +25,7 @@ import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 import { base44 } from "@/api/base44Client";
 import { isUserOnApplicationTeam, isUserOnLoanTeam } from "@/components/utils/teamAccess";
+import { LOAN_STATUS_MAP, getLoanStatusMeta } from "@/components/loan-detail/loanStatusConfig";
 
 const statusColors = {
   pending: "bg-amber-100 text-amber-800",
@@ -37,7 +38,6 @@ const statusColors = {
   in_progress: "bg-blue-100 text-blue-800",
   completed: "bg-emerald-100 text-emerald-800",
   flagged: "bg-red-100 text-red-800",
-  application_submitted: 'bg-blue-100 text-blue-800',
   underwriting: 'bg-purple-100 text-purple-800',
   processing: 'bg-amber-100 text-amber-800',
   on_hold: 'bg-slate-100 text-slate-800',
@@ -56,32 +56,12 @@ const statusColors = {
   dead: 'bg-gray-100 text-gray-800'
 };
 
-const STATUS_DESCRIPTIONS = {
-  application_submitted: "Application Submitted",
-  underwriting: "Underwriting",
-  processing: "Processing",
-  on_hold: "On Hold",
-  preclosed_review: "Preclosed Review",
-  term_sheet_sent: "Term Sheet Sent (Post-Appraisal)",
-  conditional_approval: "Conditional Approval",
-  final_approval: "Final Approval",
-  clear_to_close: "Clear to Close (CTC)",
-  closing_scheduled: "Closing Scheduled",
-  loan_funded: "Loan Funded",
-  loan_sold: "Loan Sold",
-  in_house_servicing: "In-House Servicing",
-  draws_underway: "Draws Underway",
-  draws_fully_released: "Draws Fully Released",
-  archived: "Archived",
-  dead: "Dead"
-};
-
 const LoanApplicationItem = ({ item, type }) => {
   const isLoan = type === 'loan';
 
   const formatLoanStatus = (status) => {
-    if (isLoan && STATUS_DESCRIPTIONS[status]) {
-      return STATUS_DESCRIPTIONS[status];
+    if (isLoan) {
+      return getLoanStatusMeta(status).label;
     }
     return status ? status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A';
   };
@@ -98,7 +78,7 @@ const LoanApplicationItem = ({ item, type }) => {
               {isLoan ? item.loan_number : item.application_number}
             </span>
             {item.status && (
-              <Badge className={`${statusColors[item.status]} text-xs`}>
+              <Badge className={`${isLoan ? (LOAN_STATUS_MAP[item.status]?.color || 'bg-gray-100 text-gray-800') : (statusColors[item.status] || 'bg-slate-100 text-slate-800')} text-xs`}>
                 {formatLoanStatus(item.status)}
               </Badge>
             )}

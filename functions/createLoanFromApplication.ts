@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
       occupant: 'vacant',
       
       // Status
-      status: 'application_submitted',
+      status: 'underwriting',
       
       // Modification history
       modification_history: [

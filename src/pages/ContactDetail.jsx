@@ -680,7 +680,7 @@ export default function ContactDetail() {
         });
         ongoingLns = allLoans.filter(loan => {
           const matches = loan.borrower_ids?.includes(contact.user_id) &&
-            ['application_submitted', 'underwriting'].includes(loan.status);
+            ['underwriting'].includes(loan.status);
           if (matches) {
             console.log('[checkOngoingRecords] Found ongoing loan:', loan.id, loan.loan_number, loan.status);
           }
@@ -698,7 +698,7 @@ export default function ContactDetail() {
         });
         ongoingLns = allLoans.filter(loan => {
           const matches = loan.borrower_entity_name === contact.entity_name &&
-            ['application_submitted', 'underwriting'].includes(loan.status);
+            ['underwriting'].includes(loan.status);
           if (matches) {
             console.log('[checkOngoingRecords] Found ongoing loan:', loan.id, loan.loan_number, loan.status);
           }

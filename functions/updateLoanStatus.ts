@@ -67,12 +67,6 @@ Deno.serve(async (req) => {
     // Create notification if status changed
     if (newStatus && oldStatus !== newStatus) {
       const statusMessages = {
-        'application_submitted': {
-          subject: 'Loan Application Submitted',
-          title: 'Application Submitted',
-          message: 'Your loan application has been submitted and the official loan process has begun.',
-          description: 'Our team will begin reviewing your application shortly.'
-        },
         'underwriting': {
           subject: 'Loan Status: Underwriting',
           title: 'Underwriting in Progress',
