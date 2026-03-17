@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X, Edit, Loader2, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 import DynamicFormRenderer from "../forms/DynamicFormRenderer";
+import RecentChangesPanel from "./RecentChangesPanel";
 
 // Define the desired category groupings and their display names
 const CATEGORY_GROUPS = {
@@ -227,10 +228,10 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
   });
 
   return (
-    <Card className="border-0 shadow-sm bg-white">
-      <CardHeader className="border-b border-slate-100">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl  text-slate-900">Loan Overview</CardTitle>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex items-center justify-between gap-4 xl:flex-1">
+          <h2 className="text-2xl text-slate-900">Loan Details</h2>
           {canEdit && (
             <Button
               onClick={() => {
@@ -256,88 +257,91 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
             </Button>
           )}
         </div>
-      </CardHeader>
-      
-      <CardContent className="p-6">
-        {availableCategoryGroups.length > 0 ? (
-          <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-            <TabsList className="flex flex-wrap gap-2 h-auto bg-slate-100 p-2 mb-6">
-              {availableCategoryGroups.map(([groupName]) => (
-                <TabsTrigger 
-                  key={groupName} 
-                  value={groupName}
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2"
-                >
-                  {groupName}
-                </TabsTrigger>
+        <RecentChangesPanel loan={loan} className="w-full xl:w-[360px] xl:flex-shrink-0" />
+      </div>
+
+      <Card className="border-0 shadow-sm bg-white">
+        <CardContent className="p-6">
+          {availableCategoryGroups.length > 0 ? (
+            <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+              <TabsList className="flex flex-wrap gap-2 h-auto bg-slate-100 p-2 mb-6">
+                {availableCategoryGroups.map(([groupName]) => (
+                  <TabsTrigger 
+                    key={groupName} 
+                    value={groupName}
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2"
+                  >
+                    {groupName}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {availableCategoryGroups.map(([groupName, categories]) => (
+                <TabsContent key={groupName} value={groupName}>
+                  {categories.map((category, idx) => {
+                    const categoryFields = fieldConfigs.filter(f => f.category === category);
+                    if (categoryFields.length === 0) return null;
+                    
+                    return (
+                      <div key={category} className={idx > 0 ? 'mt-6' : ''}>
+                        <DynamicFormRenderer
+                          context="loan"
+                          categoryFilter={category}
+                          data={editedLoan}
+                          onChange={handleFormChange}
+                          isReadOnly={!isEditing}
+                          canManage={canEdit}
+                          showTabs={false}
+                        />
+                      </div>
+                    );
+                  })}
+                </TabsContent>
               ))}
-            </TabsList>
+            </Tabs>
+          ) : (
+            <DynamicFormRenderer
+              context="loan"
+              data={editedLoan}
+              onChange={handleFormChange}
+              isReadOnly={!isEditing}
+              canManage={canEdit}
+            />
+          )}
 
-            {availableCategoryGroups.map(([groupName, categories]) => (
-              <TabsContent key={groupName} value={groupName}>
-                {categories.map((category, idx) => {
-                  const categoryFields = fieldConfigs.filter(f => f.category === category);
-                  if (categoryFields.length === 0) return null;
-                  
-                  return (
-                    <div key={category} className={idx > 0 ? 'mt-6' : ''}>
-                      <DynamicFormRenderer
-                        context="loan"
-                        categoryFilter={category}
-                        data={editedLoan}
-                        onChange={handleFormChange}
-                        isReadOnly={!isEditing}
-                        canManage={canEdit}
-                        showTabs={false}
-                      />
-                    </div>
-                  );
-                })}
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <DynamicFormRenderer
-            context="loan"
-            data={editedLoan}
-            onChange={handleFormChange}
-            isReadOnly={!isEditing}
-            canManage={canEdit}
-          />
-        )}
-
-        {isEditing && (
-          <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditedLoan(originalLoan);
-                setIsEditing(false);
-              }}
-              disabled={isSaving}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="bg-slate-700 hover:bg-slate-800"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {isEditing && (
+            <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditedLoan(originalLoan);
+                  setIsEditing(false);
+                }}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-slate-700 hover:bg-slate-800"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
