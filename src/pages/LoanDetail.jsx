@@ -272,11 +272,12 @@ export default function LoanDetail() {
               </div>
 
               <section className="min-w-0 space-y-6" data-tour="loan-tabs">
-                {activeTab === 'overview' ? (
+                {activeTab === 'dashboard' ? (
+                  <div>
+                    <LoanSummaryHeader loan={loan} />
+                  </div>
+                ) : activeTab === 'overview' ? (
                   <>
-                    <div>
-                      <LoanSummaryHeader loan={loan} />
-                    </div>
                   </>
                 ) : activeTab === 'details' ? (
                   <LoanOverviewTab 
