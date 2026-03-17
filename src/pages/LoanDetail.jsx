@@ -277,14 +277,15 @@ export default function LoanDetail() {
                     <div>
                       <LoanSummaryHeader loan={loan} />
                     </div>
-                    <LoanOverviewTab 
-                      loan={loan} 
-                      onUpdate={handleLoanUpdate}
-                      currentUser={currentUser}
-                      allLoanOfficers={allLoanOfficers}
-                      onLoanChange={() => {}}
-                    />
                   </>
+                ) : activeTab === 'details' ? (
+                  <LoanOverviewTab 
+                    loan={loan} 
+                    onUpdate={handleLoanUpdate}
+                    currentUser={currentUser}
+                    allLoanOfficers={allLoanOfficers}
+                    onLoanChange={() => {}}
+                  />
                 ) : activeTab === 'documents' ? (
                   <LoanDocumentsTab
                     loan={loan}

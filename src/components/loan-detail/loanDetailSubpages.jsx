@@ -45,7 +45,7 @@ export const loanDetailSubpages = [
     title: "Loan Details",
     description: "Inspect the core terms and structured loan data.",
     icon: ClipboardList,
-    isPlaceholder: true,
+    isPlaceholder: false,
   },
   {
     key: "checklist",
