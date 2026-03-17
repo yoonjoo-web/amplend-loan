@@ -175,7 +175,7 @@ export default function LoanStatusProgressCard({
           </div>
 
           <div className={isExpanded ? "overflow-x-auto pb-1" : ""}>
-            <div className={`flex ${isExpanded ? "min-w-max gap-4" : "gap-4"}`}>
+            <div className={`flex items-center ${isExpanded ? "min-w-max gap-4" : "gap-4"}`}>
               {visibleStatuses.map((status) => {
                 const originalIndex = LOAN_PROGRESS_STATUS_OPTIONS.findIndex(
                   (item) => item.value === status.value
@@ -185,41 +185,59 @@ export default function LoanStatusProgressCard({
                 const createdDate = originalIndex === 0 && isCompleted
                   ? formatCompactDate(loan.created_date || loan.updated_date)
                   : null;
+                const isFirstItem = originalIndex === 0;
 
                 return (
                   <div
                     key={status.value}
                     className={isExpanded ? "min-w-[140px] flex-1" : "min-w-0 flex-1"}
                   >
-                    <div className="flex items-start gap-[6px]">
-                      <div className="flex items-center py-[2px]">
-                        {isCompleted ? (
-                          <Check className="h-[12px] w-[10.5px] text-black stroke-[2.25]" />
-                        ) : (
-                          <div
-                            className={`mt-[3px] h-[6px] w-[6px] rounded-full border ${
-                              isCurrent
-                                ? "border-black bg-black"
-                                : "border-[#A3A3A3] bg-white"
-                            }`}
-                          />
-                        )}
+                    {isFirstItem ? (
+                      <div className="flex min-w-0 items-start gap-[6px]">
+                        <div className="flex shrink-0 items-center py-[2px]">
+                          {isCompleted ? (
+                            <Check className="h-[12px] w-[10.5px] text-black stroke-[2.25]" />
+                          ) : (
+                            <div
+                              className={`mt-[3px] h-[6px] w-[6px] rounded-full border ${
+                                isCurrent
+                                  ? "border-black bg-black"
+                                  : "border-[#A3A3A3] bg-white"
+                              }`}
+                            />
+                          )}
+                        </div>
+                        <div className="flex min-w-0 flex-col items-start justify-center text-[12px] font-normal leading-4 tracking-[-0.627px] text-[#525252]">
+                          <p className="truncate">{status.label}</p>
+                          {createdDate && <p className="truncate">{createdDate}</p>}
+                        </div>
                       </div>
-                      <div className="flex flex-col justify-center">
+                    ) : (
+                      <div className="relative h-4 min-h-px min-w-px">
+                        <div className="absolute left-0 top-[5px] h-[6px] w-[6px]">
+                          {isCompleted ? (
+                            <div className="flex h-[6px] w-[6px] items-center justify-center">
+                              <div className="h-[6px] w-[6px] rounded-full bg-black" />
+                            </div>
+                          ) : (
+                            <div
+                              className={`h-[6px] w-[6px] rounded-full border ${
+                                isCurrent
+                                  ? "border-black bg-black"
+                                  : "border-[#A3A3A3] bg-white"
+                              }`}
+                            />
+                          )}
+                        </div>
                         <p
-                          className={`text-[12px] font-normal leading-4 tracking-[-0.5px] ${
+                          className={`absolute left-[12px] top-[-2px] whitespace-nowrap text-[12px] font-normal leading-4 tracking-[-0.5px] ${
                             isCurrent ? "text-black" : "text-[#525252]"
                           }`}
                         >
                           {status.label}
                         </p>
-                        {createdDate && (
-                          <p className="text-[12px] font-normal leading-4 tracking-[-0.627px] text-[#525252]">
-                            {createdDate}
-                          </p>
-                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
