@@ -276,9 +276,6 @@ export default function LoanDetail() {
                   <div>
                     <LoanSummaryHeader loan={loan} />
                   </div>
-                ) : activeTab === 'overview' ? (
-                  <>
-                  </>
                 ) : activeTab === 'details' ? (
                   <LoanOverviewTab 
                     loan={loan} 

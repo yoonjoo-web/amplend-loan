@@ -2,7 +2,6 @@ import {
   CheckSquare,
   ClipboardList,
   CircleUserRound,
-  FileText,
   Folder,
   LayoutDashboard,
   TrendingUp,
@@ -18,13 +17,6 @@ export const loanDetailSubpages = [
     description: "Default landing space for the loan workspace.",
     icon: LayoutDashboard,
     isPlaceholder: true,
-  },
-  {
-    key: "overview",
-    title: "Overview",
-    description: "Review and edit the current loan detail content.",
-    icon: FileText,
-    isPlaceholder: false,
   },
   {
     key: "tasks",
