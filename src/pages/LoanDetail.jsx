@@ -31,7 +31,7 @@ export default function LoanDetail() {
   const fallbackTab = openTask ? 'checklist' : DEFAULT_LOAN_DETAIL_TAB;
   const activeTab = isValidLoanDetailTab(requestedTab) ? requestedTab : fallbackTab;
   const activeSubpage = getLoanDetailSubpage(activeTab);
-  const showLoanSidebar = activeTab === 'overview';
+  const showLoanSidebar = activeTab === 'dashboard';
   const [loan, setLoan] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
