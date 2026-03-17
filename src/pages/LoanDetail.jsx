@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
 import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
@@ -12,9 +11,9 @@ import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
+import LoanStatusBadgeControl from "../components/loan-detail/LoanStatusBadgeControl";
 import LoanStatusProgressCard from "../components/loan-detail/LoanStatusProgressCard";
 import LoanDetailPlaceholderView from "../components/loan-detail/LoanDetailPlaceholderView";
-import { getLoanStatusMeta } from "../components/loan-detail/loanStatusConfig";
 import {
   DEFAULT_LOAN_DETAIL_TAB,
   getLoanDetailSubpage,
@@ -273,9 +272,12 @@ export default function LoanDetail() {
                   <h1 className="text-3xl text-slate-900">
                     {loan.loan_number || loan.primary_loan_id || 'Loan Details'}
                   </h1>
-                  <Badge className={`${getLoanStatusMeta(loan.status).color} border-0`}>
-                    {getLoanStatusMeta(loan.status).label}
-                  </Badge>
+                  <LoanStatusBadgeControl
+                    loan={loan}
+                    currentUser={currentUser}
+                    onUpdate={handleLoanUpdate}
+                    onRefresh={loadLoan}
+                  />
                 </div>
               </div>
 
@@ -285,9 +287,6 @@ export default function LoanDetail() {
                     <LoanSummaryHeader loan={loan} />
                     <LoanStatusProgressCard
                       loan={loan}
-                      currentUser={currentUser}
-                      onUpdate={handleLoanUpdate}
-                      onRefresh={loadLoan}
                     />
                   </div>
                 ) : activeTab === 'details' ? (
