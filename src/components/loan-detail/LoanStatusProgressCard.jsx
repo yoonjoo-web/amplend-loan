@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -18,12 +17,11 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
-import { Check, Circle } from "lucide-react";
+import { Check } from "lucide-react";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import {
   LOAN_PROGRESS_STATUS_OPTIONS,
   LOAN_STATUS_OPTIONS,
-  getLoanStatusMeta,
 } from "./loanStatusConfig";
 
 export default function LoanStatusProgressCard({
@@ -38,16 +36,12 @@ export default function LoanStatusProgressCard({
   const [selectedStatus, setSelectedStatus] = useState(loan.status);
   const [showUpdateProfilesModal, setShowUpdateProfilesModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const normalizedRole = normalizeAppRole(currentUser?.app_role);
   const canManage = currentUser && (
     currentUser.role === "admin" ||
     ["Administrator", "Loan Officer"].includes(normalizedRole)
-  );
-
-  const currentStatus = useMemo(
-    () => getLoanStatusMeta(loan.status),
-    [loan.status]
   );
 
   const progressIndex = LOAN_PROGRESS_STATUS_OPTIONS.findIndex(
@@ -64,6 +58,10 @@ export default function LoanStatusProgressCard({
     const year = String(date.getFullYear()).slice(-2);
     return `${month}/${day}/${year}`;
   };
+
+  const visibleStatuses = isExpanded
+    ? LOAN_PROGRESS_STATUS_OPTIONS
+    : LOAN_PROGRESS_STATUS_OPTIONS.slice(0, 5);
 
   const applyStatusChange = async (nextStatus) => {
     setIsUpdating(true);
@@ -147,19 +145,88 @@ export default function LoanStatusProgressCard({
   return (
     <>
       <Card className="border-slate-200 bg-white">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <CardTitle className="text-lg text-slate-900">Progress</CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className={`${currentStatus.color} border-0`}>
-                  {currentStatus.label}
-                </Badge>
-                <span className="text-sm text-slate-500">
-                  {currentStatus.description}
-                </span>
-              </div>
+            <CardTitle className="text-[14px] font-normal leading-5 tracking-[-0.5px] text-black">
+              Progress
+            </CardTitle>
+            <p className="text-[12px] font-normal leading-4 tracking-[-0.5px] text-neutral-500">
+              Step {Math.max(progressIndex + 1, 1)} of {LOAN_PROGRESS_STATUS_OPTIONS.length}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 px-4 pb-4 pt-0">
+          <div className="flex gap-2">
+            {visibleStatuses.map((status) => {
+              const originalIndex = LOAN_PROGRESS_STATUS_OPTIONS.findIndex(
+                (item) => item.value === status.value
+              );
+              const isFilled = progressIndex >= originalIndex || progressIndex === -1;
+
+              return (
+                <div
+                  key={status.value}
+                  className={`h-2 flex-1 rounded-full ${
+                    isFilled ? "bg-black" : "bg-[#E5E5E5]"
+                  }`}
+                />
+              );
+            })}
+          </div>
+
+          <div className={isExpanded ? "overflow-x-auto pb-1" : ""}>
+            <div className={`flex ${isExpanded ? "min-w-max gap-4" : "gap-4"}`}>
+              {visibleStatuses.map((status) => {
+                const originalIndex = LOAN_PROGRESS_STATUS_OPTIONS.findIndex(
+                  (item) => item.value === status.value
+                );
+                const isCompleted = progressIndex > originalIndex || progressIndex === -1;
+                const isCurrent = progressIndex === originalIndex;
+                const createdDate = originalIndex === 0 && isCompleted
+                  ? formatCompactDate(loan.created_date || loan.updated_date)
+                  : null;
+
+                return (
+                  <div
+                    key={status.value}
+                    className={isExpanded ? "min-w-[140px] flex-1" : "min-w-0 flex-1"}
+                  >
+                    <div className="flex items-start gap-[6px]">
+                      <div className="flex items-center py-[2px]">
+                        {isCompleted ? (
+                          <Check className="h-[12px] w-[10.5px] text-black stroke-[2.25]" />
+                        ) : (
+                          <div
+                            className={`mt-[3px] h-[6px] w-[6px] rounded-full border ${
+                              isCurrent
+                                ? "border-black bg-black"
+                                : "border-[#A3A3A3] bg-white"
+                            }`}
+                          />
+                        )}
+                      </div>
+                      <div className="flex flex-col justify-center">
+                        <p
+                          className={`text-[12px] font-normal leading-4 tracking-[-0.5px] ${
+                            isCurrent ? "text-black" : "text-[#525252]"
+                          }`}
+                        >
+                          {status.label}
+                        </p>
+                        {createdDate && (
+                          <p className="text-[12px] font-normal leading-4 tracking-[-0.627px] text-[#525252]">
+                            {createdDate}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 pt-1">
             {canManage && (
               <Button
                 onClick={() => {
@@ -171,69 +238,16 @@ export default function LoanStatusProgressCard({
                 Change Status
               </Button>
             )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <p className="text-sm text-slate-900">Progress</p>
-            <p className="text-xs text-neutral-500">
-              Step {Math.max(progressIndex + 1, 1)} of {LOAN_PROGRESS_STATUS_OPTIONS.length}
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            {LOAN_PROGRESS_STATUS_OPTIONS.map((status, index) => {
-              const isFilled = progressIndex >= index || progressIndex === -1;
-              return (
-                <div
-                  key={status.value}
-                  className={`h-2 flex-1 rounded-full ${
-                    isFilled ? "bg-black" : "bg-neutral-200"
-                  }`}
-                />
-              );
-            })}
-          </div>
-
-          <div className="overflow-x-auto pb-1">
-            <div className="flex min-w-max gap-4">
-              {LOAN_PROGRESS_STATUS_OPTIONS.map((status, index) => {
-                const isCompleted = progressIndex > index || progressIndex === -1;
-                const isCurrent = progressIndex === index;
-                const showCreatedDate = index === 0 && isCompleted;
-                const createdDate = showCreatedDate
-                  ? formatCompactDate(loan.created_date || loan.updated_date)
-                  : null;
-
-                return (
-                  <div key={status.value} className="min-w-[128px] flex-1">
-                    <div className="flex items-start gap-1.5">
-                      <div className="pt-[2px]">
-                        {isCompleted ? (
-                          <Check className="h-3.5 w-3.5 text-black" />
-                        ) : (
-                          <Circle
-                            className={`h-3.5 w-3.5 ${
-                              isCurrent ? "fill-black text-black" : "text-neutral-300"
-                            }`}
-                          />
-                        )}
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className={`text-xs leading-4 ${isCurrent ? "text-black" : "text-neutral-600"}`}>
-                          {status.label}
-                        </p>
-                        {createdDate && (
-                          <p className="text-xs leading-4 text-neutral-500">
-                            {createdDate}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {LOAN_PROGRESS_STATUS_OPTIONS.length > 5 && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsExpanded((value) => !value)}
+                className="h-auto px-0 text-[12px] font-normal leading-4 tracking-[-0.5px] text-neutral-500 hover:bg-transparent hover:text-black"
+              >
+                {isExpanded ? "Collapse" : `${LOAN_PROGRESS_STATUS_OPTIONS.length - 5} more`}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
