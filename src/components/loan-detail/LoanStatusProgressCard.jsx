@@ -15,10 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { normalizeAppRole } from "@/components/utils/appRoles";
+import { Check, Circle } from "lucide-react";
 import UpdateProfilesFromLoanModal from "../shared/UpdateProfilesFromLoanModal";
 import {
   LOAN_PROGRESS_STATUS_OPTIONS,
@@ -53,10 +53,17 @@ export default function LoanStatusProgressCard({
   const progressIndex = LOAN_PROGRESS_STATUS_OPTIONS.findIndex(
     (status) => status.value === loan.status
   );
-  const progressValue =
-    progressIndex >= 0
-      ? ((progressIndex + 1) / LOAN_PROGRESS_STATUS_OPTIONS.length) * 100
-      : 100;
+
+  const formatCompactDate = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    return `${month}/${day}/${year}`;
+  };
 
   const applyStatusChange = async (nextStatus) => {
     setIsUpdating(true);
@@ -143,9 +150,7 @@ export default function LoanStatusProgressCard({
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
-              <CardTitle className="text-lg text-slate-900">
-                Loan Status
-              </CardTitle>
+              <CardTitle className="text-lg text-slate-900">Progress</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={`${currentStatus.color} border-0`}>
                   {currentStatus.label}
@@ -169,30 +174,66 @@ export default function LoanStatusProgressCard({
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <Progress value={progressValue} className="h-3 bg-slate-200 [&>*]:bg-slate-900" />
-          <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-            {LOAN_PROGRESS_STATUS_OPTIONS.map((status, index) => {
-              const isComplete = progressIndex >= index || progressIndex === -1;
-              const isCurrent = loan.status === status.value;
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <p className="text-sm text-slate-900">Progress</p>
+            <p className="text-xs text-neutral-500">
+              Step {Math.max(progressIndex + 1, 1)} of {LOAN_PROGRESS_STATUS_OPTIONS.length}
+            </p>
+          </div>
 
+          <div className="flex gap-2">
+            {LOAN_PROGRESS_STATUS_OPTIONS.map((status, index) => {
+              const isFilled = progressIndex >= index || progressIndex === -1;
               return (
                 <div
                   key={status.value}
-                  className={`rounded-xl border p-3 transition-colors ${
-                    isCurrent
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : isComplete
-                        ? "border-slate-300 bg-slate-50 text-slate-900"
-                        : "border-slate-200 bg-white text-slate-400"
+                  className={`h-2 flex-1 rounded-full ${
+                    isFilled ? "bg-black" : "bg-neutral-200"
                   }`}
-                >
-                  <p className="text-xs uppercase tracking-[0.16em] opacity-70">
-                    Step {index + 1}
-                  </p>
-                  <p className="mt-1 text-sm">{status.label}</p>
-                </div>
+                />
               );
             })}
+          </div>
+
+          <div className="overflow-x-auto pb-1">
+            <div className="flex min-w-max gap-4">
+              {LOAN_PROGRESS_STATUS_OPTIONS.map((status, index) => {
+                const isCompleted = progressIndex > index || progressIndex === -1;
+                const isCurrent = progressIndex === index;
+                const showCreatedDate = index === 0 && isCompleted;
+                const createdDate = showCreatedDate
+                  ? formatCompactDate(loan.created_date || loan.updated_date)
+                  : null;
+
+                return (
+                  <div key={status.value} className="min-w-[128px] flex-1">
+                    <div className="flex items-start gap-1.5">
+                      <div className="pt-[2px]">
+                        {isCompleted ? (
+                          <Check className="h-3.5 w-3.5 text-black" />
+                        ) : (
+                          <Circle
+                            className={`h-3.5 w-3.5 ${
+                              isCurrent ? "fill-black text-black" : "text-neutral-300"
+                            }`}
+                          />
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className={`text-xs leading-4 ${isCurrent ? "text-black" : "text-neutral-600"}`}>
+                          {status.label}
+                        </p>
+                        {createdDate && (
+                          <p className="text-xs leading-4 text-neutral-500">
+                            {createdDate}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </CardContent>
       </Card>
