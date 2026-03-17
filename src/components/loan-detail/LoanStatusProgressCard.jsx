@@ -50,7 +50,7 @@ export default function LoanStatusProgressCard({ loan }) {
                 <div
                   key={status.value}
                   className={`h-2 min-h-px min-w-px flex-1 rounded-[9999px] ${
-                    isComplete ? "bg-black" : "bg-[#E5E5E5]"
+                    isComplete ? "bg-black" : "bg-[#E5E7EB]"
                   }`}
                 />
               );
@@ -83,7 +83,7 @@ export default function LoanStatusProgressCard({ loan }) {
                         isExpanded ? "min-w-[120px]" : "min-w-0"
                       }`}
                     >
-                      <div className="flex shrink-0 items-center py-[2px]">
+                      <div className="flex h-4 shrink-0 items-start pt-[2px]">
                         {isDone ? (
                           <div className="flex h-[12px] w-[10.5px] items-center justify-center">
                             <Check className="h-[12px] w-[10.5px] text-black stroke-[2.25]" />
@@ -93,14 +93,14 @@ export default function LoanStatusProgressCard({ loan }) {
                             className={`h-[6px] w-[6px] rounded-full border ${
                               isCurrent
                                 ? "border-black bg-black"
-                                : "border-[#A3A3A3] bg-white"
+                                : "border-[#E5E7EB] bg-white"
                             }`}
                           />
                         )}
                       </div>
-                      <div className="flex shrink-0 flex-col items-start justify-center whitespace-nowrap text-[12px] font-normal leading-4 tracking-[-0.6271px] text-[#525252]">
-                        <p>{status.label}</p>
-                        {createdDate ? <p>{createdDate}</p> : null}
+                      <div className="flex shrink-0 flex-col items-start whitespace-nowrap text-[12px] font-normal tracking-[-0.6271px] text-[#525252]">
+                        <p className="leading-4">{status.label}</p>
+                        {createdDate ? <p className="leading-[14px]">{createdDate}</p> : null}
                       </div>
                     </div>
                   );
@@ -121,7 +121,7 @@ export default function LoanStatusProgressCard({ loan }) {
                           className={`h-[6px] w-[6px] rounded-full border ${
                             isCurrent
                               ? "border-black bg-black"
-                              : "border-[#A3A3A3] bg-white"
+                              : "border-[#E5E7EB] bg-white"
                           }`}
                         />
                       )}
