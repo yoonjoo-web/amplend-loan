@@ -6,7 +6,7 @@ import { X, Edit, Loader2, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 import DynamicFormRenderer from "../forms/DynamicFormRenderer";
-import RecentChangesPanel from "./RecentChangesPanel";
+import RecentChangesModal from "./RecentChangesModal";
 
 // Define the desired category groupings and their display names
 const CATEGORY_GROUPS = {
@@ -28,6 +28,7 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
   const [originalLoan, setOriginalLoan] = useState(loan);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showRecentChanges, setShowRecentChanges] = useState(false);
   const [fieldConfigs, setFieldConfigs] = useState([]);
   const [activeCategory, setActiveCategory] = useState('');
 
@@ -229,9 +230,15 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex items-center justify-between gap-4 xl:flex-1">
-          <h2 className="text-2xl text-slate-900">Loan Details</h2>
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-2xl text-slate-900">Loan Details</h2>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowRecentChanges(true)}
+          >
+            Recent Changes
+          </Button>
           {canEdit && (
             <Button
               onClick={() => {
@@ -257,7 +264,6 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
             </Button>
           )}
         </div>
-        <RecentChangesPanel loan={loan} className="w-full xl:w-[360px] xl:flex-shrink-0" />
       </div>
 
       <Card className="border-0 shadow-sm bg-white">
@@ -342,6 +348,12 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
           )}
         </CardContent>
       </Card>
+
+      <RecentChangesModal
+        open={showRecentChanges}
+        onOpenChange={setShowRecentChanges}
+        loan={loan}
+      />
     </div>
   );
 }
