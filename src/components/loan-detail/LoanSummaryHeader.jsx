@@ -17,10 +17,17 @@ export default function LoanSummaryHeader({ loan }) {
     return labels[type] || type;
   };
 
+  const getLoanPurposeLabel = (purpose) => {
+    if (!purpose) return 'N/A';
+    return purpose
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  };
+
   return (
     <Card className="mb-6 bg-white border-slate-200">
       <div className="p-6">
-        <div className={`grid ${loan.borrower_type === 'entity' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5'} gap-4`}>
+        <div className={`grid ${loan.borrower_type === 'entity' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-7' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6'} gap-4`}>
           {/* Property RSVP# */}
           <div className="flex flex-col">
             <span className="text-xs text-slate-500  mb-1">Property</span>
@@ -42,6 +49,14 @@ export default function LoanSummaryHeader({ loan }) {
             <span className="text-xs text-slate-500  mb-1">Loan Type</span>
             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded w-fit">
               {getLoanTypeLabel(loan.loan_product)}
+            </span>
+          </div>
+
+          {/* Loan Purpose */}
+          <div className="flex flex-col">
+            <span className="text-xs text-slate-500  mb-1">Loan Purpose</span>
+            <span className="text-xs bg-slate-100 text-slate-800 px-2 py-1 rounded w-fit">
+              {getLoanPurposeLabel(loan.loan_purpose)}
             </span>
           </div>
 
