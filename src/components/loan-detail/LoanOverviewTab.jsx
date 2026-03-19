@@ -13,6 +13,14 @@ import DynamicFormRenderer from "../forms/DynamicFormRenderer";
 import RecentChangesModal from "./RecentChangesModal";
 import { getLoanOverviewSections } from "./loanOverviewSections";
 
+const NON_EDITABLE_FIELDS = new Set([
+  "id",
+  "created_date",
+  "updated_date",
+  "created_by",
+  "modification_history",
+]);
+
 const sanitizeLoanData = (loanData) => {
   const sanitized = { ...loanData };
   sanitized.overridden_fields = loanData.overridden_fields || [];
@@ -122,15 +130,14 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser, activeSec
     setIsSaving(true);
 
     try {
-      const modificationHistory = editedLoan.modification_history ? [...editedLoan.modification_history] : [];
-      const modifiedByName =
-        currentUser.first_name && currentUser.last_name
-          ? `${currentUser.first_name} ${currentUser.last_name}`
-          : currentUser.full_name || currentUser.email || "Unknown User";
+      const sanitizedLoan = sanitizeLoanData(editedLoan);
+      const changedFields = Object.keys(sanitizedLoan).filter((key) => {
+        if (NON_EDITABLE_FIELDS.has(key)) {
+          return false;
+        }
 
-      const changedFields = Object.keys(editedLoan).filter((key) => {
         const originalValue = originalLoan[key];
-        const editedValue = editedLoan[key];
+        const editedValue = sanitizedLoan[key];
 
         if (
           typeof originalValue === "object" &&
@@ -144,27 +151,15 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser, activeSec
         return originalValue !== editedValue;
       });
 
-      const fieldChanges = changedFields.map((fieldName) => ({
-        field_name: fieldName,
-        old_value: originalLoan[fieldName],
-        new_value: editedLoan[fieldName],
-      }));
+      if (changedFields.length === 0) {
+        setIsEditing(false);
+        return;
+      }
 
-      modificationHistory.push({
-        timestamp: new Date().toISOString(),
-        modified_by: currentUser.id || "unknown",
-        modified_by_name: modifiedByName,
-        description: "Loan details updated",
-        fields_changed: changedFields,
-        field_changes: fieldChanges,
-      });
-
-      const sanitizedLoan = sanitizeLoanData(editedLoan);
-      const loanToUpdate = {
-        ...sanitizedLoan,
-        modification_history: modificationHistory,
-        overridden_fields: editedLoan.overridden_fields || [],
-      };
+      const loanToUpdate = changedFields.reduce((updates, fieldName) => {
+        updates[fieldName] = sanitizedLoan[fieldName];
+        return updates;
+      }, {});
 
       await onUpdate(loanToUpdate);
       setOriginalLoan(sanitizedLoan);
@@ -186,28 +181,43 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser, activeSec
             Recent Changes
           </Button>
           {canEdit ? (
-            <Button
-              onClick={() => {
-                if (isEditing) {
-                  setEditedLoan(originalLoan);
-                }
-                setIsEditing(!isEditing);
-              }}
-              variant={isEditing ? "outline" : "default"}
-              className={!isEditing ? "bg-slate-700 hover:bg-slate-800" : ""}
-            >
+            <>
               {isEditing ? (
-                <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditedLoan(originalLoan);
+                    setIsEditing(false);
+                  }}
+                  disabled={isSaving}
+                >
                   <X className="mr-2 h-4 w-4" />
                   Cancel
-                </>
-              ) : (
-                <>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </>
-              )}
-            </Button>
+                </Button>
+              ) : null}
+              <Button
+                onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                disabled={isSaving}
+                className="bg-slate-700 hover:bg-slate-800"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : isEditing ? (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                ) : (
+                  <>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </>
+                )}
+              </Button>
+            </>
           ) : null}
         </div>
       </div>
@@ -221,34 +231,6 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser, activeSec
           canEdit={canEdit}
           onChange={handleFormChange}
         />
-      ) : null}
-
-      {isEditing ? (
-        <div className="flex justify-end gap-3 border-t border-slate-200 pt-6">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setEditedLoan(originalLoan);
-              setIsEditing(false);
-            }}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="bg-slate-700 hover:bg-slate-800">
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </div>
       ) : null}
 
       <RecentChangesModal open={showRecentChanges} onOpenChange={setShowRecentChanges} loan={loan} />
