@@ -4,18 +4,27 @@ import {
   CircleUserRound,
   Folder,
   LayoutDashboard,
+  PenTool,
   TrendingUp,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 export const DEFAULT_LOAN_DETAIL_TAB = "dashboard";
 
-export const loanDetailSubpages = [
+const ALL_LOAN_DETAIL_SUBPAGES = [
   {
     key: "dashboard",
-    title: "Loan Dashboard",
+    title: "Dashboard",
     description: "Default landing space for the loan workspace.",
     icon: LayoutDashboard,
+    isPlaceholder: true,
+  },
+  {
+    key: "workspace",
+    title: "Workspace",
+    description: "Central workspace for loan collaboration and activity.",
+    icon: PenTool,
     isPlaceholder: true,
   },
   {
@@ -55,11 +64,43 @@ export const loanDetailSubpages = [
   },
 ];
 
-export const isValidLoanDetailTab = (tab) =>
-  loanDetailSubpages.some((subpage) => subpage.key === tab);
+const MANAGER_TABS = ["dashboard", "workspace", "details", "checklist", "documents", "draws"];
+const PARTICIPANT_TABS = ["dashboard", "tasks", "details", "documents", "draws"];
 
-export const getLoanDetailSubpage = (tab) =>
-  loanDetailSubpages.find((subpage) => subpage.key === tab) || loanDetailSubpages[0];
+const isLoanWorkspaceManager = (user) => {
+  if (!user) return null;
+  const normalizedRole = normalizeAppRole(user.app_role);
+  return user.role === "admin" || ["Administrator", "Loan Officer"].includes(normalizedRole);
+};
+
+export const getLoanDetailSubpages = (user) => {
+  const canManageLoanWorkspace = isLoanWorkspaceManager(user);
+  const allowedTabs =
+    canManageLoanWorkspace === null
+      ? ALL_LOAN_DETAIL_SUBPAGES.map((subpage) => subpage.key)
+      : canManageLoanWorkspace
+        ? MANAGER_TABS
+        : PARTICIPANT_TABS;
+
+  const subpagesByKey = Object.fromEntries(
+    ALL_LOAN_DETAIL_SUBPAGES.map((subpage) => [subpage.key, subpage])
+  );
+
+  return allowedTabs.map((tab) => subpagesByKey[tab]).filter(Boolean);
+};
+
+export const loanDetailSubpages = ALL_LOAN_DETAIL_SUBPAGES;
+
+export const isValidLoanDetailTab = (tab, user) =>
+  getLoanDetailSubpages(user).some((subpage) => subpage.key === tab);
+
+export const getLoanDetailSubpage = (tab, user) =>
+  getLoanDetailSubpages(user).find((subpage) => subpage.key === tab) || getLoanDetailSubpages(user)[0];
+
+export const getDefaultLoanDetailFallbackTab = (user, { openTask = false } = {}) => {
+  if (!openTask) return DEFAULT_LOAN_DETAIL_TAB;
+  return isLoanWorkspaceManager(user) ? "checklist" : "tasks";
+};
 
 export const getLoanDetailTabUrl = (loanId, tab = DEFAULT_LOAN_DETAIL_TAB, extraParams = {}) => {
   const params = new URLSearchParams({

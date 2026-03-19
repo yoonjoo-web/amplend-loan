@@ -32,8 +32,8 @@ import UniversalHeader from "../components/shared/UniversalHeader";
 import ProductTour from "../components/shared/ProductTour";
 import {
   DEFAULT_LOAN_DETAIL_TAB,
+  getLoanDetailSubpages,
   getLoanDetailTabUrl,
-  loanDetailSubpages,
 } from "@/components/loan-detail/loanDetailSubpages";
 
 // Hook to shield input fields from global key handlers (capture + bubble, all targets)
@@ -92,6 +92,7 @@ export default function Layout({ children, currentPageName }) {
   const searchParams = new URLSearchParams(location.search);
   const currentLoanId = searchParams.get('id');
   const isOnLoanDetailPage = location.pathname === createPageUrl("LoanDetail") && !!currentLoanId;
+  const visibleLoanDetailSubpages = getLoanDetailSubpages(currentUser);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
     return saved === 'true';
@@ -145,7 +146,7 @@ export default function Layout({ children, currentPageName }) {
       show: true, // Everyone can see loans (filtered by permissions)
       ...(isOnLoanDetailPage ? {
         defaultUrl: getLoanDetailTabUrl(currentLoanId, DEFAULT_LOAN_DETAIL_TAB),
-        submenu: loanDetailSubpages.map((subpage) => ({
+        submenu: visibleLoanDetailSubpages.map((subpage) => ({
           title: subpage.title,
           url: getLoanDetailTabUrl(currentLoanId, subpage.key),
           icon: subpage.icon,

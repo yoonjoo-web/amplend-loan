@@ -9,13 +9,15 @@ import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
 
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
+import LoanChecklistTab from "../components/loan-detail/LoanChecklistTab";
+import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
 import LoanStatusBadgeControl from "../components/loan-detail/LoanStatusBadgeControl";
 import LoanStatusProgressCard from "../components/loan-detail/LoanStatusProgressCard";
 import LoanDetailPlaceholderView from "../components/loan-detail/LoanDetailPlaceholderView";
 import {
-  DEFAULT_LOAN_DETAIL_TAB,
+  getDefaultLoanDetailFallbackTab,
   getLoanDetailSubpage,
   getLoanDetailTabUrl,
   isValidLoanDetailTab,
@@ -30,15 +32,16 @@ export default function LoanDetail() {
   const loanId = searchParams.get('id');
   const requestedTab = searchParams.get('tab');
   const openTask = searchParams.get('openTask');
-  const fallbackTab = openTask ? 'checklist' : DEFAULT_LOAN_DETAIL_TAB;
-  const activeTab = isValidLoanDetailTab(requestedTab) ? requestedTab : fallbackTab;
-  const activeSubpage = getLoanDetailSubpage(activeTab);
-  const showLoanSidebar = activeTab === 'dashboard';
   const [loan, setLoan] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [allLoanOfficers, setAllLoanOfficers] = useState([]);
+  const [borrowerAccessIds, setBorrowerAccessIds] = useState([]);
+  const fallbackTab = getDefaultLoanDetailFallbackTab(currentUser, { openTask: Boolean(openTask) });
+  const activeTab = isValidLoanDetailTab(requestedTab, currentUser) ? requestedTab : fallbackTab;
+  const activeSubpage = getLoanDetailSubpage(activeTab, currentUser);
+  const showLoanSidebar = activeTab === 'dashboard';
 
   const normalizeDateValue = (value) => {
     if (!value) return '';
@@ -60,7 +63,7 @@ export default function LoanDetail() {
   }, [loanId]);
 
   useEffect(() => {
-    if (!loanId) {
+    if (!loanId || !currentUser) {
       return;
     }
 
@@ -69,7 +72,7 @@ export default function LoanDetail() {
         replace: true,
       });
     }
-  }, [activeTab, loanId, navigate, openTask, requestedTab]);
+  }, [activeTab, currentUser, loanId, navigate, openTask, requestedTab]);
 
   const loadLoan = async () => {
     setIsLoading(true);
@@ -116,6 +119,7 @@ export default function LoanDetail() {
 
       const resolvedBorrowerAccessIds = await getBorrowerAccessIds(base44, user);
       const resolvedLoanPartnerAccessIds = await getLoanPartnerAccessIds(base44, user);
+      setBorrowerAccessIds(resolvedBorrowerAccessIds);
 
       const toIdArray = (singleValue, legacyList) => {
         if (singleValue) return [String(singleValue)];
@@ -240,6 +244,13 @@ export default function LoanDetail() {
     }
   };
 
+  const handleTaskOpened = () => {
+    const params = new URLSearchParams(location.search);
+    params.delete('openTask');
+    const query = params.toString();
+    navigate(query ? `${location.pathname}?${query}` : location.pathname, { replace: true });
+  };
+
   if (isLoading || !loan) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -301,6 +312,20 @@ export default function LoanDetail() {
                   <LoanDocumentsTab
                     loan={loan}
                     currentUser={currentUser}
+                  />
+                ) : activeTab === 'checklist' ? (
+                  <LoanChecklistTab
+                    loan={loan}
+                    onUpdate={handleLoanUpdate}
+                    openTaskId={openTask}
+                    onTaskOpened={handleTaskOpened}
+                  />
+                ) : activeTab === 'draws' ? (
+                  <LoanDrawsTab
+                    loan={loan}
+                    onUpdate={handleLoanUpdate}
+                    currentUser={currentUser}
+                    borrowerAccessIds={borrowerAccessIds}
                   />
                 ) : (
                   <LoanDetailPlaceholderView
