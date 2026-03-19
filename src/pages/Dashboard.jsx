@@ -119,7 +119,7 @@ export default function Dashboard() {
   const [showInviteBorrowerModal, setShowInviteBorrowerModal] = useState(false);
   const [showInviteTeamModal, setShowInviteTeamModal] = useState(false);
   const [showInviteLoanPartnerModal, setShowInviteLoanPartnerModal] = useState(false);
-  const [invitePartnerType, setInvitePartnerType] = useState('Title Company');
+  const [invitePartnerType, setInvitePartnerType] = useState('Broker');
   const [lockInvitePartnerType, setLockInvitePartnerType] = useState(false);
   const [myBorrowersSummary, setMyBorrowersSummary] = useState(null);
   const isStaffUser = permissions.isPlatformAdmin || permissions.isAdministrator || permissions.isLoanOfficer;
@@ -358,7 +358,7 @@ export default function Dashboard() {
     });
   };
 
-  const openInviteLoanPartnerModal = (partnerType = 'Title Company', lockType = false) => {
+  const openInviteLoanPartnerModal = (partnerType = 'Broker', lockType = false) => {
     setInvitePartnerType(partnerType);
     setLockInvitePartnerType(lockType);
     setShowInviteLoanPartnerModal(true);
@@ -366,7 +366,7 @@ export default function Dashboard() {
 
   const closeInviteLoanPartnerModal = () => {
     setShowInviteLoanPartnerModal(false);
-    setInvitePartnerType('Title Company');
+    setInvitePartnerType('Broker');
     setLockInvitePartnerType(false);
   };
 

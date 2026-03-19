@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
           'Communicate with the Amplend team and borrowers'
         ],
         cta_text: 'Complete Your Account Setup',
-        cta_url: `${appUrl}/Onboarding?app_role=${encodeURIComponent(data.partner_type || 'Title Company')}&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}`,
+        cta_url: `${appUrl}/Onboarding?app_role=${encodeURIComponent(data.partner_type || 'Broker')}&requested_first_name=${encodeURIComponent(data.first_name || '')}&requested_last_name=${encodeURIComponent(data.last_name || '')}`,
         cta_note: 'Click the button above to sign in or create your account.'
       },
       'invite_team_member': {

@@ -15,7 +15,7 @@ const LOAN_PARTNER_TYPES = LOAN_PARTNER_ROLES.map((role) => ({
   label: role
 }));
 
-const DEFAULT_PARTNER_TYPE = 'Title Company';
+const DEFAULT_PARTNER_TYPE = 'Broker';
 
 export default function InviteLoanPartnerModal({
   isOpen,

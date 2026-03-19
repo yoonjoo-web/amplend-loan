@@ -15,11 +15,8 @@ import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const roleColors = {
-  "Servicer": "bg-blue-100 text-blue-800",
   "Referral Partner": "bg-emerald-100 text-emerald-800",
   "Broker": "bg-amber-100 text-amber-800",
-  "Title Company": "bg-pink-100 text-pink-800",
-  "Insurance Company": "bg-cyan-100 text-cyan-800",
   "Liaison": "bg-indigo-100 text-indigo-800"
 };
 
@@ -239,7 +236,7 @@ export default function LoanPartners() {
               Loan Partners
             </h1>
             <p className="text-slate-600 text-lg">
-              Manage servicers, auditors, referrers, and other contacts
+              Manage brokers, liaisons, referral partners, and other contacts
             </p>
           </div>
           {permissions.canManageContacts && (

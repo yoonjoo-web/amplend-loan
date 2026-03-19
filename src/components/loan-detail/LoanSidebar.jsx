@@ -402,7 +402,7 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
     }
   };
 
-  const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker', 'Title Company', 'Insurance Company', 'Servicer'];
+  const restrictedMessengerRoles = ['Borrower', 'Liaison', 'Referral Partner', 'Broker'];
   const isBorrowerRole = normalizedRole === 'Borrower';
   const isLiaisonRole = normalizedRole === 'Liaison';
   const isBrokerRole = normalizedRole === 'Broker';
@@ -428,9 +428,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       'Loan Officer',
       'Broker',
       'Referral Partner',
-      'Title Company',
-      'Insurance Company',
-      'Servicer',
       'Liaison',
       'Loan Partner'
     ]);
@@ -448,9 +445,6 @@ export default function LoanSidebar({ loan, onUpdate, currentUser, collapsed, on
       'Loan Officer',
       'Broker',
       'Referral Partner',
-      'Title Company',
-      'Insurance Company',
-      'Servicer',
       'Liaison',
       'Loan Partner'
     ]);

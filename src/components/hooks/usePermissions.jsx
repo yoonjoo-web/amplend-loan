@@ -92,7 +92,7 @@ export const usePermissions = () => {
         p.isLoanOfficer = normalizedRole === 'Loan Officer';
         p.isBorrower = normalizedRole === 'Borrower' || normalizedRole === 'Liaison';
         p.isBroker = normalizedRole === 'Broker';
-        p.isLoanPartner = ['Broker', 'Referral Partner', 'Title Company', 'Insurance Company', 'Servicer'].includes(normalizedRole);
+        p.isLoanPartner = ['Broker', 'Liaison', 'Referral Partner'].includes(normalizedRole);
         p.isBorrowerLiaison = normalizedRole === 'Liaison';
 
         // --- Rule 1: Administrator = Platform Admin ---

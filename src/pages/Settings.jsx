@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { usePermissions } from "@/components/hooks/usePermissions";
-import { runRoleMigration } from "@/components/utils/roleMigration";
 import { runFieldRoleCleanup } from "@/components/utils/fieldRoleCleanup";
 
 import UserTable from '../components/settings/UserTable';
@@ -58,7 +57,6 @@ export default function Settings() {
     if (!permissionsLoading && currentUser) {
       loadData();
       if (permissions.canManageUsers) {
-        runRoleMigration({ toast });
         runFieldRoleCleanup({ toast });
       }
       
