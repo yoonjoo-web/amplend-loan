@@ -35,6 +35,7 @@ import {
   getLoanDetailSubpages,
   getLoanDetailTabUrl,
 } from "@/components/loan-detail/loanDetailSubpages";
+import { getLoanOverviewSections } from "@/components/loan-detail/loanOverviewSections";
 
 // Hook to shield input fields from global key handlers (capture + bubble, all targets)
 function useInputShield() {
@@ -91,14 +92,18 @@ export default function Layout({ children, currentPageName }) {
   const { currentUser, permissions, isLoading } = usePermissions();
   const searchParams = new URLSearchParams(location.search);
   const currentLoanId = searchParams.get('id');
+  const currentLoanTab = searchParams.get('tab');
+  const currentLoanSection = searchParams.get('section');
   const isOnLoanDetailPage = location.pathname === createPageUrl("LoanDetail") && !!currentLoanId;
   const visibleLoanDetailSubpages = getLoanDetailSubpages(currentUser);
+  const visibleLoanOverviewSections = getLoanOverviewSections(currentUser);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar_collapsed');
     return saved === 'true';
   });
   const [activeSubmenu, setActiveSubmenu] = useState(null); // holds the nav item with submenu
   const [autoOpenedLoanSubmenuKey, setAutoOpenedLoanSubmenuKey] = useState(null);
+  const [hoveredLoanDetailKey, setHoveredLoanDetailKey] = useState(null);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [isContentScrolled, setIsContentScrolled] = useState(false);
   const mainContentRef = useRef(null);
@@ -150,6 +155,14 @@ export default function Layout({ children, currentPageName }) {
           title: subpage.title,
           url: getLoanDetailTabUrl(currentLoanId, subpage.key),
           icon: subpage.icon,
+          submenu:
+            subpage.key === "details"
+              ? visibleLoanOverviewSections.map((section) => ({
+                  title: section.title,
+                  url: getLoanDetailTabUrl(currentLoanId, subpage.key, { section: section.key }),
+                  icon: section.icon,
+                }))
+              : undefined,
         })),
       } : {}),
     },
@@ -219,6 +232,10 @@ export default function Layout({ children, currentPageName }) {
     event.preventDefault();
     navigate(url);
   };
+
+  const shouldShowLoanDetailsChildren = (subitemTitle) =>
+    subitemTitle === "Loan Details" &&
+    (isOnLoanDetailPage || hoveredLoanDetailKey === subitemTitle);
 
   const filteredNavItems = navigationItems.filter(item => item.show);
   const loansNavItem = filteredNavItems.find((item) => item.title === "Loans");
@@ -384,26 +401,67 @@ export default function Layout({ children, currentPageName }) {
                     </Tooltip>
 
                     {activeSubmenu?.submenu?.map((subitem) => (
-                      <Tooltip key={subitem.title}>
-                        <TooltipTrigger asChild>
-                          <a
-                            href={subitem.url}
-                            onClick={(event) => handleSidebarNavigation(event, subitem.url)}
-                            className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
-                              (new URL(subitem.url, window.location.origin).search
-                                ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
-                                : location.pathname === new URL(subitem.url, window.location.origin).pathname)
-                                ? 'bg-slate-700 text-white shadow-lg'
-                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                            }`}
-                          >
-                            {subitem.icon && <subitem.icon className="w-5 h-5" />}
-                          </a>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p>{subitem.title}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <div
+                        key={subitem.title}
+                        onMouseEnter={() => setHoveredLoanDetailKey(subitem.title)}
+                        onMouseLeave={() => setHoveredLoanDetailKey((current) => (current === subitem.title ? null : current))}
+                        className="space-y-1"
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a
+                              href={subitem.url}
+                              onClick={(event) => handleSidebarNavigation(event, subitem.url)}
+                              className={`flex items-center justify-center w-12 h-12 rounded-xl transition-colors ${
+                                (new URL(subitem.url, window.location.origin).search
+                                  ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
+                                  : location.pathname === new URL(subitem.url, window.location.origin).pathname)
+                                  ? 'bg-slate-700 text-white shadow-lg'
+                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                              }`}
+                            >
+                              {subitem.icon && <subitem.icon className="w-5 h-5" />}
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>{subitem.title}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {subitem.submenu?.length && shouldShowLoanDetailsChildren(subitem.title) ? (
+                          <div className="ml-3 space-y-1 border-l border-slate-200 pl-2">
+                            {subitem.submenu.map((nestedItem) => {
+                              const nestedUrl = new URL(nestedItem.url, window.location.origin);
+                              const nestedSearch = new URLSearchParams(nestedUrl.search);
+                              const isNestedActive =
+                                isOnLoanDetailPage &&
+                                currentLoanTab === "details" &&
+                                currentLoanSection === nestedSearch.get("section");
+
+                              return (
+                                <Tooltip key={nestedItem.title}>
+                                  <TooltipTrigger asChild>
+                                    <a
+                                      href={nestedItem.url}
+                                      onClick={(event) => handleSidebarNavigation(event, nestedItem.url)}
+                                      className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                                        isNestedActive
+                                          ? "bg-slate-100 text-slate-900"
+                                          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                      }`}
+                                    >
+                                      {nestedItem.icon && <nestedItem.icon className="h-4 w-4" />}
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right">
+                                    <p>{nestedItem.title}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -431,21 +489,57 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                         <div className="h-px bg-slate-100 mb-1" />
                         {activeSubmenu.submenu.map((subitem) => (
-                          <a
-                           key={subitem.title}
-                           href={subitem.url}
-                           onClick={(event) => handleSidebarNavigation(event, subitem.url)}
-                           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors ${
-                             (new URL(subitem.url, window.location.origin).search
-                               ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
-                               : location.pathname === new URL(subitem.url, window.location.origin).pathname)
-                               ? 'bg-slate-700 text-white shadow-lg'
-                               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                           }`}
+                          <div
+                            key={subitem.title}
+                            onMouseEnter={() => setHoveredLoanDetailKey(subitem.title)}
+                            onMouseLeave={() => setHoveredLoanDetailKey((current) => (current === subitem.title ? null : current))}
+                            className="space-y-1"
                           >
-                           {subitem.icon && <subitem.icon className="w-4 h-4 flex-shrink-0" />}
-                           {subitem.title}
-                          </a>
+                            <a
+                              href={subitem.url}
+                              onClick={(event) => handleSidebarNavigation(event, subitem.url)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors ${
+                                (new URL(subitem.url, window.location.origin).search
+                                  ? location.search.includes(new URL(subitem.url, window.location.origin).search.replace('?', ''))
+                                  : location.pathname === new URL(subitem.url, window.location.origin).pathname)
+                                  ? 'bg-slate-700 text-white shadow-lg'
+                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                              }`}
+                            >
+                              {subitem.icon && <subitem.icon className="w-4 h-4 flex-shrink-0" />}
+                              <span className="flex-1">{subitem.title}</span>
+                              {subitem.submenu?.length ? <ChevronRight className="h-4 w-4" /> : null}
+                            </a>
+
+                            {subitem.submenu?.length && shouldShowLoanDetailsChildren(subitem.title) ? (
+                              <div className="ml-6 space-y-1 border-l border-slate-200 pl-3">
+                                {subitem.submenu.map((nestedItem) => {
+                                  const nestedUrl = new URL(nestedItem.url, window.location.origin);
+                                  const nestedSearch = new URLSearchParams(nestedUrl.search);
+                                  const isNestedActive =
+                                    isOnLoanDetailPage &&
+                                    currentLoanTab === "details" &&
+                                    currentLoanSection === nestedSearch.get("section");
+
+                                  return (
+                                    <a
+                                      key={nestedItem.title}
+                                      href={nestedItem.url}
+                                      onClick={(event) => handleSidebarNavigation(event, nestedItem.url)}
+                                      className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+                                        isNestedActive
+                                          ? "bg-slate-100 text-slate-900"
+                                          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                      }`}
+                                    >
+                                      {nestedItem.icon && <nestedItem.icon className="h-4 w-4 flex-shrink-0" />}
+                                      {nestedItem.title}
+                                    </a>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
+                          </div>
                         ))}
                       </>
                     )}
