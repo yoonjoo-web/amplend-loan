@@ -22,6 +22,11 @@ import {
   getLoanDetailTabUrl,
   isValidLoanDetailTab,
 } from "../components/loan-detail/loanDetailSubpages";
+import {
+  DEFAULT_LOAN_OVERVIEW_SECTION,
+  getLoanOverviewSection,
+  isValidLoanOverviewSection,
+} from "../components/loan-detail/loanOverviewSections";
 
 
 export default function LoanDetail() {
@@ -32,6 +37,7 @@ export default function LoanDetail() {
   const loanId = searchParams.get('id');
   const requestedTab = searchParams.get('tab');
   const openTask = searchParams.get('openTask');
+  const requestedSection = searchParams.get('section');
   const [loan, setLoan] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +47,10 @@ export default function LoanDetail() {
   const fallbackTab = getDefaultLoanDetailFallbackTab(currentUser, { openTask: Boolean(openTask) });
   const activeTab = isValidLoanDetailTab(requestedTab, currentUser) ? requestedTab : fallbackTab;
   const activeSubpage = getLoanDetailSubpage(activeTab, currentUser);
+  const activeSection =
+    activeTab === "details" && isValidLoanOverviewSection(requestedSection, currentUser)
+      ? requestedSection
+      : getLoanOverviewSection(DEFAULT_LOAN_OVERVIEW_SECTION, currentUser)?.key || DEFAULT_LOAN_OVERVIEW_SECTION;
   const showLoanSidebar = activeTab === 'dashboard';
 
   const normalizeDateValue = (value) => {
@@ -67,12 +77,24 @@ export default function LoanDetail() {
       return;
     }
 
-    if (requestedTab !== activeTab) {
-      navigate(getLoanDetailTabUrl(loanId, activeTab, openTask ? { openTask } : {}), {
+    const targetUrl = getLoanDetailTabUrl(
+      loanId,
+      activeTab,
+      activeTab === "details"
+        ? { ...(openTask ? { openTask } : {}), section: activeSection }
+        : openTask
+          ? { openTask }
+          : {}
+    );
+
+    const currentUrl = `${location.pathname}?${searchParams.toString()}`;
+
+    if (currentUrl !== targetUrl) {
+      navigate(targetUrl, {
         replace: true,
       });
     }
-  }, [activeTab, currentUser, loanId, navigate, openTask, requestedTab]);
+  }, [activeSection, activeTab, currentUser, loanId, location.pathname, navigate, openTask, requestedTab, searchParams]);
 
   const loadLoan = async () => {
     setIsLoading(true);
@@ -305,8 +327,7 @@ export default function LoanDetail() {
                     loan={loan} 
                     onUpdate={handleLoanUpdate}
                     currentUser={currentUser}
-                    allLoanOfficers={allLoanOfficers}
-                    onLoanChange={() => {}}
+                    activeSection={activeSection}
                   />
                 ) : activeTab === 'documents' ? (
                   <LoanDocumentsTab

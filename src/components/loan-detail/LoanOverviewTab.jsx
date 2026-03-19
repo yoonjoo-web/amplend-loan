@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import {
-  Building,
-  CalendarCheck2,
-  ChevronRight,
-  CircleDollarSign,
-  CircleUserRound,
   Edit,
   Loader2,
   Save,
@@ -14,66 +8,10 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { normalizeAppRole } from "@/components/utils/appRoles";
 
 import DynamicFormRenderer from "../forms/DynamicFormRenderer";
 import RecentChangesModal from "./RecentChangesModal";
-
-const LOAN_DETAIL_SECTIONS = {
-  borrower: {
-    key: "borrower",
-    title: "Borrower",
-    icon: CircleUserRound,
-    categories: [
-      { key: "borrowerInformation", title: "Borrower Information" },
-      { key: "individual_information", title: "Individual Information" },
-    ],
-  },
-  loan: {
-    key: "loan",
-    title: "Loan",
-    icon: CircleDollarSign,
-    categories: [
-      { key: "loanInformation", title: "Loan Information" },
-      { key: "loanEconomics", title: "Loan Economics" },
-    ],
-  },
-  property: {
-    key: "property",
-    title: "Property",
-    icon: Building,
-    categories: [
-      { key: "propertyInformation", title: "Property Information" },
-      { key: "unit_information", title: "Unit Information" },
-      { key: "propertyEconomics", title: "Property Economics" },
-    ],
-  },
-  closing: {
-    key: "closing",
-    title: "Closing",
-    icon: CalendarCheck2,
-    categories: [
-      { key: "estimatedCash-to-close", title: "Estimated Cash-to-Close" },
-      { key: "servicingDetails", title: "Servicing Details" },
-      { key: "post-closeDetails", title: "Loan Sale Details" },
-    ],
-  },
-};
-
-const MANAGER_SECTIONS = ["borrower", "loan", "property", "closing"];
-const PARTICIPANT_SECTIONS = ["borrower", "loan", "property"];
-
-const isManagerView = (currentUser) => {
-  if (!currentUser) return false;
-  const normalizedRole = normalizeAppRole(currentUser.app_role);
-  return currentUser.role === "admin" || ["Administrator", "Loan Officer"].includes(normalizedRole);
-};
-
-const getVisibleSections = (currentUser) => {
-  const keys = isManagerView(currentUser) ? MANAGER_SECTIONS : PARTICIPANT_SECTIONS;
-  return keys.map((key) => LOAN_DETAIL_SECTIONS[key]);
-};
+import { getLoanOverviewSections } from "./loanOverviewSections";
 
 const sanitizeLoanData = (loanData) => {
   const sanitized = { ...loanData };
@@ -131,10 +69,7 @@ function SectionContent({ section, editedLoan, currentUser, isEditing, canEdit, 
       <CardContent className="space-y-10 p-8 md:p-10">
         {section.categories.map((category, index) => (
           <div key={category.key} className={index > 0 ? "border-t border-slate-200 pt-10" : ""}>
-            <div className="mb-6">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{section.title}</p>
-              <h3 className="mt-2 text-2xl text-slate-900">{category.title}</h3>
-            </div>
+            <h3 className="mb-6 text-2xl text-slate-900">{category.title}</h3>
 
             <DynamicFormRenderer
               context="loan"
@@ -153,11 +88,10 @@ function SectionContent({ section, editedLoan, currentUser, isEditing, canEdit, 
   );
 }
 
-export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
-  const sections = useMemo(() => getVisibleSections(currentUser), [currentUser]);
+export default function LoanOverviewTab({ loan, onUpdate, currentUser, activeSection }) {
+  const sections = useMemo(() => getLoanOverviewSections(currentUser), [currentUser]);
   const [editedLoan, setEditedLoan] = useState(loan);
   const [originalLoan, setOriginalLoan] = useState(loan);
-  const [activeSection, setActiveSection] = useState(sections[0]?.key || "borrower");
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showRecentChanges, setShowRecentChanges] = useState(false);
@@ -171,12 +105,6 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
     setEditedLoan(loanWithOverrides);
     setOriginalLoan(loanWithOverrides);
   }, [loan]);
-
-  useEffect(() => {
-    if (!sections.some((section) => section.key === activeSection)) {
-      setActiveSection(sections[0]?.key || "borrower");
-    }
-  }, [activeSection, sections]);
 
   const canEdit =
     currentUser &&
@@ -250,17 +178,8 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-        <span className="text-slate-900">Loan Details</span>
-        <ChevronRight className="h-4 w-4 text-slate-300" />
-        <span>{selectedSection?.title}</span>
-      </div>
-
       <div className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-3xl text-slate-900">{selectedSection?.title || "Loan Details"}</h2>
-          <p className="text-sm text-slate-500">Role-based Loan Details sections with the original editable workflow.</p>
-        </div>
+        <h2 className="text-3xl text-slate-900">{selectedSection?.title || "Loan Details"}</h2>
 
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={() => setShowRecentChanges(true)}>
@@ -292,47 +211,6 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser }) {
           ) : null}
         </div>
       </div>
-
-      <Card className="border-0 bg-white/80 shadow-sm backdrop-blur-sm">
-        <CardContent className="p-3">
-          <div className="flex flex-wrap gap-2">
-            {sections.map((section, index) => {
-              const Icon = section.icon;
-              const isActive = section.key === activeSection;
-
-              return (
-                <motion.button
-                  key={section.key}
-                  type="button"
-                  onClick={() => setActiveSection(section.key)}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.04, ease: "easeOut" }}
-                  className={cn(
-                    "relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-4 py-2.5 text-sm transition-colors",
-                    isActive ? "text-white" : "text-slate-600 hover:text-slate-900"
-                  )}
-                >
-                  {isActive ? (
-                    <motion.span
-                      layoutId="loan-details-subpage-active-pill"
-                      className="absolute inset-0 rounded-2xl bg-slate-900 shadow-lg shadow-slate-300/60"
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                    />
-                  ) : (
-                    <span className="absolute inset-0 rounded-2xl bg-slate-50 ring-1 ring-slate-200/80" />
-                  )}
-
-                  <span className="relative z-10 flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    <span>{section.title}</span>
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
 
       {selectedSection ? (
         <SectionContent
