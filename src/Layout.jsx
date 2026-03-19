@@ -508,7 +508,6 @@ export default function Layout({ children, currentPageName }) {
                             >
                               {subitem.icon && <subitem.icon className="w-4 h-4 flex-shrink-0" />}
                               <span className="flex-1">{subitem.title}</span>
-                              {subitem.submenu?.length ? <ChevronRight className="h-4 w-4" /> : null}
                             </a>
 
                             {subitem.submenu?.length && shouldShowLoanDetailsChildren(subitem.title) ? (
