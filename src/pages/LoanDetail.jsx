@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { getBorrowerAccessIds } from "@/components/utils/borrowerAccess";
 import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
@@ -58,6 +59,13 @@ export default function LoanDetail() {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toISOString().split('T')[0];
+  };
+
+  const formatLoanMeta = (value) => {
+    if (!value) return "Not set";
+    return String(value)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
   useEffect(() => {
@@ -311,6 +319,12 @@ export default function LoanDetail() {
                     onUpdate={handleLoanUpdate}
                     onRefresh={loadLoan}
                   />
+                  <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">
+                    {formatLoanMeta(loan.loan_type)}
+                  </Badge>
+                  <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">
+                    {formatLoanMeta(loan.loan_purpose)}
+                  </Badge>
                 </div>
               </div>
 
