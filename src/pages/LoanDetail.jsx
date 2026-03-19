@@ -313,18 +313,20 @@ export default function LoanDetail() {
                   <h1 className="text-3xl text-slate-900">
                     {loan.loan_number || loan.primary_loan_id || 'Loan Details'}
                   </h1>
-                  <LoanStatusBadgeControl
-                    loan={loan}
-                    currentUser={currentUser}
-                    onUpdate={handleLoanUpdate}
-                    onRefresh={loadLoan}
-                  />
-                  <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">
-                    {formatLoanMeta(loan.loan_type)}
-                  </Badge>
-                  <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">
-                    {formatLoanMeta(loan.loan_purpose)}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <LoanStatusBadgeControl
+                      loan={loan}
+                      currentUser={currentUser}
+                      onUpdate={handleLoanUpdate}
+                      onRefresh={loadLoan}
+                    />
+                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">
+                      Loan Type: {formatLoanMeta(loan.loan_type)}
+                    </Badge>
+                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">
+                      Loan Purpose: {formatLoanMeta(loan.loan_purpose)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
