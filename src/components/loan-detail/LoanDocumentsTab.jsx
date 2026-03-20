@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -1260,12 +1261,10 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
   return (
     <>
-      <section className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
-        <header className="space-y-4">
+      <Card>
+        <CardHeader className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl   text-[#171717]">
-              Documents
-            </h2>
+            <CardTitle>Documents</CardTitle>
           </div>
 
           <div className="relative">
@@ -1277,8 +1276,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
               className="h-14 rounded-2xl border-2 border-[#d9d9d9] bg-white pl-14 text-base"
             />
           </div>
-        </header>
+        </CardHeader>
 
+        <CardContent className="space-y-6">
         <div className="overflow-x-auto">
           <div className="inline-flex min-w-full rounded-xl bg-[#ededed] p-1">
             {CATEGORY_TABS.map((tab) => (
@@ -1520,7 +1520,8 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
             </div>
           </div>
         </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <Dialog
         open={showUploadDialog}

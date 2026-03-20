@@ -73,26 +73,24 @@ const sanitizeLoanData = (loanData) => {
 
 function SectionContent({ section, editedLoan, currentUser, isEditing, canEdit, onChange }) {
   return (
-    <Card className="border-0 bg-white shadow-xl shadow-slate-200/70">
-      <CardContent className="space-y-10 p-8 md:p-10">
-        {section.categories.map((category, index) => (
-          <div key={category.key} className={index > 0 ? "border-t border-slate-200 pt-10" : ""}>
-            <h3 className="mb-6 text-2xl text-slate-900">{category.title}</h3>
+    <div className="space-y-10">
+      {section.categories.map((category, index) => (
+        <div key={category.key} className={index > 0 ? "border-t border-slate-200 pt-10" : ""}>
+          <h3 className="mb-6 text-2xl text-slate-900">{category.title}</h3>
 
-            <DynamicFormRenderer
-              context="loan"
-              categoryFilter={category.key}
-              data={editedLoan}
-              onChange={onChange}
-              isReadOnly={!isEditing}
-              canManage={canEdit}
-              showTabs={false}
-              currentUser={currentUser}
-            />
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          <DynamicFormRenderer
+            context="loan"
+            categoryFilter={category.key}
+            data={editedLoan}
+            onChange={onChange}
+            isReadOnly={!isEditing}
+            canManage={canEdit}
+            showTabs={false}
+            currentUser={currentUser}
+          />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -173,65 +171,69 @@ export default function LoanOverviewTab({ loan, onUpdate, currentUser, activeSec
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-3xl text-slate-900">{selectedSection?.title || "Loan Details"}</h2>
+      <Card>
+        <CardContent className="space-y-6 p-6 md:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-3xl text-slate-900">{selectedSection?.title || "Loan Details"}</h2>
 
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => setShowRecentChanges(true)}>
-            Recent Changes
-          </Button>
-          {canEdit ? (
-            <>
-              {isEditing ? (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEditedLoan(originalLoan);
-                    setIsEditing(false);
-                  }}
-                  disabled={isSaving}
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Cancel
-                </Button>
-              ) : null}
-              <Button
-                onClick={isEditing ? handleSave : () => setIsEditing(true)}
-                disabled={isSaving}
-                className="bg-slate-700 hover:bg-slate-800"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : isEditing ? (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </>
-                ) : (
-                  <>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </>
-                )}
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={() => setShowRecentChanges(true)}>
+                Recent Changes
               </Button>
-            </>
-          ) : null}
-        </div>
-      </div>
+              {canEdit ? (
+                <>
+                  {isEditing ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditedLoan(originalLoan);
+                        setIsEditing(false);
+                      }}
+                      disabled={isSaving}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Cancel
+                    </Button>
+                  ) : null}
+                  <Button
+                    onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                    disabled={isSaving}
+                    className="bg-slate-700 hover:bg-slate-800"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : isEditing ? (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    ) : (
+                      <>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
 
-      {selectedSection ? (
-        <SectionContent
-          section={selectedSection}
-          editedLoan={editedLoan}
-          currentUser={currentUser}
-          isEditing={isEditing}
-          canEdit={canEdit}
-          onChange={handleFormChange}
-        />
-      ) : null}
+          {selectedSection ? (
+            <SectionContent
+              section={selectedSection}
+              editedLoan={editedLoan}
+              currentUser={currentUser}
+              isEditing={isEditing}
+              canEdit={canEdit}
+              onChange={handleFormChange}
+            />
+          ) : null}
+        </CardContent>
+      </Card>
 
       <RecentChangesModal open={showRecentChanges} onOpenChange={setShowRecentChanges} loan={loan} />
     </div>

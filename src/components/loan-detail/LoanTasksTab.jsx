@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { ChecklistItem } from "@/entities/all";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -697,22 +698,23 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[480px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-      </div>
+      <Card>
+        <CardContent className="flex min-h-[480px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <>
-      <section className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
-        <header className="space-y-4">
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl text-[#171717]">My Tasks</h2>
+            <CardTitle>My Tasks</CardTitle>
           </div>
-        </header>
-
-        <div className="space-y-6">
+        </CardHeader>
+        <CardContent className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="overflow-x-auto">
               <Tabs value={activeTaskTab} onValueChange={setActiveTaskTab}>
@@ -867,8 +869,8 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
               </div>
             </div>
           )}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <Dialog open={selectedTaskMode === "submit" && !!selectedTask} onOpenChange={(open) => !open && closeTaskModal()}>
         <DialogContent className="max-w-3xl rounded-[32px] border-white/70 p-0">
