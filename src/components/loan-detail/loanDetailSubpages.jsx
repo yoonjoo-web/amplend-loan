@@ -64,7 +64,7 @@ const ALL_LOAN_DETAIL_SUBPAGES = [
   },
 ];
 
-const MANAGER_TABS = ["dashboard", "workspace", "details", "checklist", "documents", "draws"];
+const MANAGER_TABS = ["dashboard", "workspace", "tasks", "details", "checklist", "documents", "draws"];
 const PARTICIPANT_TABS = ["dashboard", "tasks", "details", "documents", "draws"];
 
 const isLoanWorkspaceManager = (user) => {
@@ -83,7 +83,22 @@ export const getLoanDetailSubpages = (user) => {
         : PARTICIPANT_TABS;
 
   const subpagesByKey = Object.fromEntries(
-    ALL_LOAN_DETAIL_SUBPAGES.map((subpage) => [subpage.key, subpage])
+    ALL_LOAN_DETAIL_SUBPAGES.map((subpage) => {
+      if (subpage.key === "tasks") {
+        return [
+          subpage.key,
+          {
+            ...subpage,
+            title: canManageLoanWorkspace ? "Team Tasks" : "My Tasks",
+            description: canManageLoanWorkspace
+              ? "Track assigned work for this loan across the team."
+              : subpage.description,
+          },
+        ];
+      }
+
+      return [subpage.key, subpage];
+    })
   );
 
   return allowedTabs.map((tab) => subpagesByKey[tab]).filter(Boolean);
@@ -99,7 +114,7 @@ export const getLoanDetailSubpage = (tab, user) =>
 
 export const getDefaultLoanDetailFallbackTab = (user, { openTask = false } = {}) => {
   if (!openTask) return DEFAULT_LOAN_DETAIL_TAB;
-  return isLoanWorkspaceManager(user) ? "checklist" : "tasks";
+  return "tasks";
 };
 
 export const getLoanDetailTabUrl = (loanId, tab = DEFAULT_LOAN_DETAIL_TAB, extraParams = {}) => {

@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import { normalizeAppRole } from "@/components/utils/appRoles";
 
 const STATUS_COLORS = {
   not_started: "bg-slate-100 text-slate-800",
@@ -70,7 +71,10 @@ const formatDateLabel = (value) => {
   }
 };
 
-const getTaskAction = (task) => (REVIEW_STATUSES.includes(task.status) ? "review" : "submit");
+const getTaskAction = (task) => {
+  if (task.checklist_type === "action_item") return "create";
+  return REVIEW_STATUSES.includes(task.status) ? "review" : "submit";
+};
 const getTaskInstruction = (task) => task.instruction || task.instructions || task.description || "";
 const getTaskComments = (task) => (Array.isArray(task.notes) ? task.notes : []);
 const getTaskFiles = (task) => (Array.isArray(task.uploaded_files) ? task.uploaded_files : []);
@@ -98,6 +102,10 @@ const buildTaskNote = (currentUser, text, prefix = "") => ({
 });
 
 const TAB_GUIDANCE = {
+  create: {
+    className: "border-violet-200 bg-violet-50 text-violet-900",
+    text: "Complete the work item, attach supporting files if needed, and mark it done for the team.",
+  },
   submit: {
     className: "border-sky-200 bg-sky-50 text-sky-900",
     text: "Upload documents, leave comments if needed, and submit this item for review.",
@@ -141,6 +149,35 @@ const createDemoTasks = (currentUser) => {
     "Current User";
 
   return [
+    {
+      id: "demo-create-title-order",
+      loan_id: "demo-loan",
+      assigned_to: [currentUser?.id].filter(Boolean),
+      item_name: "Create title order",
+      category: "Team Workflow",
+      checklist_type: "action_item",
+      status: "in_progress",
+      description: "Open a title order with the selected title company and log the confirmation details.",
+      instruction:
+        "Create the title order, attach any confirmation email or ticket number, and leave a note with next steps.",
+      template_url: "",
+      template_name: "",
+      requested_date: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      due_date: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      uploaded_files: [],
+      notes: [
+        {
+          id: "demo-note-0",
+          author: "admin-demo",
+          author_name: "Operations Lead",
+          text: "Use the approved vendor list before placing the order.",
+          timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString(),
+        },
+      ],
+      updated_date: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString(),
+      is_demo: true,
+      demo_label: "Sample Create Task",
+    },
     {
       id: "demo-submit-income-docs",
       loan_id: "demo-loan",
@@ -212,6 +249,9 @@ const createDemoTasks = (currentUser) => {
 
 export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpened }) {
   const { toast } = useToast();
+  const normalizedRole = normalizeAppRole(currentUser?.app_role);
+  const isTeamView = currentUser?.role === "admin" || ["Administrator", "Loan Officer"].includes(normalizedRole);
+  const pageTitle = isTeamView ? "Team Tasks" : "My Tasks";
 
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -275,6 +315,11 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     [filteredTasks]
   );
 
+  const createTasks = useMemo(
+    () => filteredTasks.filter((task) => getTaskAction(task) === "create"),
+    [filteredTasks]
+  );
+
   const reviewTasks = useMemo(
     () => filteredTasks.filter((task) => getTaskAction(task) === "review"),
     [filteredTasks]
@@ -306,7 +351,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const visibleTasks = useMemo(() => {
     let nextTasks;
 
-    if (activeTaskTab === "submit") {
+    if (activeTaskTab === "create") {
+      nextTasks = createTasks;
+    } else if (activeTaskTab === "submit") {
       nextTasks = submitTasks;
     } else if (activeTaskTab === "review") {
       nextTasks = reviewTasks;
@@ -315,17 +362,19 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     }
 
     return applySort(nextTasks);
-  }, [activeTaskTab, deadlineSortOrder, filteredTasks, reviewTasks, submitTasks]);
+  }, [activeTaskTab, createTasks, deadlineSortOrder, filteredTasks, reviewTasks, submitTasks]);
 
   const loadTasks = async () => {
     setIsLoading(true);
     try {
       const allTasks = await ChecklistItem.filter({ loan_id: loan.id });
-      const assignedTasks = allTasks.filter((task) => {
-        if (!task.assigned_to) return false;
-        const assignedTo = Array.isArray(task.assigned_to) ? task.assigned_to : [task.assigned_to];
-        return assignedTo.includes(currentUser.id);
-      });
+      const assignedTasks = isTeamView
+        ? allTasks
+        : allTasks.filter((task) => {
+            if (!task.assigned_to) return false;
+            const assignedTo = Array.isArray(task.assigned_to) ? task.assigned_to : [task.assigned_to];
+            return assignedTo.includes(currentUser.id);
+          });
 
       assignedTasks.sort((a, b) => {
         const deadlineA = getTaskDeadline(a);
@@ -400,8 +449,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const handleSubmitTask = async () => {
     if (!selectedTask) return;
 
+    const isCreateTask = getTaskAction(selectedTask) === "create";
     const existingFiles = getTaskFiles(selectedTask);
-    if (!existingFiles.length && !submitFiles.length) {
+    if (!isCreateTask && !existingFiles.length && !submitFiles.length) {
       toast({
         variant: "destructive",
         title: "Documents required",
@@ -431,12 +481,14 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         updateTaskInState(selectedTask.id, {
           uploaded_files: nextFiles,
           notes: nextNotes,
-          status: "submitted",
+          status: isCreateTask ? "completed" : "submitted",
         });
 
         toast({
-          title: "Sample task updated",
-          description: "This demo item updates locally so you can review the design.",
+          title: isCreateTask ? "Sample task completed" : "Sample task updated",
+          description: isCreateTask
+            ? "This demo item was completed locally."
+            : "This demo item updates locally so you can review the design.",
         });
 
         closeTaskModal();
@@ -455,15 +507,17 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
       const updates = {
         uploaded_files: nextFiles,
         notes: nextNotes,
-        status: "submitted",
+        status: isCreateTask ? "completed" : "submitted",
       };
 
       await ChecklistItem.update(selectedTask.id, updates);
       updateTaskInState(selectedTask.id, updates);
 
       toast({
-        title: "Task submitted",
-        description: `"${selectedTask.item_name}" is ready for review.`,
+        title: isCreateTask ? "Task completed" : "Task submitted",
+        description: isCreateTask
+          ? `"${selectedTask.item_name}" was marked complete.`
+          : `"${selectedTask.item_name}" is ready for review.`,
       });
 
       closeTaskModal();
@@ -671,7 +725,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <CardTitle>My Tasks</CardTitle>
+            <CardTitle>{pageTitle}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -682,6 +736,10 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                   <TabsTrigger value="all" className="rounded-lg px-5 py-2">
                     All
                     <span className="ml-2 text-xs text-slate-500">{filteredTasks.length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="create" className="rounded-lg px-5 py-2">
+                    Create
+                    <span className="ml-2 text-xs text-slate-500">{createTasks.length}</span>
                   </TabsTrigger>
                   <TabsTrigger value="submit" className="rounded-lg px-5 py-2">
                     Submit
@@ -740,7 +798,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                   </thead>
                   <tbody>
                     {visibleTasks.map((task) => {
-                      const taskType = getTaskAction(task) === "review" ? "Review" : "Submit";
+                      const taskAction = getTaskAction(task);
+                      const taskType =
+                        taskAction === "create" ? "Create" : taskAction === "review" ? "Review" : "Submit";
 
                       return (
                         <tr
@@ -771,7 +831,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                               className={
                                 taskType === "Review"
                                   ? "border-0 bg-amber-100 text-amber-800"
-                                  : "border-0 bg-sky-100 text-sky-800"
+                                  : taskType === "Create"
+                                    ? "border-0 bg-violet-100 text-violet-800"
+                                    : "border-0 bg-sky-100 text-sky-800"
                               }
                             >
                               {taskType}
@@ -794,7 +856,10 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         </CardContent>
       </Card>
 
-      <Dialog open={selectedTaskMode === "submit" && !!selectedTask} onOpenChange={(open) => !open && closeTaskModal()}>
+      <Dialog
+        open={(selectedTaskMode === "submit" || selectedTaskMode === "create") && !!selectedTask}
+        onOpenChange={(open) => !open && closeTaskModal()}
+      >
         <DialogContent className="max-w-3xl rounded-[32px] border-white/70 p-0">
           {selectedTask && (
             <div className="max-h-[88vh] overflow-y-auto">
@@ -848,7 +913,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                 <Separator />
 
                 <div className="space-y-3">
-                  <Label htmlFor="task-submit-files">Attach Documents</Label>
+                  <Label htmlFor="task-submit-files">
+                    {selectedTaskMode === "create" ? "Attach Supporting Files" : "Attach Documents"}
+                  </Label>
                   <input
                     id="task-submit-files"
                     type="file"
@@ -895,7 +962,11 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                     value={submitComment}
                     onChange={(event) => setSubmitComment(event.target.value)}
                     rows={4}
-                    placeholder="Add context for the reviewer if needed..."
+                    placeholder={
+                      selectedTaskMode === "create"
+                        ? "Add completion notes or handoff details if needed..."
+                        : "Add context for the reviewer if needed..."
+                    }
                     className="rounded-2xl"
                   />
                 </div>
@@ -908,10 +979,10 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                     {isSubmittingTask ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting
+                        {selectedTaskMode === "create" ? "Completing" : "Submitting"}
                       </>
                     ) : (
-                      "Submit"
+                      selectedTaskMode === "create" ? "Complete" : "Submit"
                     )}
                   </Button>
                 </div>
