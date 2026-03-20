@@ -11,6 +11,7 @@ import { getLoanPartnerAccessIds } from "@/components/utils/loanPartnerAccess";
 import LoanOverviewTab from "../components/loan-detail/LoanOverviewTab";
 import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
 import LoanChecklistTab from "../components/loan-detail/LoanChecklistTab";
+import LoanTasksTab from "../components/loan-detail/LoanTasksTab";
 import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
@@ -347,6 +348,13 @@ export default function LoanDetail() {
                   <LoanDocumentsTab
                     loan={loan}
                     currentUser={currentUser}
+                  />
+                ) : activeTab === 'tasks' ? (
+                  <LoanTasksTab
+                    loan={loan}
+                    currentUser={currentUser}
+                    openTaskId={openTask}
+                    onTaskOpened={handleTaskOpened}
                   />
                 ) : activeTab === 'checklist' ? (
                   <LoanChecklistTab
