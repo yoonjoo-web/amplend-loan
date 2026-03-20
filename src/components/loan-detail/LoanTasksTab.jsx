@@ -11,7 +11,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -627,9 +626,43 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-2xl text-[#171717]">My Tasks</h2>
           </div>
+        </header>
 
-          <div className="relative">
-            <div className="relative">
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+              <p className="text-sm leading-6 text-sky-900">
+                Upload documents, leave comments if needed, and submit this item for review.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm leading-6 text-amber-900">
+                Review the document, confirm it, or file an appeal with supporting information.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="overflow-x-auto">
+              <Tabs value={activeTaskTab} onValueChange={setActiveTaskTab}>
+                <TabsList className="inline-flex h-auto rounded-xl bg-[#ededed] p-1">
+                  <TabsTrigger value="all" className="rounded-lg px-5 py-2">
+                    All
+                    <span className="ml-2 text-xs text-slate-500">{filteredTasks.length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="submit" className="rounded-lg px-5 py-2">
+                    Submit
+                    <span className="ml-2 text-xs text-slate-500">{submitTasks.length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="review" className="rounded-lg px-5 py-2">
+                    Review
+                    <span className="ml-2 text-xs text-slate-500">{reviewTasks.length}</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="relative w-full lg:max-w-md">
               <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
               <Input
                 placeholder="Search tasks..."
@@ -638,27 +671,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                 className="h-14 rounded-2xl border-2 border-[#d9d9d9] bg-white pl-14 text-base"
               />
             </div>
-          </div>
-        </header>
-
-        <div className="space-y-6">
-          <div className="overflow-x-auto">
-            <Tabs value={activeTaskTab} onValueChange={setActiveTaskTab}>
-              <TabsList className="inline-flex h-auto rounded-xl bg-[#ededed] p-1">
-                <TabsTrigger value="all" className="rounded-lg px-5 py-2">
-                  All
-                  <span className="ml-2 text-xs text-slate-500">{filteredTasks.length}</span>
-                </TabsTrigger>
-                <TabsTrigger value="submit" className="rounded-lg px-5 py-2">
-                  Submit
-                  <span className="ml-2 text-xs text-slate-500">{submitTasks.length}</span>
-                </TabsTrigger>
-                <TabsTrigger value="review" className="rounded-lg px-5 py-2">
-                  Review
-                  <span className="ml-2 text-xs text-slate-500">{reviewTasks.length}</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
 
           {visibleTasks.length === 0 ? (
@@ -705,7 +717,15 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                             </div>
                           </td>
                           <td className="px-6 py-4 align-middle">
-                            <span className="text-sm text-slate-600">{taskType}</span>
+                            <Badge
+                              className={
+                                taskType === "Review"
+                                  ? "border-0 bg-amber-100 text-amber-800"
+                                  : "border-0 bg-sky-100 text-sky-800"
+                              }
+                            >
+                              {taskType}
+                            </Badge>
                           </td>
                           <td className="px-6 py-4 align-middle">
                             <div className="flex items-center gap-1.5 text-sm text-slate-600">
@@ -730,9 +750,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
             <div className="max-h-[88vh] overflow-y-auto">
               <DialogHeader className="border-b border-slate-200 px-6 py-5">
                 <DialogTitle className="text-2xl text-slate-900">{selectedTask.item_name}</DialogTitle>
-                <DialogDescription>
-                  Upload documents, leave comments if needed, and submit this item for review.
-                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-6 px-6 py-6">
@@ -860,9 +877,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
             <div className="max-h-[90vh] overflow-y-auto">
               <DialogHeader className="border-b border-slate-200 px-6 py-5">
                 <DialogTitle className="text-2xl text-slate-900">{selectedTask.item_name}</DialogTitle>
-                <DialogDescription>
-                  Review the document, confirm it, or file an appeal with supporting information.
-                </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-0 lg:grid-cols-[1.4fr_0.8fr]">
