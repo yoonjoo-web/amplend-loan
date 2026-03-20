@@ -283,6 +283,16 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     });
   }, [demoTasks, tasks, searchTerm]);
 
+  const submitTasks = useMemo(
+    () => filteredTasks.filter((task) => getTaskAction(task) === "submit"),
+    [filteredTasks]
+  );
+
+  const reviewTasks = useMemo(
+    () => filteredTasks.filter((task) => getTaskAction(task) === "review"),
+    [filteredTasks]
+  );
+
   const loadTasks = async () => {
     setIsLoading(true);
     try {
@@ -622,6 +632,57 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     );
   };
 
+  const renderTaskCard = (task) => {
+    const action = getTaskAction(task);
+
+    return (
+      <div
+        key={task.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => openTask(task)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openTask(task);
+          }
+        }}
+        className="w-full rounded-[28px] border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            {task.is_demo && (
+              <p className="mb-2 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
+                {task.demo_label || "Sample"}
+              </p>
+            )}
+            <h3 className="mb-2 text-lg text-slate-900">{task.item_name}</h3>
+            <p className="line-clamp-2 text-sm leading-6 text-slate-600">
+              {getTaskInstruction(task) || "Open this task to review the request and complete the next step."}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" />
+                <span>Deadline: {formatDateLabel(getTaskDeadline(task))}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock3 className="h-4 w-4" />
+                <span>Updated {getLastUpdateInfo(task)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-stretch gap-2 lg:min-w-[170px]">
+            <Button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800">
+              {action === "review" ? "Open Review" : "Open Submit"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -659,67 +720,42 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
               No tasks assigned on this loan.
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredTasks.map((task) => {
-                const action = getTaskAction(task);
-
-                return (
-                  <div
-                    key={task.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => openTask(task)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openTask(task);
-                      }
-                    }}
-                    className="w-full rounded-[28px] border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-3 flex flex-wrap items-center gap-2">
-                          {task.is_demo && (
-                            <Badge className="border-0 bg-fuchsia-100 text-fuchsia-800">
-                              {task.demo_label || "Sample"}
-                            </Badge>
-                          )}
-                          <Badge className={action === "review" ? "border-0 bg-amber-100 text-amber-800" : "border-0 bg-sky-100 text-sky-800"}>
-                            {action === "review" ? "Review" : "Submit"}
-                          </Badge>
-                          <Badge className={STATUS_COLORS[task.status] || STATUS_COLORS.pending}>
-                            {formatStatus(task.status)}
-                          </Badge>
-                          {task.category && <Badge variant="outline">{task.category}</Badge>}
-                        </div>
-
-                        <h3 className="mb-2 text-lg text-slate-900">{task.item_name}</h3>
-                        <p className="line-clamp-2 text-sm leading-6 text-slate-600">
-                          {getTaskInstruction(task) || "Open this task to review the request and complete the next step."}
-                        </p>
-
-                        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4" />
-                            <span>Deadline: {formatDateLabel(getTaskDeadline(task))}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Clock3 className="h-4 w-4" />
-                            <span>Updated {getLastUpdateInfo(task)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-stretch gap-2 lg:min-w-[170px]">
-                        <Button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800">
-                          {action === "review" ? "Open Review" : "Open Submit"}
-                        </Button>
-                      </div>
-                    </div>
+            <div className="space-y-8">
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg text-slate-900">Submit Tasks</h2>
+                    <p className="text-sm text-slate-500">Items waiting on your upload and submission.</p>
                   </div>
-                );
-              })}
+                  <Badge variant="outline">{submitTasks.length}</Badge>
+                </div>
+
+                {submitTasks.length ? (
+                  <div className="space-y-4">{submitTasks.map(renderTaskCard)}</div>
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center text-sm text-slate-500">
+                    No submit tasks right now.
+                  </div>
+                )}
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg text-slate-900">Review Tasks</h2>
+                    <p className="text-sm text-slate-500">Items ready for document review, confirmation, or appeal.</p>
+                  </div>
+                  <Badge variant="outline">{reviewTasks.length}</Badge>
+                </div>
+
+                {reviewTasks.length ? (
+                  <div className="space-y-4">{reviewTasks.map(renderTaskCard)}</div>
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center text-sm text-slate-500">
+                    No review tasks right now.
+                  </div>
+                )}
+              </section>
             </div>
           )}
         </CardContent>
