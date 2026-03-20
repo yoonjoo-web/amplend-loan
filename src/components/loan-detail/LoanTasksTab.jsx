@@ -123,12 +123,115 @@ const buildTaskNote = (currentUser, text, prefix = "") => ({
   timestamp: new Date().toISOString(),
 });
 
+const DEMO_REVIEW_PREVIEW =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+      <rect width="1200" height="1600" fill="#f8fafc" />
+      <rect x="120" y="96" width="960" height="1408" rx="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="8" />
+      <rect x="180" y="170" width="320" height="34" rx="10" fill="#0f172a" opacity="0.92" />
+      <rect x="180" y="240" width="840" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="280" width="760" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="320" width="680" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="400" width="220" height="220" rx="18" fill="#e0f2fe" />
+      <rect x="430" y="420" width="420" height="18" rx="9" fill="#94a3b8" />
+      <rect x="430" y="466" width="500" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="430" y="512" width="460" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="700" width="840" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="740" width="790" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="780" width="700" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="900" width="380" height="220" rx="18" fill="#fee2e2" />
+      <rect x="590" y="900" width="430" height="220" rx="18" fill="#fef3c7" />
+      <rect x="180" y="1190" width="840" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="1230" width="620" height="18" rx="9" fill="#cbd5e1" />
+      <rect x="180" y="1320" width="220" height="52" rx="14" fill="#0f172a" />
+    </svg>
+  `);
+
+const createDemoTasks = (currentUser) => {
+  const now = new Date();
+  const actorName =
+    `${currentUser?.first_name || ""} ${currentUser?.last_name || ""}`.trim() ||
+    currentUser?.full_name ||
+    "Current User";
+
+  return [
+    {
+      id: "demo-submit-income-docs",
+      loan_id: "demo-loan",
+      assigned_to: [currentUser?.id].filter(Boolean),
+      item_name: "Updated bank statements",
+      category: "Borrower Documents",
+      checklist_type: "document",
+      status: "pending",
+      description: "Please provide the most recent two months of statements for all operating accounts.",
+      instruction:
+        "Upload one or multiple statements. Include all pages. Add a short note if balances changed materially since the initial submission.",
+      template_url: "",
+      template_name: "",
+      requested_date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      due_date: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      uploaded_files: [],
+      notes: [
+        {
+          id: "demo-note-1",
+          author: "admin-demo",
+          author_name: "Loan Officer",
+          text: "Please make sure the ending balance and account holder name are visible.",
+          timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      ],
+      updated_date: new Date(now.getTime() - 18 * 60 * 60 * 1000).toISOString(),
+      is_demo: true,
+      demo_label: "Sample Submit Task",
+    },
+    {
+      id: "demo-review-insurance-cert",
+      loan_id: "demo-loan",
+      assigned_to: [currentUser?.id].filter(Boolean),
+      item_name: "Insurance certificate review",
+      category: "Review Queue",
+      checklist_type: "document",
+      status: "under_review",
+      description: "Review the uploaded certificate and either confirm or file an appeal.",
+      instruction:
+        "Confirm if coverage is accurate. If something is missing, appeal with supporting files and a written explanation.",
+      template_url: "",
+      template_name: "",
+      requested_date: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+      due_date: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+      uploaded_files: [
+        {
+          file_name: "insurance-certificate-sample.png",
+          file_url: DEMO_REVIEW_PREVIEW,
+          uploaded_by: currentUser?.id || "demo-user",
+          uploaded_by_name: actorName,
+          uploaded_date: new Date(now.getTime() - 36 * 60 * 60 * 1000).toISOString(),
+        },
+      ],
+      notes: [
+        {
+          id: "demo-note-2",
+          author: "lo-demo",
+          author_name: "Admin Review",
+          text: "Use this sample item to preview the confirm and appeal states in the modal.",
+          timestamp: new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString(),
+        },
+      ],
+      updated_date: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(),
+      is_demo: true,
+      demo_label: "Sample Review Task",
+    },
+  ];
+};
+
 export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpened }) {
   const { toast } = useToast();
 
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [demoTasks, setDemoTasks] = useState([]);
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskMode, setSelectedTaskMode] = useState(null);
@@ -142,6 +245,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const [appealExplanation, setAppealExplanation] = useState("");
   const [appealFiles, setAppealFiles] = useState([]);
   const [isReviewSaving, setIsReviewSaving] = useState(false);
+  useEffect(() => {
+    setDemoTasks(createDemoTasks(currentUser));
+  }, [currentUser]);
 
   useEffect(() => {
     if (loan?.id && currentUser?.id) {
@@ -162,7 +268,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   }, [openTaskId, tasks, onTaskOpened]);
 
   const filteredTasks = useMemo(() => {
-    const visibleTasks = tasks.filter((task) => !["completed", "approved", "rejected"].includes(task.status));
+    const visibleTasks = [...demoTasks, ...tasks].filter(
+      (task) => !["completed", "approved", "rejected"].includes(task.status)
+    );
 
     if (!searchTerm) return visibleTasks;
 
@@ -173,7 +281,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         .toLowerCase();
       return haystack.includes(searchTerm.toLowerCase());
     });
-  }, [tasks, searchTerm]);
+  }, [demoTasks, tasks, searchTerm]);
 
   const loadTasks = async () => {
     setIsLoading(true);
@@ -231,6 +339,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     setTasks((currentTasks) =>
       currentTasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
     );
+    setDemoTasks((currentTasks) =>
+      currentTasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
+    );
     setSelectedTask((currentTask) =>
       currentTask?.id === taskId ? { ...currentTask, ...updates } : currentTask
     );
@@ -267,6 +378,38 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
 
     setIsSubmittingTask(true);
     try {
+      if (selectedTask.is_demo) {
+        const nextFiles = [
+          ...existingFiles,
+          ...submitFiles.map((file) => ({
+            file_name: file.name,
+            file_url: "#",
+            uploaded_by: currentUser.id,
+            uploaded_date: new Date().toISOString(),
+          })),
+        ];
+        const nextNotes = [...getTaskComments(selectedTask)];
+
+        if (submitComment.trim()) {
+          nextNotes.push(buildTaskNote(currentUser, submitComment));
+        }
+
+        updateTaskInState(selectedTask.id, {
+          uploaded_files: nextFiles,
+          notes: nextNotes,
+          status: "submitted",
+        });
+
+        toast({
+          title: "Sample task updated",
+          description: "This demo item updates locally so you can review the design.",
+        });
+
+        closeTaskModal();
+        setIsSubmittingTask(false);
+        return;
+      }
+
       const uploadedFiles = submitFiles.length ? await uploadFiles(submitFiles) : [];
       const nextFiles = [...existingFiles, ...uploadedFiles];
       const nextNotes = [...getTaskComments(selectedTask)];
@@ -306,6 +449,17 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
 
     setIsReviewSaving(true);
     try {
+      if (selectedTask.is_demo) {
+        setDemoTasks((currentTasks) => currentTasks.filter((task) => task.id !== selectedTask.id));
+        toast({
+          title: "Sample review confirmed",
+          description: "This demo item was cleared locally.",
+        });
+        closeTaskModal();
+        setIsReviewSaving(false);
+        return;
+      }
+
       await ChecklistItem.update(selectedTask.id, { status: "approved" });
       setTasks((currentTasks) => currentTasks.filter((task) => task.id !== selectedTask.id));
 
@@ -339,6 +493,37 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
 
     setIsReviewSaving(true);
     try {
+      if (selectedTask.is_demo) {
+        const nextFiles = [
+          ...getTaskFiles(selectedTask),
+          ...appealFiles.map((file) => ({
+            file_name: file.name,
+            file_url: "#",
+            uploaded_by: currentUser.id,
+            uploaded_date: new Date().toISOString(),
+          })),
+        ];
+        const nextNotes = [
+          ...getTaskComments(selectedTask),
+          buildTaskNote(currentUser, appealExplanation, "Appeal: "),
+        ];
+
+        updateTaskInState(selectedTask.id, {
+          uploaded_files: nextFiles,
+          notes: nextNotes,
+          status: "under_review",
+        });
+
+        toast({
+          title: "Sample appeal submitted",
+          description: "This demo item updates locally so you can inspect the UI.",
+        });
+
+        closeTaskModal();
+        setIsReviewSaving(false);
+        return;
+      }
+
       const uploadedFiles = appealFiles.length ? await uploadFiles(appealFiles) : [];
       const nextFiles = [...getTaskFiles(selectedTask), ...uploadedFiles];
       const nextNotes = [
@@ -495,6 +680,11 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="mb-3 flex flex-wrap items-center gap-2">
+                          {task.is_demo && (
+                            <Badge className="border-0 bg-fuchsia-100 text-fuchsia-800">
+                              {task.demo_label || "Sample"}
+                            </Badge>
+                          )}
                           <Badge className={action === "review" ? "border-0 bg-amber-100 text-amber-800" : "border-0 bg-sky-100 text-sky-800"}>
                             {action === "review" ? "Review" : "Submit"}
                           </Badge>
