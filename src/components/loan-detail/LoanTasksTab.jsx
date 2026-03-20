@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,6 @@ import {
 import {
   Calendar,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Download,
   FileText,
   Loader2,
@@ -206,7 +205,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [demoTasks, setDemoTasks] = useState([]);
-  const [expandedTaskIds, setExpandedTaskIds] = useState([]);
+  const [activeTaskTab, setActiveTaskTab] = useState("all");
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskMode, setSelectedTaskMode] = useState(null);
@@ -267,6 +266,12 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     () => filteredTasks.filter((task) => getTaskAction(task) === "review"),
     [filteredTasks]
   );
+
+  const visibleTasks = useMemo(() => {
+    if (activeTaskTab === "submit") return submitTasks;
+    if (activeTaskTab === "review") return reviewTasks;
+    return filteredTasks;
+  }, [activeTaskTab, filteredTasks, reviewTasks, submitTasks]);
 
   const loadTasks = async () => {
     setIsLoading(true);
@@ -607,81 +612,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     );
   };
 
-  const renderTaskCard = (task) => {
-    const isExpanded = expandedTaskIds.includes(task.id);
-
-    return (
-      <div
-        key={task.id}
-        role="button"
-        tabIndex={0}
-        onClick={() => openTask(task)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            openTask(task);
-          }
-        }}
-        className="w-full rounded-[28px] border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-      >
-        <div className="min-w-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              {task.is_demo && (
-                <p className="mb-2 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
-                  {task.demo_label || "Sample"}
-                </p>
-              )}
-              <h3 className="text-lg text-slate-900">{task.item_name}</h3>
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="shrink-0 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              onClick={(event) => {
-                event.stopPropagation();
-                setExpandedTaskIds((current) =>
-                  current.includes(task.id)
-                    ? current.filter((id) => id !== task.id)
-                    : [...current, task.id]
-                );
-              }}
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="mr-1 h-4 w-4" />
-                  Collapse
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="mr-1 h-4 w-4" />
-                  Expand
-                </>
-              )}
-            </Button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-4 w-4" />
-              <span>Deadline: {formatDateLabel(getTaskDeadline(task))}</span>
-            </div>
-          </div>
-
-          {isExpanded && (
-            <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm leading-6 text-slate-600">
-                {getTaskInstruction(task) || "No instruction provided for this task."}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="flex min-h-[480px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
@@ -712,47 +642,83 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         </header>
 
         <div className="space-y-6">
-          {filteredTasks.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Tabs value={activeTaskTab} onValueChange={setActiveTaskTab}>
+              <TabsList className="inline-flex h-auto rounded-xl bg-[#ededed] p-1">
+                <TabsTrigger value="all" className="rounded-lg px-5 py-2">
+                  All
+                  <span className="ml-2 text-xs text-slate-500">{filteredTasks.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="submit" className="rounded-lg px-5 py-2">
+                  Submit
+                  <span className="ml-2 text-xs text-slate-500">{submitTasks.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="review" className="rounded-lg px-5 py-2">
+                  Review
+                  <span className="ml-2 text-xs text-slate-500">{reviewTasks.length}</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {visibleTasks.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center text-slate-500">
-              No tasks assigned on this loan.
+              No tasks found for this view.
             </div>
           ) : (
-            <div className="grid gap-8 xl:grid-cols-2">
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg text-slate-900">Submit</h2>
-                    <p className="text-sm text-slate-500">Items waiting on your upload and submission.</p>
-                  </div>
-                  <Badge variant="outline">{submitTasks.length}</Badge>
-                </div>
+            <div className="overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white">
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-[#e5e5e5]">
+                      <th className="px-6 py-3 text-left text-sm text-[#171717]">Item</th>
+                      <th className="px-6 py-3 text-left text-sm text-[#171717]">Type</th>
+                      <th className="px-6 py-3 text-left text-sm text-[#171717]">Deadline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleTasks.map((task) => {
+                      const taskType = getTaskAction(task) === "review" ? "Review" : "Submit";
 
-                {submitTasks.length ? (
-                  <div className="space-y-4">{submitTasks.map(renderTaskCard)}</div>
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center text-sm text-slate-500">
-                    No submit tasks right now.
-                  </div>
-                )}
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg text-slate-900">Review</h2>
-                    <p className="text-sm text-slate-500">Items ready for document review, confirmation, or appeal.</p>
-                  </div>
-                  <Badge variant="outline">{reviewTasks.length}</Badge>
-                </div>
-
-                {reviewTasks.length ? (
-                  <div className="space-y-4">{reviewTasks.map(renderTaskCard)}</div>
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center text-sm text-slate-500">
-                    No review tasks right now.
-                  </div>
-                )}
-              </section>
+                      return (
+                        <tr
+                          key={task.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openTask(task)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openTask(task);
+                            }
+                          }}
+                          className="cursor-pointer border-b border-[#e5e5e5] transition hover:bg-slate-50"
+                        >
+                          <td className="px-6 py-4 align-middle">
+                            <div className="min-w-0">
+                              {task.is_demo ? (
+                                <p className="mb-1 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
+                                  {task.demo_label || "Sample"}
+                                </p>
+                              ) : null}
+                              <p className="text-sm text-slate-900">{task.item_name}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 align-middle">
+                            <span className="text-sm text-slate-600">{taskType}</span>
+                          </td>
+                          <td className="px-6 py-4 align-middle">
+                            <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                              <Calendar className="h-4 w-4" />
+                              <span>{formatDateLabel(getTaskDeadline(task))}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
