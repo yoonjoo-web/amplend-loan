@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { ChecklistItem } from "@/entities/all";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -644,36 +643,34 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-12">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-            <p className="text-slate-600">Loading tasks...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex min-h-[480px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+      </div>
     );
   }
 
   return (
     <>
-      <Card className="border-slate-200">
-        <CardHeader className="border-b border-slate-100">
-          <CardTitle>My Tasks</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6 p-6">
-          <div className="max-w-md">
+      <section className="space-y-6 rounded-[24px] bg-[#f8f9fb] pb-8">
+        <header className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-2xl text-[#171717]">My Tasks</h2>
+          </div>
+
+          <div className="relative">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
               <Input
                 placeholder="Search tasks..."
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                className="pl-10"
+                className="h-14 rounded-2xl border-2 border-[#d9d9d9] bg-white pl-14 text-base"
               />
             </div>
           </div>
+        </header>
 
+        <div className="space-y-6">
           {filteredTasks.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center text-slate-500">
               No tasks assigned on this loan.
@@ -683,7 +680,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg text-slate-900">Submit Tasks</h2>
+                    <h2 className="text-lg text-slate-900">Submit</h2>
                     <p className="text-sm text-slate-500">Items waiting on your upload and submission.</p>
                   </div>
                   <Badge variant="outline">{submitTasks.length}</Badge>
@@ -701,7 +698,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg text-slate-900">Review Tasks</h2>
+                    <h2 className="text-lg text-slate-900">Review</h2>
                     <p className="text-sm text-slate-500">Items ready for document review, confirmation, or appeal.</p>
                   </div>
                   <Badge variant="outline">{reviewTasks.length}</Badge>
@@ -717,8 +714,8 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
               </section>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <Dialog open={selectedTaskMode === "submit" && !!selectedTask} onOpenChange={(open) => !open && closeTaskModal()}>
         <DialogContent className="max-w-3xl rounded-[32px] border-white/70 p-0">
