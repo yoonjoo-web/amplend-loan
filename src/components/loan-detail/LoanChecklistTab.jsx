@@ -141,9 +141,9 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
     const teamIds = new Set([
       ...(loan.borrower_ids || []),
       ...(loan.loan_officer_ids || []),
-      ...toIdArray(loan.referrer_id, loan.referrer_ids),
-      ...toIdArray(loan.liaison_id, loan.liaison_ids),
-      ...toIdArray(loan.broker_id, loan.broker_ids),
+      ...toIdArray(loan.referrer_id),
+      ...toIdArray(loan.liaison_id),
+      ...toIdArray(loan.broker_id),
       ...(loan.title_company_ids || []),
       ...(loan.insurance_company_ids || []),
       ...(loan.servicer_ids || []),
@@ -193,7 +193,7 @@ export default function LoanChecklistTab({ loan, onUpdate, openTaskId, onTaskOpe
     const loanUserIds = new Set([
       ...(loan.borrower_ids || []),
       ...(loan.loan_officer_ids || []),
-      ...toIdArray(loan.referrer_id, loan.referrer_ids)
+      ...toIdArray(loan.referrer_id)
     ]);
 
     const assignable = allUsers.filter(u => {

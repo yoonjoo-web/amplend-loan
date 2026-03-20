@@ -157,8 +157,7 @@ export default function ChecklistItemModal({ isOpen, onClose, item, loanId, loan
     const teamMemberIds = new Set([
       ...(loan?.borrower_ids || []),
       ...(loan?.loan_officer_ids || []),
-      ...(loan?.referrer_id ? [loan.referrer_id] : []),
-      ...(loan?.referrer_ids || [])
+      ...(loan?.referrer_id ? [loan.referrer_id] : [])
     ]);
     console.log('[Mentions] Team member IDs:', Array.from(teamMemberIds));
     console.log('[Mentions] Sample users from allUsersList:', allUsersList.slice(0, 3).map(u => ({ 

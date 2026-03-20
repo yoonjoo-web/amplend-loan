@@ -90,7 +90,6 @@ export default function SendTaskMessageModal({ isOpen, onClose, task, loan, curr
         (loan.loan_officer_ids || []).forEach(id => memberIds.add(id));
         (loan.borrower_ids || []).forEach(id => memberIds.add(id));
         if (loan.referrer_id) memberIds.add(loan.referrer_id);
-        (loan.referrer_ids || []).forEach(id => memberIds.add(id));
         
         // Remove current user
         memberIds.delete(currentUser.id);
@@ -154,7 +153,6 @@ export default function SendTaskMessageModal({ isOpen, onClose, task, loan, curr
           ...(loan.loan_officer_ids || []),
           ...(loan.borrower_ids || []),
           ...(loan.referrer_id ? [loan.referrer_id] : []),
-          ...(loan.referrer_ids || [])
         ];
 
         await Message.create({

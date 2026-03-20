@@ -366,9 +366,7 @@ const buildLinkedUserOptions = (
     ...(loan?.borrower_ids || []),
     ...(loan?.loan_officer_ids || []),
     ...(loan?.broker_id ? [loan.broker_id] : []),
-    ...(loan?.broker_ids || []),
     ...(loan?.liaison_id ? [loan.liaison_id] : []),
-    ...(loan?.liaison_ids || []),
   ]
     .filter(Boolean)
     .map(String);

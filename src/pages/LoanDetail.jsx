@@ -152,11 +152,7 @@ export default function LoanDetail() {
       const resolvedLoanPartnerAccessIds = await getLoanPartnerAccessIds(base44, user);
       setBorrowerAccessIds(resolvedBorrowerAccessIds);
 
-      const toIdArray = (singleValue, legacyList) => {
-        if (singleValue) return [String(singleValue)];
-        if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
-        return [];
-      };
+      const toIdArray = (singleValue) => (singleValue ? [String(singleValue)] : []);
 
       const matchesTeamIds = (values) =>
         Array.isArray(values) &&
@@ -167,9 +163,9 @@ export default function LoanDetail() {
         user.app_role === 'Administrator' ||
         user.app_role === 'Loan Officer' ||
         loanData.borrower_ids?.some((id) => resolvedBorrowerAccessIds.includes(id)) ||
-        matchesTeamIds(toIdArray(loanData.liaison_id, loanData.liaison_ids)) ||
-        matchesTeamIds(toIdArray(loanData.referrer_id, loanData.referrer_ids)) ||
-        matchesTeamIds(toIdArray(loanData.broker_id, loanData.broker_ids));
+        matchesTeamIds(toIdArray(loanData.liaison_id)) ||
+        matchesTeamIds(toIdArray(loanData.referrer_id)) ||
+        matchesTeamIds(toIdArray(loanData.broker_id));
 
       if (!canViewLoan) {
         toast({

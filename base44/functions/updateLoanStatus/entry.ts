@@ -188,8 +188,6 @@ Deno.serve(async (req) => {
       // Add referrers
       if (loan.referrer_id) {
         notificationUserIds.push(loan.referrer_id);
-      } else if (loan.referrer_ids && Array.isArray(loan.referrer_ids)) {
-        notificationUserIds.push(...loan.referrer_ids);
       }
 
       const uniqueUserIds = [...new Set(notificationUserIds)].filter(Boolean);

@@ -68,9 +68,6 @@ export default function MyPartners() {
 
       myLoans.forEach((loan) => {
         [loan.broker_id, loan.referrer_id, loan.liaison_id].filter(Boolean).forEach((id) => partnerIdSet.add(id));
-        (loan.broker_ids || []).forEach((id) => partnerIdSet.add(id));
-        (loan.referrer_ids || []).forEach((id) => partnerIdSet.add(id));
-        (loan.liaison_ids || []).forEach((id) => partnerIdSet.add(id));
         (loan.title_company_ids || []).forEach((id) => partnerIdSet.add(id));
         (loan.insurance_company_ids || []).forEach((id) => partnerIdSet.add(id));
         (loan.servicer_ids || []).forEach((id) => partnerIdSet.add(id));

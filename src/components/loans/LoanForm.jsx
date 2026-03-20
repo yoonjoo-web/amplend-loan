@@ -15,7 +15,7 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
   const [formData, setFormData] = useState({
     borrower_ids: [],
     loan_officer_ids: [],
-    referrer_ids: [],
+    referrer_id: null,
     loan_number: '',
     loan_type: 'personal',
     principal_amount: '',
@@ -112,8 +112,8 @@ export default function LoanForm({ loan, onSubmit, onCancel, isProcessing }) {
               <Label htmlFor="referrers">Referral Partners</Label>
               <MultiSelect
                 options={getUserOptions('Referral Partner')}
-                selected={formData.referrer_ids || []}
-                onChange={(value) => handleInputChange('referrer_ids', value)}
+                selected={formData.referrer_id ? [formData.referrer_id] : []}
+                onChange={(value) => handleInputChange('referrer_id', value?.[0] || null)}
                 placeholder="Select referral partners..."
               />
             </div>

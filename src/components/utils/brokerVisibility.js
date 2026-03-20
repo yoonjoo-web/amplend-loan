@@ -52,7 +52,6 @@ export const wasInvitedByBroker = (source) => {
 export const hasBrokerOnLoan = (loan, loanPartners = []) => {
   return (
     Boolean(loan?.broker_id) ||
-    hasBrokerPartnerIds(loan?.referrer_ids, loanPartners) ||
     hasBrokerPartnerName(loan?.referrer_name, loanPartners) ||
     hasBrokerContact(loan?.loan_partners?.broker)
   );

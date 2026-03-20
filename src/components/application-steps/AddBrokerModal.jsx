@@ -164,9 +164,9 @@ export default function AddBrokerModal({
         ].filter(Boolean));
 
         const loanTeamIds = (loan) => ([
-          ...toIds(loan.broker_id, loan.broker_ids),
-          ...toIds(loan.liaison_id, loan.liaison_ids),
-          ...toIds(loan.referrer_id, loan.referrer_ids),
+          ...toIds(loan.broker_id),
+          ...toIds(loan.liaison_id),
+          ...toIds(loan.referrer_id),
         ].filter(Boolean));
 
         const relevantApplications = (applicationsData || []).filter((app) =>
@@ -204,7 +204,7 @@ export default function AddBrokerModal({
         });
 
         relevantLoans.forEach((loan) => {
-          toIds(loan.broker_id, loan.broker_ids).forEach(registerBroker);
+          toIds(loan.broker_id).forEach(registerBroker);
         });
 
         const results = Array.from(statsMap.values())
@@ -255,9 +255,9 @@ export default function AddBrokerModal({
 
         relevantLoans.forEach((loan) => {
           const ids = Array.from(new Set([
-            ...toIds(loan.broker_id, loan.broker_ids),
-            ...toIds(loan.referrer_id, loan.referrer_ids),
-            ...toIds(loan.liaison_id, loan.liaison_ids),
+            ...toIds(loan.broker_id),
+            ...toIds(loan.referrer_id),
+            ...toIds(loan.liaison_id),
           ]));
           ids.forEach((id) => registerPartner(id));
         });

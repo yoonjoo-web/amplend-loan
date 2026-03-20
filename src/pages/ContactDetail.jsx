@@ -497,15 +497,12 @@ export default function ContactDetail() {
               return false;
             };
             
-            const toIdArray = (singleValue, legacyList) => {
-              if (singleValue) return [singleValue];
-              return Array.isArray(legacyList) ? legacyList : [];
-            };
+            const toIdArray = (singleValue) => (singleValue ? [singleValue] : []);
 
             contactRelatedLoans = (allLoans || []).filter((loan) =>
-              matchesPartnerIds(toIdArray(loan.referrer_id, loan.referrer_ids)) ||
-              matchesPartnerIds(toIdArray(loan.liaison_id, loan.liaison_ids)) ||
-              matchesPartnerIds(toIdArray(loan.broker_id, loan.broker_ids)) ||
+              matchesPartnerIds(toIdArray(loan.referrer_id)) ||
+              matchesPartnerIds(toIdArray(loan.liaison_id)) ||
+              matchesPartnerIds(toIdArray(loan.broker_id)) ||
               matchesPartnerContact(loan.loan_partners?.broker)
             );
             

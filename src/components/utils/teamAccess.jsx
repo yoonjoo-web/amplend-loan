@@ -4,11 +4,7 @@ export const isUserOnLoanTeam = (loan, user, access = {}) => {
   if (!userId) return false;
   const partnerIds = Array.isArray(access.loanPartnerAccessIds) ? access.loanPartnerAccessIds : [];
 
-  const toIdArray = (singleValue, legacyList) => {
-    if (singleValue) return [String(singleValue)];
-    if (Array.isArray(legacyList)) return legacyList.map(String).filter(Boolean);
-    return [];
-  };
+  const toIdArray = (singleValue) => (singleValue ? [String(singleValue)] : []);
 
   const matchesIdList = (values) => {
     if (!Array.isArray(values)) return false;
@@ -17,9 +13,9 @@ export const isUserOnLoanTeam = (loan, user, access = {}) => {
     return partnerIds.some((partnerId) => ids.includes(String(partnerId)));
   };
 
-  if (matchesIdList(toIdArray(loan.referrer_id, loan.referrer_ids))) return true;
-  if (matchesIdList(toIdArray(loan.liaison_id, loan.liaison_ids))) return true;
-  if (matchesIdList(toIdArray(loan.broker_id, loan.broker_ids))) return true;
+  if (matchesIdList(toIdArray(loan.referrer_id))) return true;
+  if (matchesIdList(toIdArray(loan.liaison_id))) return true;
+  if (matchesIdList(toIdArray(loan.broker_id))) return true;
 
   const contact = loan.loan_partners?.broker;
   if (contact && typeof contact === 'object') {
