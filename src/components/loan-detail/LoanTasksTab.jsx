@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -94,6 +95,17 @@ const buildTaskNote = (currentUser, text, prefix = "") => ({
     "Current User",
   timestamp: new Date().toISOString(),
 });
+
+const TAB_GUIDANCE = {
+  submit: {
+    className: "border-sky-200 bg-sky-50 text-sky-900",
+    text: "Upload documents, leave comments if needed, and submit this item for review.",
+  },
+  review: {
+    className: "border-amber-200 bg-amber-50 text-amber-900",
+    text: "Review the document, confirm it, or file an appeal with supporting information.",
+  },
+};
 
 const DEMO_REVIEW_PREVIEW =
   'data:image/svg+xml;utf8,' +
@@ -205,6 +217,9 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const [searchTerm, setSearchTerm] = useState("");
   const [demoTasks, setDemoTasks] = useState([]);
   const [activeTaskTab, setActiveTaskTab] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("deadline_asc");
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskMode, setSelectedTaskMode] = useState(null);
@@ -266,11 +281,80 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     [filteredTasks]
   );
 
+  const applyDateFilter = (taskList) => {
+    if (dateFilter === "all") return taskList;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    return taskList.filter((task) => {
+      const deadline = getTaskDeadline(task);
+      if (!deadline) {
+        return dateFilter === "no_deadline";
+      }
+
+      const dueDate = new Date(deadline);
+      if (Number.isNaN(dueDate.getTime())) return false;
+
+      if (dateFilter === "overdue") return dueDate < today;
+      if (dateFilter === "today") return dueDate >= today && dueDate < tomorrow;
+      if (dateFilter === "next_7_days") return dueDate >= today && dueDate <= nextWeek;
+      if (dateFilter === "no_deadline") return false;
+      return true;
+    });
+  };
+
+  const applySort = (taskList) => {
+    const sorted = [...taskList];
+
+    sorted.sort((a, b) => {
+      if (sortOrder === "title_asc") {
+        return (a.item_name || "").localeCompare(b.item_name || "");
+      }
+
+      if (sortOrder === "title_desc") {
+        return (b.item_name || "").localeCompare(a.item_name || "");
+      }
+
+      const deadlineA = getTaskDeadline(a);
+      const deadlineB = getTaskDeadline(b);
+      const timeA = deadlineA ? new Date(deadlineA).getTime() : null;
+      const timeB = deadlineB ? new Date(deadlineB).getTime() : null;
+
+      if (timeA === null && timeB === null) return (a.item_name || "").localeCompare(b.item_name || "");
+      if (timeA === null) return 1;
+      if (timeB === null) return -1;
+
+      if (sortOrder === "deadline_desc") {
+        return timeB - timeA;
+      }
+
+      return timeA - timeB;
+    });
+
+    return sorted;
+  };
+
   const visibleTasks = useMemo(() => {
-    if (activeTaskTab === "submit") return submitTasks;
-    if (activeTaskTab === "review") return reviewTasks;
-    return filteredTasks;
-  }, [activeTaskTab, filteredTasks, reviewTasks, submitTasks]);
+    let nextTasks;
+
+    if (activeTaskTab === "submit") {
+      nextTasks = submitTasks;
+    } else if (activeTaskTab === "review") {
+      nextTasks = reviewTasks;
+    } else {
+      nextTasks =
+        typeFilter === "all"
+          ? filteredTasks
+          : filteredTasks.filter((task) => getTaskAction(task) === typeFilter);
+    }
+
+    return applySort(applyDateFilter(nextTasks));
+  }, [activeTaskTab, dateFilter, filteredTasks, reviewTasks, sortOrder, submitTasks, typeFilter]);
 
   const loadTasks = async () => {
     setIsLoading(true);
@@ -629,19 +713,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         </header>
 
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
-              <p className="text-sm leading-6 text-sky-900">
-                Upload documents, leave comments if needed, and submit this item for review.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm leading-6 text-amber-900">
-                Review the document, confirm it, or file an appeal with supporting information.
-              </p>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="overflow-x-auto">
               <Tabs value={activeTaskTab} onValueChange={setActiveTaskTab}>
@@ -670,6 +741,61 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                 onChange={(event) => setSearchTerm(event.target.value)}
                 className="h-14 rounded-2xl border-2 border-[#d9d9d9] bg-white pl-14 text-base"
               />
+            </div>
+          </div>
+
+          {TAB_GUIDANCE[activeTaskTab] ? (
+            <div className={`rounded-2xl border p-4 ${TAB_GUIDANCE[activeTaskTab].className}`}>
+              <p className="text-sm leading-6">{TAB_GUIDANCE[activeTaskTab].text}</p>
+            </div>
+          ) : null}
+
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            {activeTaskTab === "all" ? (
+              <div className="flex items-center gap-3">
+                <Label className="shrink-0 text-base text-[#171717]">Type</Label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="h-11 w-[180px] rounded-lg border-[#d9d9d9] bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="submit">Submit</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-3">
+              <Label className="shrink-0 text-base text-[#171717]">Date</Label>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="h-11 w-[180px] rounded-lg border-[#d9d9d9] bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All dates</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="today">Due today</SelectItem>
+                  <SelectItem value="next_7_days">Next 7 days</SelectItem>
+                  <SelectItem value="no_deadline">No deadline</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Label className="shrink-0 text-base text-[#171717]">Sort</Label>
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="h-11 w-[200px] rounded-lg border-[#d9d9d9] bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="deadline_asc">Deadline: earliest</SelectItem>
+                  <SelectItem value="deadline_desc">Deadline: latest</SelectItem>
+                  <SelectItem value="title_asc">Title: A to Z</SelectItem>
+                  <SelectItem value="title_desc">Title: Z to A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
