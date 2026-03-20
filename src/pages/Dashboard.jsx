@@ -19,7 +19,6 @@ import { format, formatDistanceToNow } from "date-fns";
 import InviteBorrowerModal from "../components/dashboard/InviteBorrowerModal";
 import InviteTeamModal from "../components/dashboard/InviteTeamModal";
 import InviteLoanPartnerModal from "../components/dashboard/InviteLoanPartnerModal";
-import BorrowerInviteRequests from "../components/shared/BorrowerInviteRequests";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/components/hooks/usePermissions";
 import { normalizeAppRole } from "@/components/utils/appRoles";

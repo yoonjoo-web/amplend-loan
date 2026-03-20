@@ -13,6 +13,7 @@ import LoanDocumentsTab from "../components/loan-detail/LoanDocumentsTab";
 import LoanChecklistTab from "../components/loan-detail/LoanChecklistTab";
 import LoanTasksTab from "../components/loan-detail/LoanTasksTab";
 import LoanDrawsTab from "../components/loan-detail/LoanDrawsTab";
+import LoanWorkspaceTab from "../components/loan-detail/LoanWorkspaceTab";
 import LoanSidebar from "../components/loan-detail/LoanSidebar";
 import LoanSummaryHeader from "../components/loan-detail/LoanSummaryHeader";
 import LoanStatusBadgeControl from "../components/loan-detail/LoanStatusBadgeControl";
@@ -333,6 +334,11 @@ export default function LoanDetail() {
                       loan={loan}
                     />
                   </div>
+                ) : activeTab === 'workspace' ? (
+                  <LoanWorkspaceTab
+                    loan={loan}
+                    navigate={navigate}
+                  />
                 ) : activeTab === 'details' ? (
                   <LoanOverviewTab 
                     loan={loan} 
