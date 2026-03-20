@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  ArrowUpDown,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -218,9 +217,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const [searchTerm, setSearchTerm] = useState("");
   const [demoTasks, setDemoTasks] = useState([]);
   const [activeTaskTab, setActiveTaskTab] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [sortOrder, setSortOrder] = useState("deadline_asc");
+  const [deadlineSortOrder, setDeadlineSortOrder] = useState("asc");
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskMode, setSelectedTaskMode] = useState(null);
@@ -282,45 +279,10 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     [filteredTasks]
   );
 
-  const applyDateFilter = (taskList) => {
-    if (dateFilter === "all") return taskList;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-
-    return taskList.filter((task) => {
-      const deadline = getTaskDeadline(task);
-      if (!deadline) {
-        return dateFilter === "no_deadline";
-      }
-
-      const dueDate = new Date(deadline);
-      if (Number.isNaN(dueDate.getTime())) return false;
-
-      if (dateFilter === "overdue") return dueDate < today;
-      if (dateFilter === "today") return dueDate >= today && dueDate < tomorrow;
-      if (dateFilter === "next_7_days") return dueDate >= today && dueDate <= nextWeek;
-      if (dateFilter === "no_deadline") return false;
-      return true;
-    });
-  };
-
   const applySort = (taskList) => {
     const sorted = [...taskList];
 
     sorted.sort((a, b) => {
-      if (sortOrder === "title_asc") {
-        return (a.item_name || "").localeCompare(b.item_name || "");
-      }
-
-      if (sortOrder === "title_desc") {
-        return (b.item_name || "").localeCompare(a.item_name || "");
-      }
-
       const deadlineA = getTaskDeadline(a);
       const deadlineB = getTaskDeadline(b);
       const timeA = deadlineA ? new Date(deadlineA).getTime() : null;
@@ -330,7 +292,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
       if (timeA === null) return 1;
       if (timeB === null) return -1;
 
-      if (sortOrder === "deadline_desc") {
+      if (deadlineSortOrder === "desc") {
         return timeB - timeA;
       }
 
@@ -348,14 +310,11 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
     } else if (activeTaskTab === "review") {
       nextTasks = reviewTasks;
     } else {
-      nextTasks =
-        typeFilter === "all"
-          ? filteredTasks
-          : filteredTasks.filter((task) => getTaskAction(task) === typeFilter);
+      nextTasks = filteredTasks;
     }
 
-    return applySort(applyDateFilter(nextTasks));
-  }, [activeTaskTab, dateFilter, filteredTasks, reviewTasks, sortOrder, submitTasks, typeFilter]);
+    return applySort(nextTasks);
+  }, [activeTaskTab, deadlineSortOrder, filteredTasks, reviewTasks, submitTasks]);
 
   const loadTasks = async () => {
     setIsLoading(true);
@@ -752,55 +711,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-            {activeTaskTab === "all" ? (
-              <div className="flex items-center gap-3">
-                <Label className="shrink-0 text-base text-[#171717]">Type</Label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-11 w-[180px] rounded-lg border-[#d9d9d9] bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="submit">Submit</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-
-            <div className="flex items-center gap-3">
-              <Label className="shrink-0 text-base text-[#171717]">Date</Label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="h-11 w-[180px] rounded-lg border-[#d9d9d9] bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All dates</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
-                  <SelectItem value="today">Due today</SelectItem>
-                  <SelectItem value="next_7_days">Next 7 days</SelectItem>
-                  <SelectItem value="no_deadline">No deadline</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Label className="shrink-0 text-base text-[#171717]">Sort</Label>
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger className="h-11 w-[200px] rounded-lg border-[#d9d9d9] bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="deadline_asc">Deadline: earliest</SelectItem>
-                  <SelectItem value="deadline_desc">Deadline: latest</SelectItem>
-                  <SelectItem value="title_asc">Title: A to Z</SelectItem>
-                  <SelectItem value="title_desc">Title: Z to A</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           {visibleTasks.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center text-slate-500">
               No tasks found for this view.
@@ -813,7 +723,18 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
                     <tr className="border-b-2 border-[#e5e5e5]">
                       <th className="px-6 py-3 text-left text-sm text-[#171717]">Item</th>
                       <th className="px-6 py-3 text-left text-sm text-[#171717]">Type</th>
-                      <th className="px-6 py-3 text-left text-sm text-[#171717]">Deadline</th>
+                      <th className="px-6 py-3 text-left text-sm text-[#171717]">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2"
+                          onClick={() =>
+                            setDeadlineSortOrder((current) => (current === "asc" ? "desc" : "asc"))
+                          }
+                        >
+                          <span>Deadline</span>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
