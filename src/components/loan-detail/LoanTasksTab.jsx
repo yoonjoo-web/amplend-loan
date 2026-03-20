@@ -18,14 +18,13 @@ import {
 import {
   Calendar,
   CheckCircle2,
-  Clock3,
   Download,
   FileText,
   Loader2,
   Search,
   Upload,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 
 const STATUS_COLORS = {
@@ -77,32 +76,6 @@ const getTaskFiles = (task) => (Array.isArray(task.uploaded_files) ? task.upload
 const getTaskRequestedDate = (task) => task.requested_date || task.created_date || null;
 const getTaskDeadline = (task) => task.deadline || task.due_date || null;
 const getTaskTemplateName = (task) => task.template_name || (task.template_url ? "Download template" : null);
-
-const getLastUpdateInfo = (task) => {
-  const dates = [];
-
-  if (task.updated_date) {
-    dates.push(new Date(task.updated_date));
-  }
-
-  if (task.notes?.length) {
-    const lastNote = task.notes[task.notes.length - 1];
-    if (lastNote.timestamp) {
-      dates.push(new Date(lastNote.timestamp));
-    }
-  }
-
-  if (task.uploaded_files?.length) {
-    const lastFile = task.uploaded_files[task.uploaded_files.length - 1];
-    if (lastFile.uploaded_date) {
-      dates.push(new Date(lastFile.uploaded_date));
-    }
-  }
-
-  if (!dates.length) return "No updates";
-
-  return formatDistanceToNow(new Date(Math.max(...dates)), { addSuffix: true });
-};
 
 const getFilePreviewType = (fileUrl = "") => {
   if (!fileUrl) return "none";
@@ -633,8 +606,6 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   };
 
   const renderTaskCard = (task) => {
-    const action = getTaskAction(task);
-
     return (
       <div
         key={task.id}
@@ -649,34 +620,22 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         }}
         className="w-full rounded-[28px] border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 flex-1">
-            {task.is_demo && (
-              <p className="mb-2 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
-                {task.demo_label || "Sample"}
-              </p>
-            )}
-            <h3 className="mb-2 text-lg text-slate-900">{task.item_name}</h3>
-            <p className="line-clamp-2 text-sm leading-6 text-slate-600">
-              {getTaskInstruction(task) || "Open this task to review the request and complete the next step."}
+        <div className="min-w-0">
+          {task.is_demo && (
+            <p className="mb-2 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
+              {task.demo_label || "Sample"}
             </p>
+          )}
+          <h3 className="mb-2 text-lg text-slate-900">{task.item_name}</h3>
+          <p className="line-clamp-2 text-sm leading-6 text-slate-600">
+            {getTaskInstruction(task) || "Open this task to review the request and complete the next step."}
+          </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
-                <span>Deadline: {formatDateLabel(getTaskDeadline(task))}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock3 className="h-4 w-4" />
-                <span>Updated {getLastUpdateInfo(task)}</span>
-              </div>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4" />
+              <span>Deadline: {formatDateLabel(getTaskDeadline(task))}</span>
             </div>
-          </div>
-
-          <div className="flex flex-col items-stretch gap-2 lg:min-w-[170px]">
-            <Button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800">
-              {action === "review" ? "Open Review" : "Open Submit"}
-            </Button>
           </div>
         </div>
       </div>
@@ -720,7 +679,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
               No tasks assigned on this loan.
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="grid gap-8 xl:grid-cols-2">
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
