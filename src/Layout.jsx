@@ -11,7 +11,6 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  MessageSquare,
   UserCheck,
   UserRound,
   Handshake,
@@ -177,12 +176,6 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("MyPartners"),
       icon: Handshake,
       show: permissions.canViewMyPartners,
-    },
-    {
-      title: "Messages",
-      url: createPageUrl("Messages"),
-      icon: MessageSquare,
-      show: true, // Everyone can access messages
     },
     {
       title: "Contacts",

@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 const { Pages, Layout, mainPage } = pagesConfig;
+const hiddenPagePaths = new Set(['Messages']);
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
@@ -47,7 +48,9 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
-      {Object.entries(Pages).map(([path, Page]) => (
+      {Object.entries(Pages)
+        .filter(([path]) => !hiddenPagePaths.has(path))
+        .map(([path, Page]) => (
         <Route
           key={path}
           path={`/${path}`}

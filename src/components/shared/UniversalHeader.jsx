@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Mail, LogOut, Settings, CheckCircle } from "lucide-react";
+import { Bell, LogOut, Settings, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
@@ -26,29 +26,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export function HeaderActionControls({ currentUser, className = "", isVertical = false }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [messageCount, setMessageCount] = useState(0);
-
-  // Fetch unread messages
-  const { data: messages = [] } = useQuery({
-    queryKey: ['user-messages', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser) return [];
-      try {
-        const msgs = await base44.entities.Message.filter({
-          participant_ids: { $in: [currentUser.id] },
-          read_by: { $nin: [currentUser.id] }
-        }, '-created_date', 20);
-        return msgs || [];
-      } catch (error) {
-        console.log('Could not load messages:', error);
-        return [];
-      }
-    },
-    enabled: !!currentUser,
-    retry: false,
-    staleTime: 30000,
-    refetchInterval: 60000, // Refetch every minute
-  });
 
   // Fetch unread notifications
   const { data: notifications = [] } = useQuery({
@@ -94,10 +71,6 @@ export function HeaderActionControls({ currentUser, className = "", isVertical =
       queryClient.invalidateQueries({ queryKey: ['user-notifications'] });
     },
   });
-
-  useEffect(() => {
-    setMessageCount(messages.length);
-  }, [messages]);
 
   const handleLogout = async () => {
     try {
@@ -167,60 +140,6 @@ export function HeaderActionControls({ currentUser, className = "", isVertical =
   return (
     <div className={className}>
       <div className={`flex ${isVertical ? 'flex-col items-start gap-3' : 'items-center ml-auto gap-4'}`}>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Mail className="h-5 w-5" />
-              {messageCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {messageCount > 9 ? '9+' : messageCount}
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80" align={isVertical ? "end" : "end"} side={isVertical ? "right" : "bottom"}>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4>Messages</h4>
-                {messages.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(createPageUrl("Messages"))}
-                    className="text-xs text-blue-600 hover:text-blue-700"
-                  >
-                    View All
-                  </Button>
-                )}
-              </div>
-              {messages.length > 0 ? (
-                <ScrollArea className="h-96">
-                  <div className="space-y-2">
-                    {messages.slice(0, 5).map((msg) => (
-                      <div
-                        key={msg.id}
-                        className="p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-                        onClick={() => navigate(createPageUrl("Messages"))}
-                      >
-                        <p className="text-sm">{msg.sender_name}</p>
-                        <p className="text-xs text-slate-600 line-clamp-2">{msg.content}</p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          {format(new Date(msg.created_date), 'MMM d, h:mm a')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <p className="text-sm text-slate-500 py-4 text-center">No new messages</p>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
