@@ -17,6 +17,8 @@ import {
 import {
   Calendar,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Download,
   FileText,
   Loader2,
@@ -204,6 +206,7 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [demoTasks, setDemoTasks] = useState([]);
+  const [expandedTaskIds, setExpandedTaskIds] = useState([]);
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedTaskMode, setSelectedTaskMode] = useState(null);
@@ -605,6 +608,8 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
   };
 
   const renderTaskCard = (task) => {
+    const isExpanded = expandedTaskIds.includes(task.id);
+
     return (
       <div
         key={task.id}
@@ -620,22 +625,58 @@ export default function LoanTasksTab({ loan, currentUser, openTaskId, onTaskOpen
         className="w-full rounded-[28px] border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
       >
         <div className="min-w-0">
-          {task.is_demo && (
-            <p className="mb-2 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
-              {task.demo_label || "Sample"}
-            </p>
-          )}
-          <h3 className="mb-2 text-lg text-slate-900">{task.item_name}</h3>
-          <p className="line-clamp-2 text-sm leading-6 text-slate-600">
-            {getTaskInstruction(task) || "Open this task to review the request and complete the next step."}
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              {task.is_demo && (
+                <p className="mb-2 text-xs uppercase tracking-[0.18em] text-fuchsia-700">
+                  {task.demo_label || "Sample"}
+                </p>
+              )}
+              <h3 className="text-lg text-slate-900">{task.item_name}</h3>
+            </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              onClick={(event) => {
+                event.stopPropagation();
+                setExpandedTaskIds((current) =>
+                  current.includes(task.id)
+                    ? current.filter((id) => id !== task.id)
+                    : [...current, task.id]
+                );
+              }}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="mr-1 h-4 w-4" />
+                  Collapse
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="mr-1 h-4 w-4" />
+                  Expand
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
               <span>Deadline: {formatDateLabel(getTaskDeadline(task))}</span>
             </div>
           </div>
+
+          {isExpanded && (
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+              <p className="text-sm leading-6 text-slate-600">
+                {getTaskInstruction(task) || "No instruction provided for this task."}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
