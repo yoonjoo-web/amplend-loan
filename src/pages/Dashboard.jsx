@@ -641,7 +641,15 @@ export default function Dashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(createPageUrl('MyTasks'))}
+                    onClick={() => {
+                      if (!myTasks.length) return;
+                      const firstTask = myTasks[0];
+                      navigate(
+                        createPageUrl('LoanDetail') +
+                          `?id=${firstTask.loan_id}&tab=tasks&openTask=${firstTask.id}`
+                      );
+                    }}
+                    disabled={myTasks.length === 0}
                   >
                     View All
                     <ArrowRight className="w-4 h-4 ml-2" />
