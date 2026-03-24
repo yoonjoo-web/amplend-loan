@@ -1301,12 +1301,14 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         </div>
 
         <div ref={downloadZoneRef} className="space-y-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-            <div className="grid flex-1 gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-3">
-                <Label className="shrink-0 text-base  text-[#171717]">Provider</Label>
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:gap-6">
+            <div className="grid flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="flex items-center gap-2">
+                <Label className="shrink-0 text-base leading-6 tracking-[-0.5px] text-[#171717]">
+                  Provider
+                </Label>
                 <Select value={providerFilter} onValueChange={setProviderFilter}>
-                  <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
+                  <SelectTrigger className="h-10 rounded-[8px] border-[#d9d9d9] bg-white px-4 py-2 text-base leading-7 tracking-[-0.5px] text-black shadow-none [&>svg]:h-6 [&>svg]:w-6 [&>svg]:opacity-100">
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1320,12 +1322,12 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Label className="shrink-0 text-base  text-[#171717]">
+              <div className="flex items-center gap-2">
+                <Label className="shrink-0 text-base leading-6 tracking-[-0.5px] text-[#171717]">
                   Uploaded date
                 </Label>
                 <Select value={sortOrder} onValueChange={setSortOrder}>
-                  <SelectTrigger className="h-11 rounded-lg border-[#d9d9d9] bg-white">
+                  <SelectTrigger className="h-10 rounded-[8px] border-[#d9d9d9] bg-white px-4 py-2 text-base leading-7 tracking-[-0.5px] text-black shadow-none [&>svg]:h-6 [&>svg]:w-6 [&>svg]:opacity-100">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1339,19 +1341,25 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6 xl:self-stretch">
               <Button
                 type="button"
                 variant="outline"
                 className={cn(
-                  "h-11 rounded-lg border-0 bg-[#e5e5ea] text-black hover:bg-[#d9d9df]",
-                  isDownloadMode ? "min-w-[220px] justify-between px-4" : "min-w-28"
+                  "h-10 rounded-[8px] border-0 bg-[#e5e5ea] px-4 py-1 text-black shadow-none hover:bg-[#d9d9df]",
+                  isDownloadMode
+                    ? "min-w-[220px] justify-between gap-4"
+                    : "w-32 justify-center"
                 )}
                 onClick={isDownloadMode ? handleDownloadSelected : () => setIsDownloadMode(true)}
               >
                 <span className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  <span>Download</span>
+                  <Download className="h-6 w-6" />
+                  {isDownloadMode ? (
+                    <span className="text-base leading-7 tracking-[-0.5px] text-black">
+                      Download
+                    </span>
+                  ) : null}
                 </span>
                 {isDownloadMode ? (
                   <span className="text-sm text-[#4a4a50]">
@@ -1372,11 +1380,11 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 min-w-32 rounded-lg border-2 border-[#3463dd] bg-white text-black hover:bg-[#f4f7ff]"
+                  className="h-10 min-w-[132px] rounded-[8px] border-2 border-[#3463dd] bg-white px-4 py-1 text-base font-normal leading-7 tracking-[-0.5px] text-black shadow-none hover:bg-[#f4f7ff]"
                   onClick={handleOpenUploadDialog}
                 >
                   Upload
-                  <Upload className="ml-2 h-4 w-4" />
+                  <Upload className="ml-2 h-6 w-6" />
                 </Button>
               ) : null}
             </div>
