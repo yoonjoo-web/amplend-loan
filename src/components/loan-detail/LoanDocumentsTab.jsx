@@ -3,6 +3,8 @@ import { addDays, format } from "date-fns";
 import {
   ArrowUpDown,
   Bell,
+  ChevronDown,
+  ChevronRight,
   Download,
   Loader2,
   Search,
@@ -83,6 +85,13 @@ const buildTemplateKey = (category, title) => `${category}::${normalizeText(titl
 
 const getDocumentDate = (document) =>
   document?.uploaded_date || document?.updated_date || document?.created_date || null;
+
+const sortDocumentsByDateDesc = (documents = []) =>
+  [...documents].sort(
+    (left, right) =>
+      new Date(getDocumentDate(right) || 0).getTime() -
+      new Date(getDocumentDate(left) || 0).getTime()
+  );
 
 const getCurrentUserName = (currentUser) => {
   if (!currentUser) return "Unknown User";
@@ -295,10 +304,12 @@ const createRowFromTemplate = ({
   rowType,
   tabValue,
   checklistItem,
-  document,
+  documents = [],
   directory,
 }) => {
-  const uploadedAt = getDocumentDate(document);
+  const sortedDocuments = sortDocumentsByDateDesc(documents);
+  const primaryDocument = sortedDocuments[0] || null;
+  const uploadedAt = getDocumentDate(primaryDocument);
   const latestRequestRelatedEntry = getLatestRequestRelatedEntry(checklistItem?.activity_history);
   const requestTimestamp = latestRequestRelatedEntry?.timestamp || null;
   const latestPendingReminder = getLatestPendingScheduledReminder(checklistItem?.activity_history);
@@ -317,9 +328,12 @@ const createRowFromTemplate = ({
     providerLabel: getRowProviderLabel({ checklistItem, directory }),
     uploadedAt,
     uploadedDateLabel: resolveDateLabel(uploadedAt),
-    hasFile: Boolean(document),
+    hasFile: sortedDocuments.length > 0,
     hasActiveRequest,
-    document,
+    document: primaryDocument,
+    documents: sortedDocuments,
+    fileCount: sortedDocuments.length,
+    hasMultipleFiles: sortedDocuments.length > 1,
     template,
     checklistItem,
     checklistItemId: checklistItem?.id || null,
@@ -331,25 +345,30 @@ const createRowFromTemplate = ({
   };
 };
 
-const createRowFromUploadedDocument = ({ document, directory }) => {
-  const uploadedAt = getDocumentDate(document);
-  const uploaderName = directory[String(document?.uploaded_by)] || "Uploaded document";
+const createRowFromUploadedDocument = ({ documents = [], directory }) => {
+  const sortedDocuments = sortDocumentsByDateDesc(documents);
+  const primaryDocument = sortedDocuments[0] || null;
+  const uploadedAt = getDocumentDate(primaryDocument);
+  const uploaderName = directory[String(primaryDocument?.uploaded_by)] || "Uploaded document";
 
   return {
-    id: `uploaded-${document.id}`,
-    title: document.document_name || "Uploaded document",
-    tabValue: DOC_VALUE_TO_TAB[document.category] || "all",
+    id: `uploaded-${primaryDocument?.id || Math.random()}`,
+    title: primaryDocument?.document_name || "Uploaded document",
+    tabValue: DOC_VALUE_TO_TAB[primaryDocument?.category] || "all",
     rowType: "uploaded",
     providerLabel: uploaderName,
     uploadedAt,
     uploadedDateLabel: resolveDateLabel(uploadedAt),
-    hasFile: true,
+    hasFile: sortedDocuments.length > 0,
     hasActiveRequest: false,
-    document,
+    document: primaryDocument,
+    documents: sortedDocuments,
+    fileCount: sortedDocuments.length,
+    hasMultipleFiles: sortedDocuments.length > 1,
     template: null,
     checklistItem: null,
-    checklistItemId: document?.checklist_item_id || null,
-    loanDocumentCategory: document.category,
+    checklistItemId: primaryDocument?.checklist_item_id || null,
+    loanDocumentCategory: primaryDocument?.category,
   };
 };
 
@@ -431,9 +450,10 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [activeTab, setActiveTab] = useState("all");
   const [providerFilter, setProviderFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("latest");
-  const [viewingDocument, setViewingDocument] = useState(null);
+  const [viewerState, setViewerState] = useState(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingUploads, setPendingUploads] = useState([]);
+  const [uploadTargetRow, setUploadTargetRow] = useState(null);
   const [isDraggingUpload, setIsDraggingUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [requestRow, setRequestRow] = useState(null);
@@ -442,6 +462,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [activityRow, setActivityRow] = useState(null);
   const [isDownloadMode, setIsDownloadMode] = useState(false);
   const [selectedDownloadRowIds, setSelectedDownloadRowIds] = useState([]);
+  const [expandedRowIds, setExpandedRowIds] = useState([]);
 
   const loadDirectory = async () => {
     const namesById = {};
@@ -546,12 +567,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     const checklistByKey = new Map();
     const checklistIdsUsedByTemplate = new Set();
     const templateKeys = new Set();
-    const latestDocumentByChecklistId = new Map();
-    const latestDocumentByKey = new Map();
-    const sortedDocuments = [...allDocuments].sort(
-      (a, b) =>
-        new Date(getDocumentDate(b) || 0).getTime() - new Date(getDocumentDate(a) || 0).getTime()
-    );
+    const documentsByChecklistId = new Map();
+    const documentsByKey = new Map();
+    const sortedDocuments = sortDocumentsByDateDesc(allDocuments);
 
     allChecklistItems.forEach((item) => {
       const key = buildTemplateKey(item.category, item.item_name);
@@ -561,8 +579,10 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     });
 
     sortedDocuments.forEach((document) => {
-      if (document?.checklist_item_id && !latestDocumentByChecklistId.has(document.checklist_item_id)) {
-        latestDocumentByChecklistId.set(document.checklist_item_id, document);
+      if (document?.checklist_item_id) {
+        const checklistDocuments = documentsByChecklistId.get(document.checklist_item_id) || [];
+        checklistDocuments.push(document);
+        documentsByChecklistId.set(document.checklist_item_id, checklistDocuments);
       }
 
       const categoryLabel = Object.keys(DOC_CATEGORY_LABEL_TO_VALUE).find(
@@ -571,9 +591,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
       if (categoryLabel) {
         const key = buildTemplateKey(categoryLabel, document.document_name);
-        if (!latestDocumentByKey.has(key)) {
-          latestDocumentByKey.set(key, document);
-        }
+        const keyedDocuments = documentsByKey.get(key) || [];
+        keyedDocuments.push(document);
+        documentsByKey.set(key, keyedDocuments);
       }
     });
 
@@ -592,10 +612,10 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
         const templateKey = buildTemplateKey(template.category, template.item);
         const checklistItem = checklistByKey.get(templateKey);
-        const document =
-          (checklistItem?.id && latestDocumentByChecklistId.get(checklistItem.id)) ||
-          latestDocumentByKey.get(templateKey) ||
-          null;
+        const documents =
+          (checklistItem?.id && documentsByChecklistId.get(checklistItem.id)) ||
+          documentsByKey.get(templateKey) ||
+          [];
 
         if (checklistItem?.id) {
           checklistIdsUsedByTemplate.add(checklistItem.id);
@@ -608,7 +628,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
             rowType: "document",
             tabValue,
             checklistItem,
-            document,
+            documents,
             directory: nameDirectory,
           })
         );
@@ -625,10 +645,10 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       const checklistItem = checklistByKey.get(templateKey);
       const fallbackCategory =
         tabValue === "closing" ? "Closing Document" : "Post-Closing Document";
-      const document =
-        (checklistItem?.id && latestDocumentByChecklistId.get(checklistItem.id)) ||
-        latestDocumentByKey.get(buildTemplateKey(fallbackCategory, template.item)) ||
-        null;
+      const documents =
+        (checklistItem?.id && documentsByChecklistId.get(checklistItem.id)) ||
+        documentsByKey.get(buildTemplateKey(fallbackCategory, template.item)) ||
+        [];
 
       if (checklistItem?.id) {
         checklistIdsUsedByTemplate.add(checklistItem.id);
@@ -638,17 +658,16 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       templateRows.push(
         createRowFromTemplate({
           template,
-          rowType: "action",
-          tabValue,
-          checklistItem,
-          document,
-          directory: nameDirectory,
-        })
-      );
+            rowType: "action",
+            tabValue,
+            checklistItem,
+            documents,
+            directory: nameDirectory,
+          })
+        );
     });
 
-    const uploadedOnlyRows = [];
-    const seenUploadedKeys = new Set();
+    const uploadedOnlyDocumentsByKey = new Map();
 
     sortedDocuments.forEach((document) => {
       const categoryLabel = Object.keys(DOC_CATEGORY_LABEL_TO_VALUE).find(
@@ -666,13 +685,14 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       }
 
       const uniquenessKey = `${document.category}::${normalizeText(document.document_name)}`;
-      if (seenUploadedKeys.has(uniquenessKey)) {
-        return;
-      }
-
-      seenUploadedKeys.add(uniquenessKey);
-      uploadedOnlyRows.push(createRowFromUploadedDocument({ document, directory: nameDirectory }));
+      const groupedDocuments = uploadedOnlyDocumentsByKey.get(uniquenessKey) || [];
+      groupedDocuments.push(document);
+      uploadedOnlyDocumentsByKey.set(uniquenessKey, groupedDocuments);
     });
+
+    const uploadedOnlyRows = [...uploadedOnlyDocumentsByKey.values()].map((documents) =>
+      createRowFromUploadedDocument({ documents, directory: nameDirectory })
+    );
 
     return [...templateRows, ...uploadedOnlyRows];
   };
@@ -738,7 +758,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         showUploadDialog ||
         requestRow ||
         activityRow ||
-        viewingDocument ||
+        viewerState ||
         !downloadZoneRef.current ||
         downloadZoneRef.current.contains(target)
       ) {
@@ -750,7 +770,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
     document.addEventListener("mousedown", handlePointerDown, true);
     return () => document.removeEventListener("mousedown", handlePointerDown, true);
-  }, [activityRow, isDownloadMode, requestRow, showUploadDialog, viewingDocument]);
+  }, [activityRow, isDownloadMode, requestRow, showUploadDialog, viewerState]);
 
   const providerOptions = Array.from(
     new Set(
@@ -862,30 +882,44 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     return createdItem?.id || null;
   };
 
-  const createPendingUploads = (files) => {
-    const defaultCategory = activeTab === "all" ? "borrower" : activeTab;
+  const createPendingUploads = (files, linkedRow = null) => {
+    const defaultCategory =
+      linkedRow?.tabValue && linkedRow.tabValue !== "all"
+        ? linkedRow.tabValue
+        : activeTab === "all"
+          ? "borrower"
+          : activeTab;
 
     return files.map((file, index) => ({
       id: `${Date.now()}-${index}-${file.name}`,
       file,
       title: stripFileExtension(file.name),
       category: defaultCategory,
-      linkedRowId: "none",
-      checklistItemId: null,
+      linkedRowId: linkedRow?.id || "none",
+      checklistItemId: linkedRow?.checklistItemId || null,
       comment: "",
     }));
   };
 
-  const appendPendingUploads = (files) => {
+  const appendPendingUploads = (files, linkedRow = null) => {
     if (!files.length) {
       return;
     }
 
-    setPendingUploads((currentUploads) => [...currentUploads, ...createPendingUploads(files)]);
+    setPendingUploads((currentUploads) => [
+      ...currentUploads,
+      ...createPendingUploads(files, linkedRow),
+    ]);
   };
 
-  const handleOpenUploadDialog = () => {
+  const handleOpenUploadDialog = (linkedRow = null) => {
+    setUploadTargetRow(linkedRow);
     setShowUploadDialog(true);
+  };
+
+  const handleUploadToRow = (row) => {
+    setUploadTargetRow(row);
+    hiddenFileInputRef.current?.click();
   };
 
   const handleFileSelection = (event) => {
@@ -894,8 +928,9 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       return;
     }
 
-    appendPendingUploads(files);
+    appendPendingUploads(files, uploadTargetRow);
     setShowUploadDialog(true);
+    setUploadTargetRow(null);
     event.target.value = "";
   };
 
@@ -941,7 +976,6 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         if (field === "linkedRowId") {
           const selectedOption = rowOptions.find((option) => option.value === value);
           if (selectedOption) {
-            nextUpload.title = selectedOption.title;
             nextUpload.category = selectedOption.category;
             nextUpload.checklistItemId = selectedOption.checklistItemId || null;
           } else {
@@ -952,6 +986,32 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
         return nextUpload;
       })
     );
+  };
+
+  const toggleRowExpansion = (rowId) => {
+    setExpandedRowIds((currentRowIds) =>
+      currentRowIds.includes(rowId)
+        ? currentRowIds.filter((currentRowId) => currentRowId !== rowId)
+        : [...currentRowIds, rowId]
+    );
+  };
+
+  const handleOpenViewer = (row, document = row.document) => {
+    if (!document) {
+      return;
+    }
+
+    setViewerState({
+      row,
+      document: {
+        ...document,
+        uploader_name:
+          directory[String(document?.uploaded_by)] ||
+          document.uploader_name ||
+          document.uploaded_by_name ||
+          row.providerLabel,
+      },
+    });
   };
 
   const handleUploadDocuments = async () => {
@@ -1381,7 +1441,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                   type="button"
                   variant="outline"
                   className="h-10 min-w-[132px] rounded-[8px] border-2 border-[#3463dd] bg-white px-4 py-1 text-base font-normal leading-7 tracking-[-0.5px] text-black shadow-none hover:bg-[#f4f7ff]"
-                  onClick={handleOpenUploadDialog}
+                  onClick={() => handleOpenUploadDialog()}
                 >
                   Upload
                   <Upload className="ml-2 h-6 w-6" />
@@ -1428,91 +1488,138 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((row) => (
-                    <tr key={row.id} className="border-b border-[#ededed] last:border-b-0">
-                      <td className="px-6 py-4 text-[17px]  text-[#171717]">
-                        <div className="flex items-center gap-4">
-                          {isDownloadMode ? (
-                            <Checkbox
-                              checked={selectedDownloadRowIds.includes(row.id)}
-                              onCheckedChange={(checked) =>
-                                handleToggleDownloadRow(row.id, Boolean(checked))
-                              }
-                              disabled={!row.hasFile}
-                              aria-label={`Select ${row.title} for download`}
-                            />
-                          ) : null}
-                          <span>{row.title}</span>
-                        </div>
-                      </td>
-                      <td
-                        className={cn(
-                          "px-6 py-4 text-[17px] ",
-                          row.providerLabel === "Not Assigned" ? "text-[#8e8e93]" : "text-[#171717]"
-                        )}
-                      >
-                        {row.providerLabel}
-                      </td>
-                      <td
-                        className={cn(
-                          "px-6 py-4 text-[17px] ",
-                          row.hasFile ? "text-[#171717]" : "text-[#8e8e93]"
-                        )}
-                      >
-                        {row.uploadedDateLabel}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          {row.hasFile ? (
-                            <Button
-                              type="button"
-                              className="h-10 min-w-[120px] rounded-lg bg-[#3463dd] text-white hover:bg-[#2850ba]"
-                              onClick={() =>
-                                setViewingDocument(
-                                  row.document
-                                    ? {
-                                        ...row.document,
-                                        uploader_name: row.providerLabel,
-                                      }
-                                    : null
-                                )
-                              }
-                            >
-                              View file
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              disabled={row.hasActiveRequest || isSubmittingRequest}
-                              className={cn(
-                                "h-10 min-w-[120px] rounded-lg border-2",
-                                row.hasActiveRequest
-                                  ? "border-[#d1d5db] bg-[#e5e7eb] text-[#6b7280] hover:bg-[#e5e7eb] hover:text-[#6b7280]"
-                                  : "border-[#3463dd] bg-white text-black hover:bg-slate-50"
-                              )}
-                              onClick={() => handleOpenRequestModal(row)}
-                            >
-                              {row.hasActiveRequest ? "Request Sent" : "Request document"}
-                            </Button>
-                          )}
+                  {visibleRows.map((row) => {
+                    const isExpanded = expandedRowIds.includes(row.id);
 
-                          <div className="flex h-6 w-6 items-center justify-center">
-                            {row.hasActiveRequest && !row.hasFile ? (
-                              <button
-                                type="button"
-                                className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
-                                onClick={() => setActivityRow(row)}
-                                aria-label={`View request activity for ${row.title}`}
+                    return (
+                      <React.Fragment key={row.id}>
+                        <tr
+                          className={cn(
+                            "border-b border-[#ededed]",
+                            row.hasMultipleFiles && isExpanded ? "bg-[#f4f4f4]" : "bg-white"
+                          )}
+                        >
+                          <td className="px-6 py-4 text-[17px] text-[#171717]">
+                            <div className="flex items-center gap-4">
+                              {isDownloadMode ? (
+                                <Checkbox
+                                  checked={selectedDownloadRowIds.includes(row.id)}
+                                  onCheckedChange={(checked) =>
+                                    handleToggleDownloadRow(row.id, Boolean(checked))
+                                  }
+                                  disabled={!row.hasFile}
+                                  aria-label={`Select ${row.title} for download`}
+                                />
+                              ) : null}
+                              <span>{row.title}</span>
+                            </div>
+                          </td>
+                          <td
+                            className={cn(
+                              "px-6 py-4 text-[17px]",
+                              row.providerLabel === "Not Assigned"
+                                ? "text-[#8e8e93]"
+                                : "text-[#171717]"
+                            )}
+                          >
+                            {row.providerLabel}
+                          </td>
+                          <td
+                            className={cn(
+                              "px-6 py-4 text-[17px]",
+                              row.hasFile ? "text-[#171717]" : "text-[#8e8e93]"
+                            )}
+                          >
+                            {row.uploadedDateLabel}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-4">
+                              {row.hasFile ? (
+                                row.hasMultipleFiles ? (
+                                  <button
+                                    type="button"
+                                    className="flex w-[160px] items-center justify-between text-left text-base font-normal tracking-[-0.5px] text-[#171717]"
+                                    onClick={() => toggleRowExpansion(row.id)}
+                                    aria-expanded={isExpanded}
+                                    aria-label={`${isExpanded ? "Collapse" : "Expand"} files for ${row.title}`}
+                                  >
+                                    <span>View files</span>
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-6 w-6" />
+                                    ) : (
+                                      <ChevronRight className="h-6 w-6" />
+                                    )}
+                                  </button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    className="h-10 w-[160px] rounded-[8px] bg-[#3463dd] text-base font-normal tracking-[-0.5px] text-white hover:bg-[#2850ba]"
+                                    onClick={() => handleOpenViewer(row)}
+                                  >
+                                    View file
+                                  </Button>
+                                )
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  disabled={row.hasActiveRequest || isSubmittingRequest}
+                                  className={cn(
+                                    "h-10 w-[160px] rounded-[8px] border-2 text-base font-normal tracking-[-0.5px] shadow-none",
+                                    row.hasActiveRequest
+                                      ? "border-[#d1d1d6] bg-[#e5e5ea] text-black hover:bg-[#e5e5ea] hover:text-black"
+                                      : "border-[#3463dd] bg-white text-black hover:bg-slate-50"
+                                  )}
+                                  onClick={() => handleOpenRequestModal(row)}
+                                >
+                                  {row.hasActiveRequest ? "Requested" : "Request document"}
+                                </Button>
+                              )}
+
+                              <div className="flex h-6 w-6 items-center justify-center">
+                                {row.hasActiveRequest && !row.hasFile ? (
+                                  <button
+                                    type="button"
+                                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
+                                    onClick={() => setActivityRow(row)}
+                                    aria-label={`View request activity for ${row.title}`}
+                                  >
+                                    <Bell className="h-3.5 w-3.5 fill-current" />
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {row.hasMultipleFiles && isExpanded
+                          ? row.documents.map((document) => (
+                              <tr
+                                key={`${row.id}-${document.id}`}
+                                className="border-b border-[#e5e5e5] bg-[#f4f4f4] last:border-b-0"
                               >
-                                <Bell className="h-3.5 w-3.5 fill-current" />
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                                <td className="px-6 py-4 text-[17px] text-[#171717]">
+                                  {document.document_name || row.title}
+                                </td>
+                                <td className="px-6 py-4 text-[17px] text-[#8e8e93]" />
+                                <td className="px-6 py-4 text-[17px] text-[#171717]">
+                                  {resolveDateLabel(getDocumentDate(document))}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <Button
+                                    type="button"
+                                    className="h-10 w-[160px] rounded-[8px] bg-[#3463dd] text-base font-normal tracking-[-0.5px] text-white hover:bg-[#2850ba]"
+                                    onClick={() => handleOpenViewer(row, document)}
+                                  >
+                                    View file
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          : null}
+                      </React.Fragment>
+                    );
+                  })}
 
                   {visibleRows.length === 0 && (
                     <tr>
@@ -1535,6 +1642,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
           setShowUploadDialog(open);
           if (!open) {
             setIsDraggingUpload(false);
+            setUploadTargetRow(null);
           }
         }}
       >
@@ -1677,6 +1785,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                   setShowUploadDialog(false);
                   setPendingUploads([]);
                   setIsDraggingUpload(false);
+                  setUploadTargetRow(null);
                 }}
               >
                 Cancel
@@ -1825,11 +1934,16 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
       </Dialog>
 
       <DocumentViewer
-        isOpen={Boolean(viewingDocument)}
-        onClose={() => setViewingDocument(null)}
-        document={viewingDocument}
+        isOpen={Boolean(viewerState)}
+        onClose={() => setViewerState(null)}
+        document={viewerState?.document || null}
+        documentRow={viewerState?.row || null}
         currentUser={currentUser}
         onUpdate={loadWorkspace}
+        onUploadAdditional={(row) => {
+          setViewerState(null);
+          handleUploadToRow(row);
+        }}
       />
     </>
   );
