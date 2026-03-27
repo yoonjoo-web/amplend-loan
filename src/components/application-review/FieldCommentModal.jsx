@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, AlertTriangle, AlertCircle, HelpCircle } from 'lucide-react';
 
+
 export default function FieldCommentModal({ isOpen, onClose, field, currentComment, onSave }) {
   const [comment, setComment] = useState(currentComment?.comment || '');
   const [indicator, setIndicator] = useState(currentComment?.indicator || 'question');
