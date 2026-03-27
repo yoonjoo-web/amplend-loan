@@ -461,7 +461,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [activityRow, setActivityRow] = useState(null);
   const [isDownloadMode, setIsDownloadMode] = useState(false);
-  const [selectedDownloadRowIds, setSelectedDownloadRowIds] = useState([]);
+  const [selectedDownloadDocumentIds, setSelectedDownloadDocumentIds] = useState([]);
   const [expandedRowIds, setExpandedRowIds] = useState([]);
 
   const loadDirectory = async () => {
@@ -743,7 +743,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
 
   const exitDownloadMode = () => {
     setIsDownloadMode(false);
-    setSelectedDownloadRowIds([]);
+    setSelectedDownloadDocumentIds([]);
   };
 
   useEffect(() => {
@@ -822,14 +822,16 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     }
 
     const visibleDownloadableIds = new Set(
-      visibleRows.filter((row) => row.hasFile).map((row) => row.id)
+      visibleRows.flatMap((row) => (row.documents || []).map((document) => document.id))
     );
 
-    setSelectedDownloadRowIds((currentIds) => {
-      const nextIds = currentIds.filter((rowId) => visibleDownloadableIds.has(rowId));
+    setSelectedDownloadDocumentIds((currentIds) => {
+      const nextIds = currentIds.filter((documentId) =>
+        visibleDownloadableIds.has(documentId)
+      );
       if (
         nextIds.length === currentIds.length &&
-        nextIds.every((rowId, index) => rowId === currentIds[index])
+        nextIds.every((documentId, index) => documentId === currentIds[index])
       ) {
         return currentIds;
       }
@@ -1253,40 +1255,46 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     }
   };
 
-  const visibleDownloadableRows = visibleRows.filter((row) => row.hasFile);
-  const allVisibleDownloadableIds = visibleDownloadableRows.map((row) => row.id);
+  const visibleDownloadableDocuments = visibleRows.flatMap((row) =>
+    isDownloadMode ? row.documents || [] : row.hasFile && row.document ? [row.document] : []
+  );
+  const allVisibleDownloadableIds = visibleDownloadableDocuments.map((document) => document.id);
   const allVisibleDownloadableSelected =
     allVisibleDownloadableIds.length > 0 &&
-    allVisibleDownloadableIds.every((rowId) => selectedDownloadRowIds.includes(rowId));
+    allVisibleDownloadableIds.every((documentId) =>
+      selectedDownloadDocumentIds.includes(documentId)
+    );
   const someVisibleDownloadableSelected =
     !allVisibleDownloadableSelected &&
-    allVisibleDownloadableIds.some((rowId) => selectedDownloadRowIds.includes(rowId));
+    allVisibleDownloadableIds.some((documentId) =>
+      selectedDownloadDocumentIds.includes(documentId)
+    );
 
   const handleToggleAllDownloadable = (checked) => {
     if (checked) {
-      setSelectedDownloadRowIds(allVisibleDownloadableIds);
+      setSelectedDownloadDocumentIds(allVisibleDownloadableIds);
       return;
     }
 
-    setSelectedDownloadRowIds([]);
+    setSelectedDownloadDocumentIds([]);
   };
 
-  const handleToggleDownloadRow = (rowId, checked) => {
-    setSelectedDownloadRowIds((currentIds) =>
+  const handleToggleDownloadDocument = (documentId, checked) => {
+    setSelectedDownloadDocumentIds((currentIds) =>
       checked
-        ? currentIds.includes(rowId)
+        ? currentIds.includes(documentId)
           ? currentIds
-          : [...currentIds, rowId]
-        : currentIds.filter((id) => id !== rowId)
+          : [...currentIds, documentId]
+        : currentIds.filter((id) => id !== documentId)
     );
   };
 
   const handleDownloadSelected = () => {
-    const selectedRows = visibleRows.filter(
-      (row) => row.hasFile && selectedDownloadRowIds.includes(row.id)
+    const selectedDocuments = visibleRows.flatMap((row) =>
+      (row.documents || []).filter((document) => selectedDownloadDocumentIds.includes(document.id))
     );
 
-    if (selectedRows.length === 0) {
+    if (selectedDocuments.length === 0) {
       toast({
         variant: "destructive",
         title: "No files selected",
@@ -1296,8 +1304,8 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
     }
 
     let downloadedCount = 0;
-    selectedRows.forEach((row) => {
-      if (triggerDocumentDownload(row.document)) {
+    selectedDocuments.forEach((document) => {
+      if (triggerDocumentDownload(document)) {
         downloadedCount += 1;
       }
     });
@@ -1423,7 +1431,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 </span>
                 {isDownloadMode ? (
                   <span className="text-sm text-[#4a4a50]">
-                    {selectedDownloadRowIds.length} selected
+                    {selectedDownloadDocumentIds.length} selected
                   </span>
                 ) : null}
               </Button>
@@ -1489,27 +1497,20 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                 </thead>
                 <tbody>
                   {visibleRows.map((row) => {
-                    const isExpanded = expandedRowIds.includes(row.id);
+                    const isExpanded = isDownloadMode || expandedRowIds.includes(row.id);
 
                     return (
                       <React.Fragment key={row.id}>
                         <tr
                           className={cn(
                             "border-b border-[#ededed]",
-                            row.hasMultipleFiles && isExpanded ? "bg-[#f4f4f4]" : "bg-white"
+                            isDownloadMode ? "bg-white" : row.hasMultipleFiles && isExpanded ? "bg-[#f4f4f4]" : "bg-white"
                           )}
                         >
                           <td className="px-6 py-4 text-[17px] text-[#171717]">
                             <div className="flex items-center gap-4">
                               {isDownloadMode ? (
-                                <Checkbox
-                                  checked={selectedDownloadRowIds.includes(row.id)}
-                                  onCheckedChange={(checked) =>
-                                    handleToggleDownloadRow(row.id, Boolean(checked))
-                                  }
-                                  disabled={!row.hasFile}
-                                  aria-label={`Select ${row.title} for download`}
-                                />
+                                <span className="h-6 w-6 shrink-0" />
                               ) : null}
                               <span>{row.title}</span>
                             </div>
@@ -1522,7 +1523,7 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                                 : "text-[#171717]"
                             )}
                           >
-                            {row.providerLabel}
+                            {isDownloadMode && row.hasFile ? row.providerLabel : row.providerLabel}
                           </td>
                           <td
                             className={cn(
@@ -1534,7 +1535,11 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-4">
-                              {row.hasFile ? (
+                              {isDownloadMode ? (
+                                <div className="ml-auto flex h-6 w-6 items-center justify-center">
+                                  {row.hasFile ? <ChevronDown className="h-6 w-6" /> : null}
+                                </div>
+                              ) : row.hasFile ? (
                                 row.hasMultipleFiles ? (
                                   <button
                                     type="button"
@@ -1576,30 +1581,43 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                                 </Button>
                               )}
 
-                              <div className="flex h-6 w-6 items-center justify-center">
-                                {row.hasActiveRequest && !row.hasFile ? (
-                                  <button
-                                    type="button"
-                                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
-                                    onClick={() => setActivityRow(row)}
-                                    aria-label={`View request activity for ${row.title}`}
-                                  >
-                                    <Bell className="h-3.5 w-3.5 fill-current" />
-                                  </button>
-                                ) : null}
-                              </div>
+                              {!isDownloadMode ? (
+                                <div className="flex h-6 w-6 items-center justify-center">
+                                  {row.hasActiveRequest && !row.hasFile ? (
+                                    <button
+                                      type="button"
+                                      className="flex h-6 w-6 items-center justify-center rounded-full bg-[#b3261e] text-white"
+                                      onClick={() => setActivityRow(row)}
+                                      aria-label={`View request activity for ${row.title}`}
+                                    >
+                                      <Bell className="h-3.5 w-3.5 fill-current" />
+                                    </button>
+                                  ) : null}
+                                </div>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
 
-                        {row.hasMultipleFiles && isExpanded
+                        {row.hasFile && isExpanded
                           ? row.documents.map((document) => (
                               <tr
                                 key={`${row.id}-${document.id}`}
                                 className="border-b border-[#e5e5e5] bg-[#f4f4f4] last:border-b-0"
                               >
                                 <td className="px-6 py-4 text-[17px] text-[#171717]">
-                                  {document.document_name || row.title}
+                                  <div className="flex items-center gap-4">
+                                    {isDownloadMode ? (
+                                      <Checkbox
+                                        checked={selectedDownloadDocumentIds.includes(document.id)}
+                                        onCheckedChange={(checked) =>
+                                          handleToggleDownloadDocument(document.id, Boolean(checked))
+                                        }
+                                        aria-label={`Select ${document.document_name || row.title} for download`}
+                                      />
+                                    ) : null}
+                                    <span>{document.document_name || row.title}</span>
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4 text-[17px] text-[#8e8e93]" />
                                 <td className="px-6 py-4 text-[17px] text-[#171717]">
@@ -1608,7 +1626,11 @@ export default function LoanDocumentsTab({ loan, currentUser }) {
                                 <td className="px-6 py-4">
                                   <Button
                                     type="button"
-                                    className="h-10 w-[160px] rounded-[8px] bg-[#3463dd] text-base font-normal tracking-[-0.5px] text-white hover:bg-[#2850ba]"
+                                    variant="outline"
+                                    className={cn(
+                                      "h-10 w-[160px] rounded-[8px] border-2 border-[#3463dd] text-base font-normal tracking-[-0.5px] text-black shadow-none hover:bg-[#f4f7ff]",
+                                      !isDownloadMode && "bg-[#3463dd] text-white hover:bg-[#2850ba] hover:text-white"
+                                    )}
                                     onClick={() => handleOpenViewer(row, document)}
                                   >
                                     View file
