@@ -167,7 +167,7 @@ export default function Dashboard() {
       setActiveLoans(userRecentLoans);
 
       // Filter applications based on user role
-      let userApps = applications || [];
+      let userApps = Array.isArray(applications) ? applications : [];
       if (permissions.isLoanOfficer) {
         userApps = userApps.filter(a => a.assigned_loan_officer_id === currentUser.id);
       } else if (permissions.isBroker) {
@@ -191,7 +191,7 @@ export default function Dashboard() {
         userApps = userApps.filter((a) => isUserOnApplicationTeam(a, currentUser, permissions));
       }
 
-      const userRecentApps = userApps.slice(0, 5);
+      const userRecentApps = Array.isArray(userApps) ? userApps.slice(0, 5) : [];
       setActiveApplications(userRecentApps);
 
       // Get loan IDs for user's loans to fetch tasks
