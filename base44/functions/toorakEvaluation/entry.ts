@@ -1,6 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-const TOORAK_BASE_UAT = "https://public-api-uat.toorakcapital.info";
+const TOORAK_BASE = "https://api-uat.toorakcapital.info";
 const ORIGINATOR_PARTY_ID = "a1a75814-b55e-4ed8-b9cb-092aa31b11a8";
 
 Deno.serve(async (req) => {
@@ -11,11 +11,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const apiKey = Deno.env.get("TOORAK_API_KEY");
-    if (!apiKey) {
-      return Response.json({ error: "TOORAK_API_KEY secret not set" }, { status: 500 });
-    }
-
     const body = await req.json();
     const { loanFact } = body;
 
@@ -23,26 +18,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Missing loanFact in request body" }, { status: 400 });
     }
 
-    // Step 1: Get JWT token using X-API-Key
-    const authResponse = await fetch(`${TOORAK_BASE_UAT}/public-api/getToken`, {
+    // Step 1: Authenticate and retrieve JWT token
+    const authResponse = await fetch(`${TOORAK_BASE}/public-api/getToken`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify({}),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: "amplendapiuser@gmail.com",
+        password: "AmplendApi@0408",
+      }),
     });
 
     if (!authResponse.ok) {
       const authErr = await authResponse.text();
       return Response.json(
-        { error: "Authentication failed", status: authResponse.status, details: authErr },
+        { error: "Authentication failed", details: authErr },
         { status: 502 }
       );
     }
 
     const authData = await authResponse.json();
-    const authToken = authData.token || authData.access_token || authData.accessToken;
+    const authToken = authData.token;
 
     if (!authToken) {
       return Response.json(
@@ -63,13 +58,12 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Step 2: Call the rule evaluation API using the JWT token
-    const evalResponse = await fetch(`${TOORAK_BASE_UAT}/ruleevaluation/v1.0`, {
+    // Step 2: Call the Bridge loan evaluation API using the retrieved token
+    const evalResponse = await fetch(`${TOORAK_BASE}/ruleevaluation/v1.0`, {
       method: "POST",
       headers: {
-        "Authorization": authToken,
+        Authorization: authToken,
         "Content-Type": "application/json",
-        "X-API-Key": apiKey,
       },
       body: JSON.stringify({ loanFact: enrichedLoanFact }),
     });
