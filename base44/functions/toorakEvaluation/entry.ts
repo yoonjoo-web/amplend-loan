@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
       },
     };
 
+
     // Step 2: Call the Bridge loan evaluation API using the retrieved token
     const evalResponse = await fetch(`${TOORAK_BASE}/ruleevaluation/v1.0`, {
       method: "POST",
