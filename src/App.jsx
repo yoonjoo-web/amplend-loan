@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ToorakApiTest from './pages/ToorakApiTest';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const hiddenPagePaths = new Set(['Messages']);
@@ -61,6 +62,11 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/ToorakApiTest" element={
+        <LayoutWrapper currentPageName="ToorakApiTest">
+          <ToorakApiTest />
+        </LayoutWrapper>
+      } />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
