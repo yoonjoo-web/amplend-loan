@@ -11,16 +11,39 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const apiKey = Deno.env.get("TOORAK_API_KEY");
-    if (!apiKey) {
-      return Response.json({ error: "TOORAK_API_KEY secret is not set" }, { status: 500 });
-    }
-
     const body = await req.json();
     const { loanFact } = body;
 
     if (!loanFact) {
       return Response.json({ error: "Missing loanFact in request body" }, { status: 400 });
+    }
+
+    // Step 1: Authenticate and retrieve JWT token
+    const authResponse = await fetch(`${TOORAK_UAT_BASE}/public-api/getToken`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName: "amplendapiuser@gmail.com",
+        password: "AmplendApi@0408",
+      }),
+    });
+
+    if (!authResponse.ok) {
+      const authErr = await authResponse.text();
+      return Response.json(
+        { error: "Authentication failed", status: authResponse.status, details: authErr },
+        { status: 502 }
+      );
+    }
+
+    const authData = await authResponse.json();
+    const authToken = authData.token;
+
+    if (!authToken) {
+      return Response.json(
+        { error: "No token returned from authentication endpoint", raw: authData },
+        { status: 502 }
+      );
     }
 
     // Enforce static originatorPartyId
@@ -35,10 +58,11 @@ Deno.serve(async (req) => {
       },
     };
 
+    // Step 2: Call rule evaluation using the JWT token
     const evalResponse = await fetch(`${TOORAK_UAT_BASE}/ruleevaluation/v1.0`, {
       method: "POST",
       headers: {
-        "X-API-Key": apiKey,
+        Authorization: authToken,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ loanFact: enrichedLoanFact }),
