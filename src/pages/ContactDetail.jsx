@@ -82,7 +82,7 @@ const InfoItem = ({ icon: Icon, label, value, href, isEmail, isPhone }) => {
   return content;
 };
 
-const AddCoOwnerModal = ({ isOpen, onClose, onSave, allBorrowers, toast }) => {
+const AddCoOwnerModal = ({ isOpen, onClose, onSave, allBorrowers, toast, currentUser }) => {
   // Removed 'owner_name' state
   const [ownership_percentage, setOwnershipPercentage] = useState("");
   const [borrower_id, setBorrowerId] = useState("");
@@ -2083,7 +2083,7 @@ export default function ContactDetail() {
           onClose={() => setShowAddCoOwnerModal(false)}
           onSave={handleSaveCoOwner}
           allBorrowers={allBorrowers}
-          toast={toast}
+          toast={toast} currentUser={currentUser}
         />
 
         <PropagateProfileChangesModal
